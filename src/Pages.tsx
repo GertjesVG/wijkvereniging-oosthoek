@@ -20,6 +20,7 @@ import {
 import { ButtonLink, PageHeading, Rules, StatusNote } from "./components";
 import { asset, dateLabel, event } from "./content/event";
 import sponsors from "./content/sponsors.json";
+import { RegistrationPanel } from "./inschrijving/RegistrationPanel";
 import { ShareCode } from "./ShareCode";
 import "./pages.css";
 
@@ -84,71 +85,7 @@ function GiftPage() {
             Kleurplaat & wedstrijdregels
           </ButtonLink>
         </section>
-        <section
-          className="paper-panel registration-panel"
-          aria-labelledby="registration-heading"
-        >
-          <div className="panel-heading">
-            <span className="eyebrow">KINDERINSCHRIJVING</span>
-            <Gift size={24} aria-hidden="true" />
-          </div>
-          <h2 id="registration-heading">
-            Schrijf je kleine
-            <br />
-            Sinterklaasfan in
-          </h2>
-          <StatusNote>{event.registration.message}</StatusNote>
-          <p className="quiet-copy">
-            Dit is een voorbeeld van het toekomstige formulier. Je kunt nog geen
-            gegevens invullen of verzenden.
-          </p>
-          <fieldset
-            disabled
-            className="registration-fields"
-            aria-describedby="registration-unavailable"
-          >
-            <legend className="visually-hidden">
-              Nog niet actief inschrijfformulier
-            </legend>
-            <label>
-              Voornaam van het kind
-              <input
-                type="text"
-                placeholder="Nog niet beschikbaar"
-                autoComplete="off"
-              />
-            </label>
-            <label>
-              Leeftijd van het kind
-              <select defaultValue="">
-                <option value="">Nog niet beschikbaar</option>
-              </select>
-            </label>
-            <label>
-              E-mailadres ouder of voogd
-              <input
-                type="email"
-                placeholder="Nog niet beschikbaar"
-                autoComplete="off"
-              />
-            </label>
-            <button type="button" className="button button-primary" disabled>
-              <Gift size={17} aria-hidden="true" />
-              Inschrijving nog niet geopend
-            </button>
-          </fieldset>
-          <p className="form-footnote" id="registration-unavailable">
-            <ShieldCheck size={16} aria-hidden="true" />
-            Er worden nu geen persoonsgegevens verzameld.
-          </p>
-          <div className="confirmation-explanation">
-            <h3>En de bevestiging?</h3>
-            <p>
-              Een inschrijving is pas geldig na een echte bevestiging. Je kunt
-              hier op dit moment geen cadeautje reserveren.
-            </p>
-          </div>
-        </section>
+        <RegistrationPanel />
       </div>
     </>
   );

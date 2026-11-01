@@ -1,3 +1,17 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-export default defineConfig({ plugins: [react()], base: "./" });
+// `--mode beheer` bouwt het beheerdashboard (beheer/index.html) apart naar _site/beheer/.
+// /api gaat in ontwikkeling naar `npm run dev:api` (wrangler, poort 8788); draait die niet, dan blijft de inschrijving dicht.
+const server = { proxy: { "/api": "http://127.0.0.1:8788" } };
+export default defineConfig(({ mode }) =>
+  mode === "beheer"
+    ? {
+        plugins: [react()],
+        base: "./",
+        root: "beheer",
+        publicDir: false,
+        server,
+        build: { outDir: "../_site/beheer", emptyOutDir: true },
+      }
+    : { plugins: [react()], base: "./", server },
+);

@@ -1,0 +1,21 @@
+# Cloudflare Pages-configuratie van de website en het inschrijfsysteem (functions/).
+# Zodra dit bestand op main staat, is het de bron van waarheid voor bindings; geheimen staan alleen in Cloudflare
+# (Settings → Variables and Secrets): TURNSTILE_SECRET, ADMIN_PASSWORD, MAIL_SECRET, MAIL_WEBHOOK_URL.
+name = "wijkvereniging-oosthoek"
+pages_build_output_dir = "./_site"
+compatibility_date = "2026-10-01"
+
+[vars]
+# Openbare Turnstile-sitekey; leeg = formulier blijft dicht. Invullen bij activering (README → Inschrijvingen activeren).
+TURNSTILE_SITE_KEY = ""
+
+[[d1_databases]]
+binding = "DB"
+database_name = "oosthoek-inschrijvingen"
+# Vervangen door het id uit `wrangler d1 create` vóór activering; lokaal werkt elk id.
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "migrations"
+
+# Previews van andere takken krijgen bewust geen database: daar kan niemand echt inschrijven.
+[env.preview.vars]
+TURNSTILE_SITE_KEY = ""
