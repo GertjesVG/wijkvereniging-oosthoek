@@ -1,4 +1,4 @@
-# Bouwt de website en zet dist/ op GitHub Pages.
+# Bouwt de website en zet ze op GitHub Pages onder /sinterklaas/: dat adres is altijd de Sinterklaaswebsite zelf, nooit een doorverwijzing.
 # Publiceert pas als Settings → Pages → Source op "GitHub Actions" staat; anders stopt configure-pages zonder iets online te zetten.
 name: Website publiceren
 
@@ -29,10 +29,13 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - run: npm run build
+      - run: npm run build -- --outDir _site/sinterklaas
+      # Alleen het hoofdadres mag later wisselen (bv. een overzicht met het actuele evenement).
+      - name: Hoofdadres voorlopig naar Sinterklaas
+        run: printf '%s\n' '<!doctype html><html lang="nl-BE"><head><meta charset="UTF-8"><meta http-equiv="refresh" content="0; url=sinterklaas/"><title>Wijkvereniging Oosthoek</title></head><body><p><a href="sinterklaas/">Naar de Sinterklaaswebsite van Oosthoek</a></p></body></html>' > _site/index.html
       - uses: actions/upload-pages-artifact@v5
         with:
-          path: dist
+          path: _site
 
   deploy:
     needs: build

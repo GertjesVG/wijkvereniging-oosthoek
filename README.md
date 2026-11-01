@@ -44,22 +44,22 @@ De lettertypen en illustraties worden lokaal geladen. De gegenereerde hoofdillus
 
 ## GitHub Pages
 
-Repository `GertjesVG/wijkvereniging-oosthoek` (privé), branch `main`. De workflow `.github/workflows/pages.yml` bouwt met `npm ci` en `npm run build` en zet `dist/` online. Hij publiceert pas als Settings → Pages → Source op **GitHub Actions** staat; zolang dat niet zo is, stopt hij bij `configure-pages` zonder iets online te zetten. Pushen, de repository openbaar maken en Pages aanzetten gebeuren alleen na expliciete GO.
+Repository `GertjesVG/wijkvereniging-oosthoek` (privé), branch `main`. De workflow `.github/workflows/pages.yml` bouwt met `npm ci` en `npm run build` en zet de website online onder `/sinterklaas/`. Hij publiceert pas als Settings → Pages → Source op **GitHub Actions** staat; zolang dat niet zo is, stopt hij bij `configure-pages` zonder iets online te zetten. Pushen, de repository openbaar maken en Pages aanzetten gebeuren alleen na expliciete GO.
 
 | Adres | Doel |
 | --- | --- |
-| https://gertjesvg.github.io/wijkvereniging-oosthoek/ | website van de vereniging (nu de Sinterklaaswebsite) |
-| https://gertjesvg.github.io/wijkvereniging-oosthoek/sinterklaas/ | vast QR-adres voor Sinterklaas, elk jaar hetzelfde |
+| https://gertjesvg.github.io/wijkvereniging-oosthoek/ | hoofdadres; verwijst nu door naar Sinterklaas en mag later het actuele evenement uitlichten |
+| https://gertjesvg.github.io/wijkvereniging-oosthoek/sinterklaas/ | de Sinterklaaswebsite zelf en het vaste QR-adres; blijft elk jaar Sinterklaas |
 
-`public/sinterklaas/index.html` stuurt het QR-adres door naar de juiste pagina. Verandert de opbouw later, pas dan alleen dat doel aan: het QR-adres en gedrukte flyers blijven geldig. Hashlinks (`#/route`) en relatieve paden (`base: './'`) werken onder het projectpad zonder serverregels. Nooit kindergegevens of secrets toevoegen.
+De Sinterklaaswebsite staat zelf op `/sinterklaas/`, zonder doorverwijzing, zodat dat adres nooit naar een ander evenement kan wijzen. Lokaal (`npm run dev`, `npm run preview`) blijft alles op de hoofdmap. Hashlinks (`#/route`) en relatieve paden (`base: './'`) werken onder dit pad zonder serverregels. Nooit kindergegevens of secrets toevoegen.
 
 ## Later een ander evenement
 
 Nog niet gebouwd. Zo blijft het eenvoudig:
 
-1. Elk evenement krijgt een eigen vast adres, zoals `/garageverkoop/`, `/wijkfeest/` of `/paasfeest/`, op dezelfde manier als `public/sinterklaas/`.
+1. Elk evenement krijgt een eigen vast adres en een eigen QR-code, zoals `/garageverkoop/`, `/wijkfeest/` of `/paasfeest/`, net als `/sinterklaas/`. Een evenementadres verwijst nooit naar een ander evenement.
 2. De openbare gegevens van dat evenement komen in een eigen bestand onder `src/content/`, naar het voorbeeld van `event.ts`.
-3. Pas als er echt een tweede evenement online komt: een korte overzichtspagina op het hoofdadres, en `public/sinterklaas/index.html` laten doorverwijzen naar de Sinterklaaspagina.
+3. Alleen het hoofdadres mag wisselen: nu een doorverwijzing in de workflow, later eventueel een korte overzichtspagina die het actuele evenement uitlicht.
 
 Technische bronnen: [Vite statische publicatie](https://vite.dev/guide/static-deploy), [Storybook React/Vite](https://storybook.js.org/docs/get-started/frameworks/react-vite/).
 
