@@ -7,14 +7,15 @@ pages_build_output_dir = "./_site"
 compatibility_date = "2026-10-01"
 
 [vars]
-# Openbare Turnstile-sitekey; leeg = formulier blijft dicht. Invullen bij activering (README → Inschrijvingen activeren).
-TURNSTILE_SITE_KEY = ""
+# Openbare Turnstile-sitekey (widget voor wijkvereniging-oosthoek.pages.dev). Het formulier opent pas als ook het geheim
+# TURNSTILE_SECRET in Cloudflare staat; dat geheim komt nooit in dit bestand. Lokaal overschrijft .dev.vars deze waarde.
+TURNSTILE_SITE_KEY = "0x4AAAAAAFvuHbVEJkgOfaOF"
 
+# De binding "DB" komt uit dit bestand, niet uit het dashboard. Database in EU-jurisdictie.
 [[d1_databases]]
 binding = "DB"
 database_name = "oosthoek-inschrijvingen"
-# Vervangen door het id uit `wrangler d1 create` vóór activering; lokaal werkt elk id.
-database_id = "00000000-0000-0000-0000-000000000000"
+database_id = "2885e43b-710d-4c88-b905-87d7ab91f72f"
 migrations_dir = "migrations"
 
 # Previews van andere takken krijgen bewust geen database: daar kan niemand echt inschrijven.

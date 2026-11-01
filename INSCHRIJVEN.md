@@ -54,13 +54,13 @@ Voor `dev:api` maak je zelf een bestand `.dev.vars` in deze map met `TURNSTILE_S
 
 ## Inschrijvingen activeren (pas na GO van Gert)
 
-Al gedaan: het Cloudflare Pages-project `wijkvereniging-oosthoek` (Git-koppeling, productie = `main`), leeftijdsgrens en stratenlijst. Nog te doen, in deze volgorde:
+Al gedaan: het Cloudflare Pages-project `wijkvereniging-oosthoek` (Git-koppeling, productie = `main`), leeftijdsgrens en stratenlijst, de D1-database `oosthoek-inschrijvingen` (EU-jurisdictie; id en binding `DB` staan in `wrangler.toml`, dus géén binding in het dashboard toevoegen) en de Turnstile-widget (openbare sitekey in `wrangler.toml`). Nog te doen, in deze volgorde:
 
-1. **D1-database** (dash.cloudflare.com → Storage & Databases → D1 SQL Database → Create Database): naam `oosthoek-inschrijvingen`; bij "Data location" → "Specify jurisdiction" → European Union (EU). Kan dat niet op het gratis plan, kies dan een locatiehint West-Europa. Create. Daarna het **Database ID** van de overzichtspagina doorgeven (geen geheim); het komt in `wrangler.toml` bij `database_id`.
-2. **Tabellen** (eenmalig, in je eigen PowerShell in `Broncode\website`, na stap 1 en met het ingevulde `database_id`): `npx wrangler login` (browser opent, goedkeuren), dan `npx wrangler d1 migrations apply oosthoek-inschrijvingen --remote`. Verwacht: 0001, 0002 en 0003 met een vinkje.
-3. **Turnstile** (dash.cloudflare.com → Turnstile → Add widget): naam `Oosthoek inschrijvingen`, hostname `wijkvereniging-oosthoek.pages.dev`, Widget Mode "Managed", pre-clearance "No" → Create. De **Site Key** (openbaar) doorgeven; die komt in `wrangler.toml` bij `TURNSTILE_SITE_KEY`. De **Secret Key** nooit in een chat.
+1. (gedaan) D1-database.
+2. **Tabellen** (productiedatabase, pas na GO; eenmalig, in je eigen PowerShell in `Broncode\website` op `feature/inschrijvingen`): `npx wrangler login` (browser opent, goedkeuren), dan ter controle `npx wrangler d1 migrations list oosthoek-inschrijvingen --remote` (verwacht: 0001, 0002 en 0003 nog niet toegepast), dan `npx wrangler d1 migrations apply oosthoek-inschrijvingen --remote` en bevestigen. Verwacht: 0001, 0002 en 0003 met een vinkje.
+3. (gedaan) Turnstile-widget. Controleer alleen nog dat bij de widget de hostname `wijkvereniging-oosthoek.pages.dev` staat. De **Secret Key** nooit in een chat.
 4. **Geheimen** (Workers & Pages → wijkvereniging-oosthoek → Settings → Variables and Secrets → Add, type "Secret", omgeving Production), elk door Gert zelf: `TURNSTILE_SECRET` (de Secret Key uit stap 3), `ADMIN_PASSWORD` (minstens 16 tekens, uit een wachtwoordbeheerder), `MAIL_API_TOKEN` (minstens 32 tekens, uit een wachtwoordbeheerder; dezelfde waarde komt in het Apps Script).
-5. **Previews uit** (Settings → Builds & deployments → Branch control → Preview branch: "None"), als dat nog niet zo staat.
+5. **Previews uit** (Settings → Builds & deployments → Branch control → Preview branch: "None"), vóór de tak `feature/inschrijvingen` ooit gepusht wordt. Previews krijgen bewust geen database (`[env.preview]` in `wrangler.toml`) en geen geheimen: zet de geheimen uit stap 4 nooit in de omgeving Preview. Bestaat er toch een preview, dan moet `POST /api/beheer/login` daar 503 geven.
 6. **Beheertoegang**: `/beheer/` met het wachtwoord uit stap 4. Geen Cloudflare Access op `pages.dev` (dat zou de hele site afschermen); kan later met een eigen domein.
 7. **Publiceren** (aparte GO): `feature/inschrijvingen` samenvoegen in `main` en pushen; Cloudflare publiceert automatisch, met de geheimen uit stap 4.
 8. **Apps Script** in het bestaande project (zie hieronder), pas na stap 7.

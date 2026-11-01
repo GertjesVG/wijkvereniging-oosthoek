@@ -39,7 +39,8 @@ export function eraseStatements(db: D1Database, eventId: string, now: string) {
            address_key = NULL, note = NULL, updated_at = ?2 WHERE event_id = ?1`,
       )
       .bind(eventId, now),
-    db.prepare("UPDATE events SET personal_data_erased_at = ?2, updated_at = ?2 WHERE id = ?1").bind(eventId, now),
+    // In dezelfde batch dicht: een gewist evenement kan nooit open blijven, ook niet bij een gelijktijdige wijziging.
+    db.prepare("UPDATE events SET status = 'closed', personal_data_erased_at = ?2, updated_at = ?2 WHERE id = ?1").bind(eventId, now),
     // Ook de kortlopende misbruiklogboeken (onomkeerbaar gemaakte internetadressen).
     db.prepare("DELETE FROM login_attempts"),
     db.prepare("DELETE FROM submit_log"),
@@ -55,11 +56,5 @@ export async function eraseExpired(db: D1Database) {
     .prepare("SELECT id FROM events WHERE personal_data_erased_at IS NULL AND id IN (SELECT value FROM json_each(?1))")
     .bind(JSON.stringify(due))
     .all<{ id: string }>();
-  for (const { id } of results) {
-    const now = nowIso();
-    await db.batch([
-      db.prepare("UPDATE events SET status = 'closed', updated_at = ?2 WHERE id = ?1").bind(id, now),
-      ...eraseStatements(db, id, now),
-    ]);
-  }
+  for (const { id } of results) await db.batch(eraseStatements(db, id, nowIso()));
 }
