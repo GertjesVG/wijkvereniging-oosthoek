@@ -3,6 +3,7 @@ import type { PublicEventStatus, RegistrationResponse } from "../src/inschrijvin
 import { registrationEvents } from "../src/inschrijving/evenementen.ts";
 import { connectionOf, errorMessage, fail, json, nowIso, readJson, sha256Hex, type Env } from "./basis.ts";
 import { validateRegistration, type CleanRegistration } from "./validatie.ts";
+import { deleteByPassed } from "./wissen.ts";
 
 const SITEVERIFY = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
 // Nieuwe inschrijvingen per internetaansluiting per dag. Ruim voor gezinnen, klein genoeg tegen het leegboeken van de actie.
@@ -27,7 +28,9 @@ export async function publicStatus(env: Env, eventId: string) {
   const config = eventFor(eventId);
   if (!config) return fail(404, "NIET_GEVONDEN", "Onbekend evenement.");
   const configured =
-    Boolean(env.DB && env.TURNSTILE_SECRET && env.TURNSTILE_SITE_KEY) && config.pendingDecisions.length === 0;
+    Boolean(env.DB && env.TURNSTILE_SECRET && env.TURNSTILE_SITE_KEY) &&
+    config.pendingDecisions.length === 0 &&
+    !deleteByPassed(config);
   const row = configured ? await counts(env.DB!, eventId) : null;
   const available = row ? Math.max(0, row.capacity - row.active) : 0;
   const status: PublicEventStatus["status"] =
@@ -56,9 +59,17 @@ async function verifyTurnstile(env: Env, response: string, ip: string | null) {
 
 async function existing(db: D1Database, submissionId: string) {
   const registration = await db
-    .prepare("SELECT id, reference, parent_name, email, street, house_number FROM registrations WHERE submission_id = ?1")
+    .prepare("SELECT id, reference, parent_name, email, street, house_number, address_review FROM registrations WHERE submission_id = ?1")
     .bind(submissionId)
-    .first<{ id: number; reference: string; parent_name: string; email: string; street: string | null; house_number: string | null }>();
+    .first<{
+      id: number;
+      reference: string;
+      parent_name: string;
+      email: string;
+      street: string | null;
+      house_number: string | null;
+      address_review: number;
+    }>();
   if (!registration) return null;
   const { results } = await db
     .prepare("SELECT name, age, child_key FROM participants WHERE registration_id = ?1 ORDER BY id")
@@ -69,6 +80,7 @@ async function existing(db: D1Database, submissionId: string) {
     parentName: registration.parent_name,
     email: registration.email,
     address: registration.street ? { street: registration.street, houseNumber: registration.house_number ?? "" } : null,
+    addressReview: registration.address_review === 1,
     participants: results.map(({ name, age }) => ({ name, age })),
   };
   return { response, email: registration.email, keys: results.map((p) => p.child_key) };
@@ -105,7 +117,7 @@ export async function register(request: Request, env: Env) {
   if (again) return again;
 
   const state = await counts(db, config.id);
-  if (state?.status !== "open" || config.pendingDecisions.length)
+  if (state?.status !== "open" || config.pendingDecisions.length || deleteByPassed(config))
     return fail(423, "GESLOTEN", "De inschrijvingen zijn gesloten.");
   const ip = request.headers.get("CF-Connecting-IP");
   if (!(await verifyTurnstile(env, data.challenge, ip)))
@@ -161,12 +173,12 @@ export async function register(request: Request, env: Env) {
     db
       .prepare(
         `INSERT INTO registrations (event_id, submission_id, seq, reference, parent_name, email, street, house_number,
-           address_key, suspected_duplicate, created_at, updated_at)
-         SELECT ?1, ?2, n, ?3 || printf('%04d', n), ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?10
+           address_key, suspected_duplicate, address_review, created_at, updated_at)
+         SELECT ?1, ?2, n, ?3 || printf('%04d', n), ?4, ?5, ?6, ?7, ?8, ?9, ?11, ?10, ?10
          FROM (SELECT COALESCE(MAX(seq), 0) + 1 AS n FROM registrations WHERE event_id = ?1)`,
       )
       .bind(config.id, sub, config.referencePrefix, data.parentName, data.email, data.street, data.houseNumber,
-        data.addressKey, suspicious?.hit ? 1 : 0, now),
+        data.addressKey, suspicious?.hit ? 1 : 0, now, data.addressReview ? 1 : 0),
     ...data.participants.map((p) =>
       db
         .prepare(

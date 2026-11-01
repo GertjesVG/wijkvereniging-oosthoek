@@ -77,6 +77,19 @@
   outline: 3px solid #bb7c1d;
   outline-offset: 2px;
 }
+.field-hint {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.registration-review {
+  padding: 10px 14px;
+  border-left: 4px solid var(--gold);
+  background: #fff6e2;
+  border-radius: 6px;
+}
+
 .field-error {
   color: #9b0019;
   font-size: 0.8rem;

@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { ChevronDown, Copy, Mail } from "lucide-react";
+import { ChevronDown, Copy, Mail, MapPin } from "lucide-react";
 import type { AdminParticipant, AdminRegistration } from "../inschrijving/api";
 import { api } from "./client";
 import { ErrorNote, formatDateTime, MailBadge, useAction } from "./ui";
@@ -108,6 +108,7 @@ export function RegistrationDetails({
   const status = useAction();
   const mail = useAction();
   const add = useAction();
+  const review = useAction();
   const [parentName, setParentName] = useState(reg.parentName);
   const [email, setEmail] = useState(reg.email);
   const [street, setStreet] = useState(reg.street ?? "");
@@ -129,6 +130,14 @@ export function RegistrationDetails({
     e.preventDefault();
     if (!dirty) return;
     const updated = await edit.run(() => api.patchRegistration(reg.id, changes));
+    if (updated) {
+      // De server zet een herkende straat in de officiële schrijfwijze.
+      setStreet(updated.street ?? "");
+      onUpdate(updated);
+    }
+  }
+  async function approveAddress() {
+    const updated = await review.run(() => api.patchRegistration(reg.id, { addressApproved: true }));
     if (updated) onUpdate(updated);
   }
   async function toggleStatus() {
@@ -164,6 +173,19 @@ export function RegistrationDetails({
     <div className="details">
       <section aria-label="Gegevens ouder en adres">
         <h4>Ouder en adres</h4>
+        {reg.addressReview && (
+          <div className="note address-review">
+            <p>
+              <strong>Adres nakijken.</strong>{" "}
+              {reg.addressReview.reason ?? "Gemarkeerd om na te kijken."} Ligt het adres toch in de wijk, keur het dan
+              goed; anders kun je het adres verbeteren of de inschrijving annuleren.
+            </p>
+            <button type="button" className="btn btn-small" disabled={review.busy} onClick={approveAddress}>
+              Adres goedgekeurd
+            </button>
+            <ErrorNote>{review.error}</ErrorNote>
+          </div>
+        )}
         <form className="grid-form" onSubmit={saveDetails}>
           <label className="field">
             <span>Naam ouder</span>
@@ -307,6 +329,11 @@ export function RegistrationItem({
             {reg.suspectedDuplicate && (
               <span className="badge badge-warn">
                 <Copy size={12} aria-hidden="true" /> Mogelijk dubbel
+              </span>
+            )}
+            {reg.addressReview && (
+              <span className="badge badge-warn">
+                <MapPin size={12} aria-hidden="true" /> Adres nakijken
               </span>
             )}
             {active.length > 0 && (

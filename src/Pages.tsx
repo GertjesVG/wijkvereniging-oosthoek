@@ -635,7 +635,9 @@ function PrivacyPage() {
             <p>
               We gebruiken die gegevens alleen om het juiste aantal cadeautjes
               voor te bereiden, één cadeautje per kind te geven, je een
-              bevestiging te sturen en je vragen te beantwoorden. Inschrijven is
+              bevestiging te sturen en je vragen te beantwoorden. Of je adres in{" "}
+              {registration.area?.name ?? "de wijk"} ligt, kijken we na met de
+              wijkindeling van de gemeente Beerse. Inschrijven is
               vrijwillig; zonder deze gegevens kunnen we geen cadeautje
               voorzien.
             </p>
@@ -652,8 +654,9 @@ function PrivacyPage() {
             </p>
             <p>
               Uiterlijk op {deleteByLabel} wissen we namen, e-mailadressen en
-              adressen. Daarna houden we alleen aantallen en leeftijden over,
-              zonder namen.
+              adressen. Daarna houden we per editie alleen aantallen en
+              leeftijden over, zonder namen, om volgende edities voor te
+              bereiden.
             </p>
           </section>
           <section>

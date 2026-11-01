@@ -4,7 +4,7 @@ import type { AdminEventSummary, AdminRegistration } from "../inschrijving/api";
 import { renderConfirmation } from "../inschrijving/bevestigingsmail";
 import { AdminError, api, describeError, exportUrl, setUnauthorizedHandler } from "./client";
 import { RegistrationItem } from "./RegistrationItem";
-import { ErrorNote, useAction } from "./ui";
+import { ErrorNote, formatDay, useAction } from "./ui";
 
 // ---------- Inloggen ----------
 
@@ -180,6 +180,11 @@ function EventPanel({
           {event.pendingDecisions.join("; ")}.
         </p>
       )}
+      {!event.personalDataErased && event.deleteByPassed && (
+        <p className="note note-error">
+          De wisdatum ({formatDay(event.deleteBy)}) is bereikt. Wis nu de persoonsgegevens met de knop onderaan.
+        </p>
+      )}
       <ErrorNote>{toggle.error}</ErrorNote>
 
       <dl className="stats">
@@ -188,6 +193,7 @@ function EventPanel({
         <Stat label="Vrije plaatsen" value={event.available} />
         <Stat label="Inschrijvingen" value={event.registrations} />
         <Stat label="Afgehaald" value={event.pickedUp} hint={`van ${event.active}`} />
+        <Stat label="Adres nakijken" value={event.addressReview} hint="actieve inschrijvingen" />
         <Stat
           label="Mails"
           value={`${mailWaiting} / ${event.mail.sent} / ${event.mail.failed}`}
@@ -227,6 +233,15 @@ function EventPanel({
       <MailPreview eventId={event.id} />
 
       <div className="erase">
+        {!event.personalDataErased && (
+          <p className="muted small">
+            Namen, e-mailadressen en adressen worden gewist uiterlijk op {formatDay(event.deleteBy)}.{" "}
+            {event.autoErase
+              ? "De server sluit en wist dan automatisch."
+              : "Automatisch wissen staat nog uit tot de vereniging de wisdatum goedkeurt; wis dus zelf met deze knop."}{" "}
+            Aantallen en leeftijden blijven bewaard voor de historiek.
+          </p>
+        )}
         {event.personalDataErased ? (
           <p className="note">De persoonsgegevens van dit evenement zijn gewist.</p>
         ) : confirming ? (
@@ -294,6 +309,7 @@ type Filters = {
   status: "all" | "active" | "cancelled";
   mail: "all" | "waiting" | "sent" | "failed" | "none";
   duplicate: boolean;
+  addressReview: boolean;
   pickup: "all" | "done" | "open";
 };
 const emptyFilters: Filters = {
@@ -301,6 +317,7 @@ const emptyFilters: Filters = {
   status: "all",
   mail: "all",
   duplicate: false,
+  addressReview: false,
   pickup: "all",
 };
 
@@ -310,6 +327,7 @@ const fold = (s: string) =>
 function matches(reg: AdminRegistration, f: Filters): boolean {
   if (f.status !== "all" && reg.status !== f.status) return false;
   if (f.duplicate && !reg.suspectedDuplicate) return false;
+  if (f.addressReview && !reg.addressReview) return false;
   const mail = reg.mail?.status ?? null;
   if (f.mail === "none" && mail !== null) return false;
   if (f.mail === "waiting" && mail !== "pending" && mail !== "sending") return false;
@@ -386,6 +404,7 @@ function Registrations({
     filters.status !== "all" ||
     filters.mail !== "all" ||
     filters.duplicate ||
+    filters.addressReview ||
     filters.pickup !== "all";
 
   function update(updated: AdminRegistration) {
@@ -447,6 +466,14 @@ function Registrations({
           />
           <span>Mogelijk dubbel</span>
         </label>
+        <label className="check filter-check">
+          <input
+            type="checkbox"
+            checked={filters.addressReview}
+            onChange={(e) => set("addressReview", e.target.checked)}
+          />
+          <span>Adres nakijken</span>
+        </label>
         {filtered && (
           <button type="button" className="btn btn-small btn-quiet" onClick={() => setFilters(emptyFilters)}>
             Filters wissen
@@ -485,6 +512,93 @@ function Registrations({
             </ul>
           )}
         </>
+      )}
+    </section>
+  );
+}
+
+// ---------- Historiek: alle edities, ook na het wissen van de persoonsgegevens ----------
+
+const percent = (part: number, whole: number) => (whole > 0 ? `${Math.round((part / whole) * 100)}%` : "–");
+
+function History({ events }: { events: AdminEventSummary[] }) {
+  const rows = [...events].sort((a, b) => a.series.localeCompare(b.series, "nl") || b.edition - a.edition);
+  const known = rows.flatMap((e) => e.ages.map((a) => a.age));
+  const ages = known.length
+    ? Array.from({ length: Math.max(...known) - Math.min(...known) + 1 }, (_, i) => Math.min(...known) + i)
+    : [];
+  return (
+    <section className="panel" aria-labelledby="history-title">
+      <div className="panel-top">
+        <div>
+          <h2 id="history-title">Historiek per editie</h2>
+          <p className="muted small">Anonieme cijfers: blijven bewaard nadat de persoonsgegevens gewist zijn.</p>
+        </div>
+      </div>
+      <div className="table-wrap">
+        <table className="history">
+          <thead>
+            <tr>
+              <th scope="col">Evenement</th>
+              <th scope="col">Editie</th>
+              <th scope="col">Inschrijvingen</th>
+              <th scope="col">Kinderen</th>
+              <th scope="col">Capaciteit</th>
+              <th scope="col">Afgehaald</th>
+              <th scope="col">Geannuleerd</th>
+              <th scope="col">Persoonsgegevens</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((e) => (
+              <tr key={e.id}>
+                <th scope="row">{e.series}</th>
+                <td>{e.edition}</td>
+                <td>{e.registrations}</td>
+                <td>{e.active}</td>
+                <td>
+                  {e.capacity} <small className="muted">({percent(e.active, e.capacity)} bezet)</small>
+                </td>
+                <td>
+                  {e.pickedUp} <small className="muted">({percent(e.pickedUp, e.active)})</small>
+                </td>
+                <td>{e.cancelled}</td>
+                <td>{e.personalDataErased ? "gewist" : `wissen uiterlijk ${formatDay(e.deleteBy)}`}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <h3 className="history-sub">Leeftijdsverdeling (ingeschreven kinderen, leeftijd op de evenementdag)</h3>
+      {ages.length === 0 ? (
+        <p className="muted small">Nog geen leeftijden.</p>
+      ) : (
+        <div className="table-wrap">
+          <table className="history">
+            <thead>
+              <tr>
+                <th scope="col">Editie</th>
+                {ages.map((age) => (
+                  <th scope="col" key={age}>
+                    {age} j
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((e) => (
+                <tr key={e.id}>
+                  <th scope="row">
+                    {e.series} {e.edition}
+                  </th>
+                  {ages.map((age) => (
+                    <td key={age}>{e.ages.find((a) => a.age === age)?.count ?? 0}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </section>
   );
@@ -558,6 +672,7 @@ function Dashboard({
               onErased={() => setReloadKey((n) => n + 1)}
             />
             <Registrations eventId={event.id} reloadKey={reloadKey} onMutated={refreshEvents} />
+            <History events={events} />
           </>
         )}
       </main>

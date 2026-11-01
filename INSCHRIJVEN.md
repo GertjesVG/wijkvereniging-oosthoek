@@ -16,6 +16,10 @@ Eén gratis inschrijfsysteem voor alle evenementen van VZW Wijkvereniging Oostho
 - Een ouder schrijft een of meer kinderen in (per kind voornaam en leeftijd, plus naam, e-mail, straat en huisnummer van de ouder). Elke inschrijving krijgt een nummer zoals `SINT26-0001`.
 - De database bewaakt de regels zelf, ook als veel mensen tegelijk inschrijven: open of dicht, nooit meer kinderen dan de capaciteit (standaard 150), en elk kind (voornaam + adres) maar één keer. Een tweede klik op "verzenden" geeft dezelfde inschrijving terug, geen tweede.
 - "Mogelijk dubbel" (zelfde e-mail of adres, of zelfde voornaam en leeftijd elders) wordt niet geweigerd, maar gemarkeerd in het beheer.
+- **Leeftijd**: 0 tot en met 12 jaar, gemeten op de evenementdag (28 november 2026). Het formulier vraagt de leeftijd, geen geboortedatum.
+- **Wijkcontrole**: het straatveld stelt de officiële straten voor. Een officiële straat (binnen de huisnummergrens) is in orde en krijgt de officiële schrijfwijze. Elk ander adres wordt aanvaard maar gemarkeerd als "Adres nakijken"; de beheerder keurt goed, verbetert of annuleert. Nooit een automatische weigering.
+- **Stratenbron**: gemeente Beerse, https://www.beerse.be/wijkraad → "Wijken Beerse 2017 per straat.xlsx" + wijkkaart "Wijken Beerse 2017.pdf" (kopieën in `Documentatie\` van het project, 1 november 2026). 30 rijen "wijk Oosthoek" = 27 volledige straten + Steenbakkersdam 10 tot 48 en Steenovensstraat 51 tot 57 (oneven) en 46 tot 68 (even). Het laatste nummer van zo'n reeks (48, 57, 68) gaat naar "nakijken": de lijst zegt "tot", niet "tot en met". De lijst dateert van 2017; straten die wel in het huidige Vlaamse straatnamenregister staan maar niet in die lijst (Gerststraat, Kongostraat, Kruisstraat, Marie De Breynestraat, Tarwestraat, Vissersstraat) komen in "nakijken" terecht.
+- **Historiek**: het beheer toont per evenement en editie het aantal inschrijvingen, kinderen, afgehaald, geannuleerd, de bezetting en de leeftijdsverdeling. Die cijfers blijven na het wissen van de persoonsgegevens. Laat oude evenementen daarom in `src/inschrijving/evenementen.ts` staan.
 - De bevestigingsmail komt eerst in een wachtrij. Het Apps Script haalt elke 5 minuten de wachtende mails op, verstuurt ze vanaf vzwoosthoek@gmail.com en meldt het resultaat terug. Mislukt een mail, dan volgt automatisch een nieuwe poging (na 1, 5, 15 minuten … tot een dag; na 9 pogingen "mislukt"). Het script onthoudt elke verstuurde mail, dus nooit twee keer dezelfde. Het script heeft geen webadres en kan dus niet als open mailrelais misbruikt worden.
 - De mail gebruikt het goedgekeurde feestelijke ontwerp (`src/inschrijving/bevestigingsmail.ts`, beelden in `public/email/`). Alleen inschrijvingsnummer en voornamen worden ingevuld, als echte tekst. In het beheer staat een voorbeeld.
 - Beheer: inschrijvingen zoeken en filteren, vrije plaatsen, mailstatus, corrigeren, annuleren, kind toevoegen, cadeau afgehaald, opnieuw mailen, CSV voor Excel, inschrijving open/dicht, capaciteit, en na het evenement alle persoonsgegevens wissen.
@@ -28,7 +32,13 @@ Eén gratis inschrijfsysteem voor alle evenementen van VZW Wijkvereniging Oostho
 - De mailwachtrij (`/api/mail/…`) vraagt het geheim `MAIL_API_TOKEN` (minstens 32 tekens), dat ook als scripteigenschap in het Apps Script staat.
 - De openbare kant geeft alleen open/dicht en het aantal vrije plaatsen. De database is niet rechtstreeks bereikbaar.
 - Geen geheimen in deze repository. Ze staan alleen in Cloudflare en in de scripteigenschappen van het Apps Script.
-- Zolang `pendingDecisions` in `src/inschrijving/evenementen.ts` niet leeg is, weigert de server het evenement open te zetten.
+- Zolang `pendingDecisions` in `src/inschrijving/evenementen.ts` niet leeg is, weigert de server het evenement open te zetten. Vanaf de wisdatum (`deleteBy`) kan een evenement niet meer open.
+
+## Bewaartermijn
+
+- Namen, e-mailadressen en adressen: wissen uiterlijk op `deleteBy` (Sinterklaas 2026: **31 januari 2027, voorstel, nog niet goedgekeurd door de vereniging**). Aantallen, leeftijden en afhaalcijfers blijven voor de historiek.
+- Tot het akkoord staat `autoErase: false`: wissen gebeurt met de knop "Persoonsgegevens wissen" in het beheer, en het beheer waarschuwt zodra de wisdatum bereikt is.
+- Na akkoord: `autoErase: true` zetten (en eventueel `deleteBy` aanpassen). Dan sluit en wist de server het evenement vanzelf vanaf de wisdatum, bij de eerstvolgende ophaalronde van het Apps Script (elke 5 minuten) of bij het openen van het beheer.
 
 ## Lokaal ontwikkelen en testen
 
@@ -44,16 +54,19 @@ Voor `dev:api` maak je zelf een bestand `.dev.vars` in deze map met `TURNSTILE_S
 
 ## Inschrijvingen activeren (pas na GO van Gert)
 
-1. **Beslissingen van de vereniging** invullen in `src/inschrijving/evenementen.ts`: leeftijdsgrens, officiële stratenlijst (`area.streets`), wisdatum (`deleteBy`). Daarna `pendingDecisions: []`. De privacyverklaring neemt wisdatum en wijk automatisch over.
-2. **Database**: `npx wrangler d1 create oosthoek-inschrijvingen` (indien beschikbaar met `--jurisdiction eu`), het `database_id` in `wrangler.toml` zetten en `npx wrangler d1 migrations apply oosthoek-inschrijvingen --remote`.
-3. **Turnstile**: in Cloudflare een widget aanmaken voor `wijkvereniging-oosthoek.pages.dev` (Managed). De sitesleutel in `wrangler.toml` bij `TURNSTILE_SITE_KEY`; de geheime sleutel als geheim `TURNSTILE_SECRET`.
-4. **Geheimen** (Gert zelf, in Cloudflare → Workers & Pages → wijkvereniging-oosthoek → Settings → Variables and Secrets, omgeving Production, type Secret): `TURNSTILE_SECRET`, `ADMIN_PASSWORD`, `MAIL_API_TOKEN`. Nooit in een chat of in deze repository.
-5. **Previews**: Settings → Builds → Preview deployments op "None" (anders maakt elke andere tak een tweede publicatie; die heeft wel geen database).
-6. **Publiceren**: `feature/inschrijvingen` samenvoegen in `main` en pushen; Cloudflare publiceert automatisch.
-7. **Apps Script** in het bestaande project (zie hieronder).
-8. **Eindtest** met fictieve gegevens: in `/beheer/` inloggen, inschrijving open, één inschrijving met het testadres, binnen 5 minuten de mail controleren in Gmail, daarna de testinschrijving annuleren. Pas dan de echte inschrijving aankondigen.
+Al gedaan: het Cloudflare Pages-project `wijkvereniging-oosthoek` (Git-koppeling, productie = `main`), leeftijdsgrens en stratenlijst. Nog te doen, in deze volgorde:
 
-**Na het evenement, uiterlijk op de wisdatum:** inschrijving dicht, in het beheer "persoonsgegevens wissen", en in Gmail van vzwoosthoek@gmail.com de verstuurde bevestigingen verwijderen (map Verzonden, zoeken op `subject:"Bevestiging inschrijving — Sinterklaas Oosthoek 2026"`, daarna de prullenbak legen). Die kopieën bevatten voornamen en e-mailadressen.
+1. **D1-database** (dash.cloudflare.com → Storage & Databases → D1 SQL Database → Create Database): naam `oosthoek-inschrijvingen`; bij "Data location" → "Specify jurisdiction" → European Union (EU). Kan dat niet op het gratis plan, kies dan een locatiehint West-Europa. Create. Daarna het **Database ID** van de overzichtspagina doorgeven (geen geheim); het komt in `wrangler.toml` bij `database_id`.
+2. **Tabellen** (eenmalig, in je eigen PowerShell in `Broncode\website`, na stap 1 en met het ingevulde `database_id`): `npx wrangler login` (browser opent, goedkeuren), dan `npx wrangler d1 migrations apply oosthoek-inschrijvingen --remote`. Verwacht: 0001, 0002 en 0003 met een vinkje.
+3. **Turnstile** (dash.cloudflare.com → Turnstile → Add widget): naam `Oosthoek inschrijvingen`, hostname `wijkvereniging-oosthoek.pages.dev`, Widget Mode "Managed", pre-clearance "No" → Create. De **Site Key** (openbaar) doorgeven; die komt in `wrangler.toml` bij `TURNSTILE_SITE_KEY`. De **Secret Key** nooit in een chat.
+4. **Geheimen** (Workers & Pages → wijkvereniging-oosthoek → Settings → Variables and Secrets → Add, type "Secret", omgeving Production), elk door Gert zelf: `TURNSTILE_SECRET` (de Secret Key uit stap 3), `ADMIN_PASSWORD` (minstens 16 tekens, uit een wachtwoordbeheerder), `MAIL_API_TOKEN` (minstens 32 tekens, uit een wachtwoordbeheerder; dezelfde waarde komt in het Apps Script).
+5. **Previews uit** (Settings → Builds & deployments → Branch control → Preview branch: "None"), als dat nog niet zo staat.
+6. **Beheertoegang**: `/beheer/` met het wachtwoord uit stap 4. Geen Cloudflare Access op `pages.dev` (dat zou de hele site afschermen); kan later met een eigen domein.
+7. **Publiceren** (aparte GO): `feature/inschrijvingen` samenvoegen in `main` en pushen; Cloudflare publiceert automatisch, met de geheimen uit stap 4.
+8. **Apps Script** in het bestaande project (zie hieronder), pas na stap 7.
+9. **Productieproef** met fictieve gegevens: in `/beheer/` inloggen, inschrijving open, één inschrijving met het testadres, binnen 5 minuten de mail controleren in Gmail, testinschrijving annuleren, inschrijving weer dicht. Pas dan de echte inschrijving aankondigen.
+
+**Na het evenement, uiterlijk op de wisdatum:** inschrijving dicht, in het beheer "persoonsgegevens wissen" (of automatisch, zie Bewaartermijn), en in Gmail van vzwoosthoek@gmail.com de verstuurde bevestigingen verwijderen (map Verzonden, zoeken op `subject:"Bevestiging inschrijving — Sinterklaas Oosthoek 2026"`, daarna de prullenbak legen). Die kopieën bevatten voornamen en e-mailadressen.
 
 ### Apps Script bijwerken (bestaand project, geen nieuw)
 
@@ -64,8 +77,8 @@ In het project "Oosthoek — Automatische bevestigingsmails" van vzwoosthoek@gma
 3. Bovenaan de functie `installeerTrigger` kiezen en uitvoeren; de gevraagde toestemming (mail versturen, externe verbinding, triggers) goedkeuren. Die functie verwijdert eerst alle oude triggers van dit project.
 4. Triggers (klokje links): er staat precies één trigger, `verwerkWachtrij`, elke 5 minuten.
 5. Implementeren → Implementaties beheren: staat er nog een webapp van een eerdere versie, archiveer die. Het script heeft geen webapp meer nodig.
-6. Niet zelf testmails versturen vanuit de editor; de eindtest loopt via een fictieve inschrijving (stap 8 hierboven).
+6. Niet zelf testmails versturen vanuit de editor; de eindtest loopt via een fictieve inschrijving (stap 9 hierboven).
 
 ## Een volgend evenement
 
-Een blok toevoegen in `src/inschrijving/evenementen.ts` (titel, datum, nummerprefix, capaciteit, wat er per deelnemer gevraagd wordt, wijk, wisdatum) en een bevestigingsmail met dezelfde sleutel in `src/inschrijving/bevestigingsmail.ts`. Deelnemers, aantallen en mails blijven per evenement gescheiden. Het formulier op een nieuwe evenementpagina gebruikt dezelfde componenten.
+Een blok toevoegen in `src/inschrijving/evenementen.ts` (reeks, titel, datum, nummerprefix, capaciteit, wat er per deelnemer gevraagd wordt, wijk, wisdatum, `autoErase`) en een bevestigingsmail met dezelfde sleutel in `src/inschrijving/bevestigingsmail.ts`. Deelnemers, aantallen en mails blijven per evenement gescheiden. Het formulier op een nieuwe evenementpagina gebruikt dezelfde componenten.

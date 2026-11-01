@@ -26,6 +26,8 @@ export type RegistrationResponse = {
   parentName: string;
   email: string;
   address: { street: string; houseNumber: string } | null;
+  // Adres staat niet zeker in de wijk: de inschrijving is ontvangen, de vereniging kijkt het adres na.
+  addressReview: boolean;
   participants: { name: string; age: number | null }[];
 };
 
@@ -67,6 +69,16 @@ export type AdminEventSummary = {
   personalDataErased: boolean;
   // Nog goed te keuren beslissingen; zolang er één is, kan de inschrijving niet open.
   pendingDecisions: string[];
+  // Historiek: reeks en editie (jaar), geannuleerde kinderen, actieve kinderen per leeftijd, en adressen om na te kijken.
+  series: string;
+  edition: number;
+  cancelled: number;
+  ages: { age: number; count: number }[];
+  addressReview: number;
+  // Bewaartermijn van de persoonsgegevens (zie evenementen.ts).
+  deleteBy: string;
+  autoErase: boolean;
+  deleteByPassed: boolean;
 };
 
 export type AdminParticipant = {
@@ -87,6 +99,8 @@ export type AdminRegistration = {
   houseNumber: string | null;
   note: string | null;
   suspectedDuplicate: boolean;
+  // Adres nakijken: gemarkeerd bij de inschrijving of na een correctie; reason = waarom (null als de reden niet meer geldt).
+  addressReview: { reason: string | null } | null;
   createdAt: string;
   mail: {
     status: MailStatus;

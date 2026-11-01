@@ -8,7 +8,8 @@ import { randomBytes, randomUUID } from "node:crypto";
 import vm from "node:vm";
 import { registrationEvents, sinterklaasRegistration } from "../src/inschrijving/evenementen.ts";
 import { confirmationTemplates, joinNames, renderConfirmation } from "../src/inschrijving/bevestigingsmail.ts";
-import { cleanChildName, validateRegistration } from "../server/validatie.ts";
+import { checkArea, cleanChildName, validateRegistration } from "../server/validatie.ts";
+import { deleteByPassed, dueForAutoErase, todayInBelgium } from "../server/wissen.ts";
 import { addressKey, connectionOf } from "../server/basis.ts";
 import { createSession, csvCell, validSession } from "../server/beheer.ts";
 import { backoffMs } from "../server/mail.ts";
@@ -79,6 +80,47 @@ test("validatie: geldig gezin met meerdere kinderen", () => {
   assert.equal(result.ok, true);
   assert.equal(result.value.participants.length, 2);
   assert.equal(result.value.addressKey, "teststraat|12a");
+  // Teststraat ligt niet in Wijk Oosthoek: aanvaard, maar na te kijken.
+  assert.equal(result.value.addressReview, true);
+  const inWijk = validateRegistration(sinterklaasRegistration, form({ address: { street: "dr paul janssenstraat", houseNumber: "3" } }));
+  assert.equal(inWijk.value.addressReview, false);
+  assert.equal(inWijk.value.street, "Dr. Paul Janssenstraat");
+  assert.equal(inWijk.value.addressKey, "dr paul janssenstraat|3");
+});
+
+test("adrescontrole volgt de gemeentelijke stratenlijst en weigert nooit", () => {
+  const area = sinterklaasRegistration.area;
+  const review = (street, number) => checkArea(area, street, number).review;
+  for (const [street, number] of [
+    ["Zandstraat", "1"],
+    ["edward wouters straat", "12"],
+    ["Dr Paul Janssenstraat", "2"],
+    ["Steenbakkersdam", "10"],
+    ["Steenbakkersdam", "47 bus 2"],
+    ["Steenovensstraat", "51"],
+    ["Steenovensstraat", "55A"],
+    ["Steenovensstraat", "46"],
+    ["Steenovensstraat", "66"],
+  ])
+    assert.equal(review(street, number), null, `${street} ${number}`);
+  // Volgens dezelfde lijst bij een andere wijk, bij geen enkele wijk, of het grensnummer: nakijken.
+  for (const [street, number] of [
+    ["Steenbakkersdam", "9"],
+    ["Steenbakkersdam", "48"],
+    ["Steenbakkersdam", "60"],
+    ["Steenovensstraat", "45"],
+    ["Steenovensstraat", "49"],
+    ["Steenovensstraat", "57"],
+    ["Steenovensstraat", "44"],
+    ["Steenovensstraat", "68"],
+    ["Steenovensstraat", "70"],
+    ["Anjerstraat", "4"],
+    ["Kongostraat", "1"],
+  ])
+    assert.ok(review(street, number), `${street} ${number}`);
+  assert.match(review("Steenbakkersdam", "48"), /grensnummer/);
+  assert.equal(checkArea(area, "steenovensstraat", "53").street, "Steenovensstraat");
+  assert.equal(checkArea(area, "Fictieve Dreef", "1").street, "Fictieve Dreef");
 });
 
 test("validatie weigert ongeldige of te veel gegevens", () => {
@@ -89,6 +131,9 @@ test("validatie weigert ongeldige of te veel gegevens", () => {
   };
   assert.deepEqual(fieldsOf(form({ parent: { name: "Testouder", email: "geen-mail" } })), ["parent.email"]);
   assert.deepEqual(fieldsOf(form({ participants: [{ name: "Noor", age: 13 }] })), ["participants.0.age"]);
+  assert.deepEqual(fieldsOf(form({ participants: [{ name: "Noor", age: -1 }] })), ["participants.0.age"]);
+  assert.match(validateRegistration(sinterklaasRegistration, form({ participants: [{ name: "Noor", age: 13 }] })).fields["participants.0.age"], /0 tot en met 12 jaar/);
+  assert.equal(validateRegistration(sinterklaasRegistration, form({ participants: [{ name: "Noor", age: 0 }, { name: "Milan", age: 12 }] })).ok, true);
   assert.deepEqual(fieldsOf(form({ participants: [] })), ["participants"]);
   const nine = Array.from({ length: 9 }, (_, i) => ({ name: `Kind${"ABCDEFGHI"[i]}`, age: 5 }));
   assert.deepEqual(fieldsOf(form({ participants: nine })), ["participants"]);
@@ -124,10 +169,31 @@ test("internetaansluiting: IPv4-adres apart, IPv6 per /64-blok", () => {
   assert.equal(connectionOf(null), "onbekend");
 });
 
-test("Sinterklaas blijft dicht zolang de vereniging nog beslissingen moet goedkeuren", () => {
-  assert.ok(sinterklaasRegistration.pendingDecisions.length >= 3);
-  assert.equal(sinterklaasRegistration.defaultCapacity, 150);
-  assert.match(sinterklaasRegistration.deleteBy, /^\d{4}-\d{2}-\d{2}$/);
+test("Sinterklaas 2026: beslissingen van de vereniging en de gemeentelijke stratenlijst", () => {
+  const config = sinterklaasRegistration;
+  assert.deepEqual(config.participant.age, { min: 0, max: 12 });
+  assert.equal(config.date, "2026-11-28");
+  assert.equal(config.defaultCapacity, 150);
+  assert.deepEqual(config.pendingDecisions, []);
+  // 30 rijen "wijk Oosthoek" in de gemeentelijke lijst: 27 volledige straten en 2 straten met huisnummergrenzen.
+  assert.equal(config.area.streets.length, 27);
+  assert.deepEqual(Object.keys(config.area.partialStreets), ["Steenbakkersdam", "Steenovensstraat"]);
+  assert.equal(new Set([...config.area.streets, ...Object.keys(config.area.partialStreets)]).size, 29);
+  // Wisdatum is een voorstel: automatisch wissen blijft uit tot de vereniging akkoord gaat.
+  assert.equal(config.deleteBy, "2027-01-31");
+  assert.equal(config.autoErase, false);
+  assert.equal(config.series, "Sinterklaas in Oosthoek");
+});
+
+test("bewaartermijn: automatisch wissen alleen met akkoord en vanaf de wisdatum (Belgische datum)", () => {
+  const config = sinterklaasRegistration;
+  assert.equal(todayInBelgium(new Date("2027-01-30T22:59:00Z")), "2027-01-30");
+  assert.equal(todayInBelgium(new Date("2027-01-30T23:01:00Z")), "2027-01-31");
+  assert.equal(deleteByPassed(config, "2027-01-30"), false);
+  assert.equal(deleteByPassed(config, "2027-01-31"), true);
+  assert.deepEqual(dueForAutoErase([config], "2027-06-01"), []);
+  assert.deepEqual(dueForAutoErase([{ ...config, autoErase: true }], "2027-01-30"), []);
+  assert.deepEqual(dueForAutoErase([{ ...config, autoErase: true }], "2027-01-31"), ["sinterklaas-2026"]);
 });
 
 test("beheersessie: alleen geldig met het juiste wachtwoord en binnen 8 uur", async () => {

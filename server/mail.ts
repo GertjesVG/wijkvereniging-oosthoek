@@ -7,6 +7,7 @@
 // onthoudt elk bericht-id (inschrijvingsnummer:generation) dat het al verstuurd heeft.
 import { renderConfirmation } from "../src/inschrijving/bevestigingsmail.ts";
 import { nowIso, type Env } from "./basis.ts";
+import { eraseExpired } from "./wissen.ts";
 
 export const MAX_ATTEMPTS = 9;
 // Wachttijd na poging n (minuten): 1, 5, 15, 60, 180, 360, 720, 1440.
@@ -63,6 +64,8 @@ async function finish(env: Env, id: number, generation: number, ok: boolean, att
 // Claimt de mails die nu aan de beurt zijn (of waarvan de lease verlopen is) in één statement, dus nooit dubbel.
 export async function claimMail(env: Env, max: number): Promise<MailJob[]> {
   const db = env.DB!;
+  // Het script komt elke 5 minuten langs: ook het moment om verlopen persoonsgegevens te wissen (als dat aan staat).
+  await eraseExpired(db);
   const now = nowIso();
   const { results: claimed } = await db
     .prepare(

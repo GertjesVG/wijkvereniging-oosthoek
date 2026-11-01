@@ -65,6 +65,13 @@ const dateTime = new Intl.DateTimeFormat("nl-BE", {
   minute: "2-digit",
   timeZone: "Europe/Brussels",
 });
+const day = new Intl.DateTimeFormat("nl-BE", { day: "numeric", month: "long", year: "numeric" });
+// "2027-01-31" → "31 januari 2027"
+export function formatDay(isoDate: string): string {
+  const d = new Date(`${isoDate}T12:00:00`);
+  return Number.isNaN(d.getTime()) ? isoDate : day.format(d);
+}
+
 export function formatDateTime(value: string | null): string {
   if (!value) return "–";
   const d = parseDate(value);

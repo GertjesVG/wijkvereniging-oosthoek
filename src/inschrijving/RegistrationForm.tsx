@@ -63,6 +63,15 @@ function giftCount(n: number) {
   return `${n} ${n === 1 ? "cadeautje" : "cadeautjes"}`;
 }
 
+// "2026-11-28" → "28 november 2026" (of "28 november" zonder jaar)
+function longDate(isoDate: string, withYear = true) {
+  return new Intl.DateTimeFormat("nl-BE", {
+    day: "numeric",
+    month: "long",
+    ...(withYear && { year: "numeric" }),
+  }).format(new Date(`${isoDate}T12:00:00`));
+}
+
 function PanelShell({ children }: { children: ReactNode }) {
   return (
     <section
@@ -215,6 +224,14 @@ function ConfirmationPanel({
             </dd>
           </div>
         </dl>
+        {result.addressReview && (
+          <p className="registration-review">
+            Je adres staat niet in de gemeentelijke stratenlijst van{" "}
+            {config.area?.name ?? "de wijk"}, of het huisnummer ligt op de grens.
+            Je inschrijving is wel ontvangen; de vereniging kijkt het adres nog na
+            en neemt contact op als er iets niet klopt.
+          </p>
+        )}
         <p>
           Je ontvangt binnen enkele minuten een bevestigingsmail op{" "}
           <strong>{result.email}</strong>. Zie je niets? Kijk dan ook in je
@@ -302,6 +319,10 @@ function OpenPanel({
   if (participant.age)
     for (let n = participant.age.min; n <= participant.age.max; n++)
       ageOptions.push(n);
+  const eventDate = longDate(config.date);
+  const streetSuggestions = area
+    ? [...area.streets, ...Object.keys(area.partialStreets)].sort((a, b) => a.localeCompare(b, "nl"))
+    : [];
 
   function validate(): Record<string, string> {
     const e: Record<string, string> = {};
@@ -502,36 +523,27 @@ function OpenPanel({
             <div className="field-row">
               <div className="field">
                 <label htmlFor={id("address.street")}>Straat</label>
-                {area.streets.length > 0 ? (
-                  <select
-                    id={id("address.street")}
-                    value={street}
-                    onChange={(e) => setStreet(e.target.value)}
-                    autoComplete="off"
-                    aria-invalid={errors["address.street"] ? true : undefined}
-                    aria-describedby={
-                      errors["address.street"] ? errId("address.street") : undefined
-                    }
-                  >
-                    <option value="">Kies je straat</option>
-                    {area.streets.map((s) => (
-                      <option key={s} value={s}>
-                        {s}
-                      </option>
+                {/* Vrij veld met de officiële straten als suggestie: een straat buiten de lijst wordt nagekeken, niet geweigerd. */}
+                <input
+                  id={id("address.street")}
+                  type="text"
+                  value={street}
+                  list={streetSuggestions.length ? id("streets") : undefined}
+                  autoComplete="off"
+                  onChange={(e) => setStreet(e.target.value)}
+                  aria-invalid={errors["address.street"] ? true : undefined}
+                  aria-describedby={
+                    [errors["address.street"] && errId("address.street"), id("address-hint")]
+                      .filter(Boolean)
+                      .join(" ")
+                  }
+                />
+                {streetSuggestions.length > 0 && (
+                  <datalist id={id("streets")}>
+                    {streetSuggestions.map((s) => (
+                      <option key={s} value={s} />
                     ))}
-                  </select>
-                ) : (
-                  <input
-                    id={id("address.street")}
-                    type="text"
-                    value={street}
-                    autoComplete="address-line1"
-                    onChange={(e) => setStreet(e.target.value)}
-                    aria-invalid={errors["address.street"] ? true : undefined}
-                    aria-describedby={
-                      errors["address.street"] ? errId("address.street") : undefined
-                    }
-                  />
+                  </datalist>
                 )}
                 <FieldError id={errId("address.street")} message={errors["address.street"]} />
               </div>
@@ -541,12 +553,23 @@ function OpenPanel({
                 })}
               </div>
             </div>
+            <p className="field-hint" id={id("address-hint")}>
+              Kies je straat uit de lijst van de gemeente Beerse. Staat ze er niet
+              bij, vul ze dan gewoon in: we kijken het adres na.
+            </p>
           </fieldset>
         )}
         <div className="form-group">
           <h3 className="group-title">
             {participant.plural.charAt(0).toUpperCase() + participant.plural.slice(1)}
           </h3>
+          {participant.age && (
+            <p className="field-hint">
+              Voor {participant.plural} van {participant.age.min} tot en met{" "}
+              {participant.age.max} jaar. Kies de leeftijd die het{" "}
+              {participant.singular} heeft op {eventDate}.
+            </p>
+          )}
           {children.map((c, i) => {
             const nameKey = `participants.${i}.name`;
             const ageKey = `participants.${i}.age`;
@@ -574,7 +597,7 @@ function OpenPanel({
                   {participant.age && (
                     <div className="field field-narrow">
                       <label htmlFor={id(`c${c.key}-age`)}>
-                        Leeftijd van het {participant.singular}
+                        Leeftijd op {longDate(config.date, false)}
                       </label>
                       <select
                         id={id(`c${c.key}-age`)}

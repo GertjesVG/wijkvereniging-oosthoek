@@ -1,8 +1,9 @@
 // Volledige keten lokaal: Pages Functions + D1 (wrangler pages dev, lokale database) met uitsluitend fictieve gegevens.
 // Gebruik: npm run test:inschrijving. Werkt op een tijdelijke kopie van functions/, server/ en de gedeelde bestanden.
-// Twee aanpassingen alleen in die kopie: in fase B en C is de lijst met nog goed te keuren beslissingen leeg (zodat het
-// evenement open kan), en Turnstile-siteverify wijst naar een lokale nabootsing die de Cloudflare-testsleutels volgt
-// (1x… keurt goed, 2x… keurt af) en elke controle telt. De echte code blijft ongewijzigd.
+// Aanpassingen alleen in die kopie: in fase A een nog goed te keuren beslissing (zodat het evenement niet open kan),
+// in fase D automatisch wissen aan en daarna een wisdatum in het verleden, en overal wijst Turnstile-siteverify naar een
+// lokale nabootsing die de Cloudflare-testsleutels volgt (1x… keurt goed, 2x… keurt af) en elke controle telt.
+// De echte code blijft ongewijzigd.
 import assert from "node:assert/strict";
 import { spawn, spawnSync } from "node:child_process";
 import { randomBytes, randomUUID } from "node:crypto";
@@ -43,7 +44,13 @@ const dummyAnswer = ["XXXX", "DUMMY", "TOKEN", "XXXX"].join(".");
 const beheerWachtwoord = randomBytes(24).toString("hex");
 const mailSleutel = randomBytes(24).toString("hex");
 
-function prepare(dir, approved) {
+function replaceOnce(source, from, to) {
+  assert.equal(source.split(from).length, 2, `niet precies één keer gevonden: ${from}`);
+  return source.replace(from, to);
+}
+
+// edit past alleen in de kopie src/inschrijving/evenementen.ts aan.
+function prepare(dir, edit = (source) => source) {
   for (const part of ["functions", "server", "migrations", "wrangler.toml"])
     cpSync(path.join(repo, part), path.join(dir, part), { recursive: true });
   mkdirSync(path.join(dir, "src/inschrijving"), { recursive: true });
@@ -54,13 +61,8 @@ function prepare(dir, approved) {
   const local = serverSource.replace("https://challenges.cloudflare.com/turnstile/v0/siteverify", `http://127.0.0.1:${VERIFY_PORT}/siteverify`);
   assert.notEqual(local, serverSource, "siteverify-adres niet gevonden");
   writeFileSync(serverFile, local);
-  if (approved) {
-    const file = path.join(dir, "src/inschrijving/evenementen.ts");
-    const source = readFileSync(file, "utf8");
-    const patched = source.replace(/pendingDecisions: \[[^\]]*\]/, "pendingDecisions: []");
-    assert.notEqual(patched, source, "lijst met beslissingen niet gevonden");
-    writeFileSync(file, patched);
-  }
+  const eventsFile = path.join(dir, "src/inschrijving/evenementen.ts");
+  writeFileSync(eventsFile, edit(readFileSync(eventsFile, "utf8")));
   mkdirSync(path.join(dir, "_site"), { recursive: true });
   writeFileSync(path.join(dir, "_site/index.html"), "<!doctype html><title>test</title>");
   const state = path.join(work, "state", path.basename(dir));
@@ -179,9 +181,9 @@ async function step(name, fn) {
 let server = null;
 let failed = false;
 try {
-  // Fase A: echte configuratie (beslissingen nog niet goedgekeurd).
+  // Fase A: een beslissing nog niet goedgekeurd.
   const dirA = path.join(work, "a");
-  prepare(dirA, false);
+  prepare(dirA, (source) => replaceOnce(source, "pendingDecisions: []", 'pendingDecisions: ["testbeslissing"]'));
   server = await start(dirA, serverVars(1));
   await step("niet goedgekeurd evenement: beheer kan niet openen, publiek blijft dicht", async () => {
     await login();
@@ -194,9 +196,9 @@ try {
   });
   stop(server);
 
-  // Fase B: beslissingen goedgekeurd (alleen in de tijdelijke kopie), Turnstile keurt goed.
+  // Fase B: echte configuratie, Turnstile keurt goed.
   const dirB = path.join(work, "b");
-  prepare(dirB, true);
+  prepare(dirB);
   server = await start(dirB, serverVars(1, { MAIL_BACKOFF_FACTOR: "0.00001" }));
 
   await step("privé-API's weigeren zonder geldige sessie of mailsleutel", async () => {
@@ -435,7 +437,7 @@ try {
 
   // Fase C: nieuwe database, evenement open, maar Turnstile keurt af: de server moet weigeren.
   const dirC = path.join(work, "c");
-  prepare(dirC, true);
+  prepare(dirC);
   server = await start(dirC, serverVars(2));
   await step("Turnstile wordt op de server gecontroleerd: afgekeurd = geen inschrijving", async () => {
     await login();
@@ -460,6 +462,85 @@ try {
     // Zelfde /64-blok: ook met het juiste wachtwoord even geblokkeerd. Een andere aansluiting kan gewoon aanmelden.
     assert.equal((await attempt(beheerWachtwoord, "2001:db8:7:8:ffff::1")).status, 429);
     assert.equal((await attempt(beheerWachtwoord, "198.51.100.7")).status, 204);
+  });
+  stop(server);
+
+  // Fase D: nieuwe database; adrescontrole, historiek en automatisch wissen (autoErase alleen in de kopie aan).
+  const dirD = path.join(work, "d");
+  prepare(dirD, (source) => replaceOnce(source, "autoErase: false", "autoErase: true"));
+  server = await start(dirD, serverVars(1));
+  await step("adrescontrole: officiële straat binnen de grens = in orde; daarbuiten of onbekend = aanvaard en nakijken", async () => {
+    await login();
+    await admin("PATCH", `/evenementen/${EVENT}`, { status: "open" });
+    const ok = await register(family({ names: ["Anna"], street: "dr paul janssenstraat", houseNumber: "5" }));
+    assert.equal(ok.status, 201, ok.text);
+    assert.equal(ok.data.addressReview, false);
+    assert.equal(ok.data.address.street, "Dr. Paul Janssenstraat");
+    const inRange = await register(family({ names: ["Bram"], street: "Steenbakkersdam", houseNumber: "20B" }));
+    assert.equal(inRange.data.addressReview, false);
+    const outside = await register(family({ names: ["Cas"], street: "Steenbakkersdam", houseNumber: "5" }));
+    assert.equal(outside.status, 201, outside.text);
+    assert.equal(outside.data.addressReview, true);
+    const unknown = await register(family({ names: ["Dirk"], street: "Fictieve Dreef", houseNumber: "1" }));
+    assert.equal(unknown.status, 201, unknown.text);
+    assert.equal(unknown.data.addressReview, true);
+    const list = await registrations();
+    const byRef = (ref) => list.find((r) => r.reference === ref);
+    assert.equal(byRef(ok.data.reference).addressReview, null);
+    assert.match(byRef(outside.data.reference).addressReview.reason, /hoort niet bij Wijk Oosthoek/);
+    assert.match(byRef(unknown.data.reference).addressReview.reason, /niet in de officiële stratenlijst/);
+    assert.equal((await summary()).addressReview, 2);
+    // Verbeterd naar een nummer binnen de grens: vlag weg. Verbeterd naar een straat buiten de wijk: vlag terug.
+    const fixed = await admin("PATCH", `/inschrijvingen/${byRef(outside.data.reference).id}`, { houseNumber: "12" });
+    assert.equal(fixed.data.addressReview, null);
+    const moved = await admin("PATCH", `/inschrijvingen/${byRef(ok.data.reference).id}`, { street: "Anjerstraat" });
+    assert.match(moved.data.addressReview.reason, /niet in de officiële stratenlijst/);
+    assert.equal((await admin("PATCH", `/inschrijvingen/${byRef(unknown.data.reference).id}`, { addressApproved: false })).status, 400);
+    const approved = await admin("PATCH", `/inschrijvingen/${byRef(unknown.data.reference).id}`, { addressApproved: true });
+    assert.equal(approved.data.addressReview, null);
+    assert.equal((await summary()).addressReview, 1);
+    const csv = await admin("GET", `/evenementen/${EVENT}/export`);
+    const [head, ...rows] = csv.text.trim().split("\r\n");
+    assert.match(head, /"Huisnummer";"Adres nakijken";"Naam";"Leeftijd op evenementdag"/);
+    assert.ok(rows.some((l) => l.includes(`"Anjerstraat";"5";"ja";"Anna";"3"`)), rows.join("\n"));
+  });
+
+  await step("historiek: inschrijvingen, kinderen, leeftijdsverdeling, afgehaald en geannuleerd per editie", async () => {
+    const reg = await register(family({ names: ["Eva", "Finn", "Gust"], street: "Zandstraat", houseNumber: "2" }));
+    assert.equal(reg.status, 201, reg.text);
+    const target = (await registrations()).find((r) => r.reference === reg.data.reference);
+    await admin("PATCH", `/deelnemers/${target.participants[2].id}`, { status: "cancelled" });
+    await admin("PATCH", `/deelnemers/${target.participants[0].id}`, { pickedUp: true });
+    const s = await summary();
+    assert.deepEqual(
+      [s.series, s.edition, s.registrations, s.active, s.cancelled, s.pickedUp],
+      ["Sinterklaas in Oosthoek", 2026, 5, 6, 1, 1],
+    );
+    assert.deepEqual(s.ages, [{ age: 3, count: 5 }, { age: 4, count: 1 }]);
+    assert.deepEqual([s.deleteBy, s.autoErase, s.deleteByPassed], ["2027-01-31", true, false]);
+  });
+  stop(server);
+
+  // Zelfde database, maar nu ligt de wisdatum in het verleden (alleen in de kopie).
+  const eventsD = path.join(dirD, "src/inschrijving/evenementen.ts");
+  writeFileSync(eventsD, replaceOnce(readFileSync(eventsD, "utf8"), 'deleteBy: "2027-01-31"', 'deleteBy: "2026-01-01"'));
+  server = await start(dirD, serverVars(1));
+  await step("bewaartermijn: na de wisdatum sluit en wist de ophaalronde van het Apps Script; de historiek blijft", async () => {
+    assert.equal((await call("GET", `/api/evenementen/${EVENT}`)).data.status, "closed");
+    assert.equal((await register(family())).status, 423);
+    // Eerst alleen een ophaalronde, zonder beheer: er wachtten 5 mails, maar na het wissen gaat er geen enkele meer weg.
+    assert.equal((await mailApi("wachtrij", { max: 50 })).data.jobs.length, 0);
+    await login();
+    const s = await summary();
+    assert.deepEqual([s.personalDataErased, s.status, s.deleteByPassed], [true, "closed", true]);
+    assert.deepEqual([s.registrations, s.active, s.cancelled, s.pickedUp], [5, 6, 1, 1]);
+    assert.deepEqual(s.ages, [{ age: 3, count: 5 }, { age: 4, count: 1 }]);
+    const list = await registrations();
+    assert.ok(list.every((r) => r.parentName === "[gewist]" && r.email === "[gewist]" && r.street === null && r.houseNumber === null && r.note === null));
+    assert.ok(list.every((r) => r.participants.every((p) => p.name === "[gewist]")));
+    const open = await admin("PATCH", `/evenementen/${EVENT}`, { status: "open" });
+    assert.equal(open.status, 409);
+    assert.match(open.data.message, /gewist/);
   });
 } catch (error) {
   failed = true;

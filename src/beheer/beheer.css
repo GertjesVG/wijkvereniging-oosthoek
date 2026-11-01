@@ -658,3 +658,43 @@ textarea:disabled {
     transition: none;
   }
 }
+
+/* Adres nakijken */
+.address-review {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+  margin: 0 0 12px;
+}
+.address-review p {
+  margin: 0;
+}
+
+/* Historiek per editie */
+.table-wrap {
+  overflow-x: auto;
+  margin-top: 12px;
+}
+.history {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+.history th,
+.history td {
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--line);
+  text-align: right;
+  white-space: nowrap;
+}
+.history th:first-child {
+  text-align: left;
+}
+.history thead th {
+  color: var(--muted);
+  font-weight: 600;
+}
+.history-sub {
+  margin: 18px 0 0;
+  font-size: 1rem;
+}

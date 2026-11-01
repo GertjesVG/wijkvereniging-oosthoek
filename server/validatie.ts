@@ -1,6 +1,6 @@
 // Controle van een inschrijving vóór er iets wordt opgeslagen. Puur: geen database of netwerk.
 import type { RegistrationEvent } from "../src/inschrijving/evenementen.ts";
-import { addressKey, childKey } from "./basis.ts";
+import { addressKey, childKey, normalize } from "./basis.ts";
 
 export type CleanRegistration = {
   submissionId: string;
@@ -9,6 +9,8 @@ export type CleanRegistration = {
   street: string | null;
   houseNumber: string | null;
   addressKey: string | null;
+  // Adres niet zeker in de wijk: wordt aanvaard, maar in het beheer nagekeken.
+  addressReview: boolean;
   participants: { name: string; age: number | null; childKey: string }[];
   // Turnstile-antwoord uit het formulier.
   challenge: string;
@@ -60,13 +62,17 @@ export function validateRegistration(
 
   let street: string | null = null;
   let number: string | null = null;
+  let review = false;
   if (config.area) {
     street = text(address.street);
     number = text(address.houseNumber);
     checkText(fields, "address.street", street, 2, 100, "de straat");
-    if (config.area.streets.length && !config.area.streets.includes(street))
-      fields["address.street"] = `Kies een straat uit ${config.area.name}.`;
     if (!houseNumber.test(number)) fields["address.houseNumber"] = "Vul een geldig huisnummer in.";
+    if (!fields["address.street"] && !fields["address.houseNumber"]) {
+      const place = checkArea(config.area, street, number);
+      street = place.street;
+      review = place.review !== null;
+    }
     if (confirmations.area !== true)
       fields["confirmations.area"] = `Bevestig dat je in ${config.area.name} woont.`;
   }
@@ -89,7 +95,7 @@ export function validateRegistration(
     if (age) {
       value = typeof item.age === "number" ? item.age : Number.NaN;
       if (!Number.isInteger(value) || value < age.min || value > age.max)
-        fields[`participants.${i}.age`] = `Kies een leeftijd van ${age.min} tot ${age.max} jaar.`;
+        fields[`participants.${i}.age`] = `Kies een leeftijd van ${age.min} tot en met ${age.max} jaar.`;
     }
     const key = childKey(name, address_, mail);
     if (name && seen.has(key)) fields[`participants.${i}.name`] = `Dit ${singular} staat al in de lijst.`;
@@ -110,10 +116,33 @@ export function validateRegistration(
       street,
       houseNumber: number,
       addressKey: address_,
+      addressReview: review,
       participants,
       challenge: proof,
     },
   };
+}
+
+// Ligt het adres volgens de officiële stratenlijst in de wijk? Nooit een weigering: bij twijfel een reden om na te
+// kijken. Een herkende straat krijgt de officiële schrijfwijze ("dr paul janssenstraat" → "Dr. Paul Janssenstraat").
+export function checkArea(
+  area: NonNullable<RegistrationEvent["area"]>,
+  street: string,
+  houseNumber: string,
+): { street: string; review: string | null } {
+  const key = (value: string) => normalize(value).replace(/ /g, "");
+  const wanted = key(street);
+  const full = area.streets.find((s) => key(s) === wanted);
+  if (full) return { street: full, review: null };
+  const partial = Object.keys(area.partialStreets).find((s) => key(s) === wanted);
+  if (!partial) return { street, review: `Straat staat niet in de officiële stratenlijst van ${area.name}.` };
+  const n = Number(/^\d+/.exec(houseNumber.trim())?.[0]);
+  const ranges = area.partialStreets[partial].filter((r) => !r.parity || (n % 2 === 0) === (r.parity === "even"));
+  if (ranges.some((r) => n >= r.from && n < r.to)) return { street: partial, review: null };
+  // "10 tot 48": of het laatste nummer er nog bij hoort, zegt de gemeentelijke lijst niet uitdrukkelijk.
+  if (ranges.some((r) => n === r.to))
+    return { street: partial, review: `Huisnummer ${n} is het grensnummer van ${partial} in de gemeentelijke lijst.` };
+  return { street: partial, review: `Dit huisnummer van ${partial} hoort niet bij ${area.name} volgens de gemeentelijke lijst.` };
 }
 
 // Voor correcties in het beheer: dezelfde regels als het formulier; null = ongeldig.

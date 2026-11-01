@@ -16,7 +16,8 @@ import {
   sha256Hex,
   type Env,
 } from "./basis.ts";
-import { CHILD_NAME_HINT, cleanChildName, cleanEmail, cleanHouseNumber, cleanText } from "./validatie.ts";
+import { CHILD_NAME_HINT, checkArea, cleanChildName, cleanEmail, cleanHouseNumber, cleanText } from "./validatie.ts";
+import { deleteByPassed, eraseExpired, eraseStatements } from "./wissen.ts";
 
 const COOKIE = "oosthoek_beheer";
 const SESSION_SECONDS = 8 * 3600;
@@ -94,6 +95,10 @@ const SUMMARY_SQL = `SELECT e.id, e.status, e.capacity, e.personal_data_erased_a
   (SELECT COUNT(*) FROM participants p WHERE p.event_id = e.id AND p.status = 'active') AS active,
   (SELECT COUNT(*) FROM participants p WHERE p.event_id = e.id AND p.status = 'active' AND p.picked_up_at IS NOT NULL) AS picked_up,
   (SELECT COUNT(*) FROM registrations r WHERE r.event_id = e.id AND r.status = 'active') AS registrations,
+  (SELECT COUNT(*) FROM participants p WHERE p.event_id = e.id AND p.status = 'cancelled') AS cancelled,
+  (SELECT COUNT(*) FROM registrations r WHERE r.event_id = e.id AND r.status = 'active' AND r.address_review = 1) AS address_review,
+  (SELECT json_group_array(json_array(a.age, a.n)) FROM (SELECT p.age, COUNT(*) AS n FROM participants p
+     WHERE p.event_id = e.id AND p.status = 'active' AND p.age IS NOT NULL GROUP BY p.age) a) AS ages,
   (SELECT json_group_object(m.status, m.n) FROM (SELECT o.status, COUNT(*) AS n FROM mail_outbox o
      JOIN registrations r ON r.id = o.registration_id WHERE r.event_id = e.id GROUP BY o.status) m) AS mail
   FROM events e`;
@@ -106,6 +111,9 @@ type SummaryRow = {
   active: number;
   picked_up: number;
   registrations: number;
+  cancelled: number;
+  address_review: number;
+  ages: string | null;
   mail: string | null;
 };
 
@@ -125,6 +133,16 @@ function toSummary(row: SummaryRow): AdminEventSummary {
     mail: mail as Record<MailStatus, number>,
     personalDataErased: row.erased !== null,
     pendingDecisions: config.pendingDecisions,
+    series: config.series,
+    edition: Number(config.date.slice(0, 4)),
+    cancelled: row.cancelled,
+    ages: (JSON.parse(row.ages ?? "[]") as [number, number][])
+      .map(([age, count]) => ({ age, count }))
+      .sort((a, b) => a.age - b.age),
+    addressReview: row.address_review,
+    deleteBy: config.deleteBy,
+    autoErase: config.autoErase,
+    deleteByPassed: deleteByPassed(config),
   };
 }
 
@@ -158,6 +176,8 @@ async function updateEvent(request: Request, db: D1Database, eventId: string) {
       return fail(409, "VERBODEN", "De gegevens van dit evenement zijn gewist; het kan niet opnieuw open.");
     if (body.status === "open" && current.pendingDecisions.length)
       return fail(409, "VERBODEN", `Nog niet vrijgegeven. Eerst goedkeuren: ${current.pendingDecisions.join("; ")}.`);
+    if (body.status === "open" && current.deleteByPassed)
+      return fail(409, "VERBODEN", "De wisdatum van dit evenement is bereikt; het kan niet meer open.");
     await db.prepare("UPDATE events SET status = ?2, updated_at = ?3 WHERE id = ?1").bind(eventId, body.status, nowIso()).run();
   }
   if (body.capacity !== undefined) {
@@ -181,7 +201,7 @@ async function updateEvent(request: Request, db: D1Database, eventId: string) {
 // ---------- Inschrijvingen ----------
 
 const REGISTRATION_SQL = `SELECT r.id, r.event_id, r.reference, r.status, r.parent_name, r.email, r.street, r.house_number,
-  r.note, r.suspected_duplicate, r.created_at, o.status AS mail_status, o.attempts, o.last_error, o.sent_at
+  r.note, r.suspected_duplicate, r.address_review, r.created_at, o.status AS mail_status, o.attempts, o.last_error, o.sent_at
   FROM registrations r LEFT JOIN mail_outbox o ON o.registration_id = r.id`;
 
 type RegistrationRow = {
@@ -195,6 +215,7 @@ type RegistrationRow = {
   house_number: string | null;
   note: string | null;
   suspected_duplicate: number;
+  address_review: number;
   created_at: string;
   mail_status: MailStatus | null;
   attempts: number | null;
@@ -210,6 +231,13 @@ type ParticipantRow = {
   picked_up_at: string | null;
 };
 
+// De reden wordt telkens opnieuw bepaald uit het huidige adres; de vlag zelf staat in de database.
+function addressReviewOf(row: RegistrationRow): AdminRegistration["addressReview"] {
+  if (row.address_review !== 1) return null;
+  const area = registrationEvents[row.event_id]?.area;
+  return { reason: area && row.street && row.house_number ? checkArea(area, row.street, row.house_number).review : null };
+}
+
 function toRegistration(row: RegistrationRow, participants: ParticipantRow[]): AdminRegistration {
   return {
     id: row.id,
@@ -221,6 +249,7 @@ function toRegistration(row: RegistrationRow, participants: ParticipantRow[]): A
     houseNumber: row.house_number,
     note: row.note,
     suspectedDuplicate: row.suspected_duplicate === 1,
+    addressReview: addressReviewOf(row),
     createdAt: row.created_at,
     mail: row.mail_status
       ? { status: row.mail_status, attempts: row.attempts ?? 0, lastError: row.last_error, sentAt: row.sent_at }
@@ -323,7 +352,17 @@ async function updateRegistration(request: Request, db: D1Database, id: number) 
   }
   if (body.status !== undefined && body.status !== "active" && body.status !== "cancelled")
     fields.status = "Ongeldige status.";
+  if (body.addressApproved !== undefined && body.addressApproved !== true) fields.addressApproved = "Ongeldige waarde.";
   if (Object.keys(fields).length) return fail(400, "VALIDATIE", "Controleer de gemarkeerde velden.", { fields });
+
+  // Een gecorrigeerd adres wordt opnieuw beoordeeld; "adres goedgekeurd" haalt de vlag weg.
+  const area = registrationEvents[current.event_id].area;
+  if (area && next.street && next.house_number && (next.street !== current.street || next.house_number !== current.house_number)) {
+    const place = checkArea(area, next.street, next.house_number);
+    next.street = place.street;
+    next.address_review = place.review ? 1 : 0;
+  }
+  if (body.addressApproved === true) next.address_review = 0;
 
   const now = nowIso();
   const address = next.street && next.house_number ? addressKey(next.street, next.house_number) : null;
@@ -331,9 +370,9 @@ async function updateRegistration(request: Request, db: D1Database, id: number) 
     db
       .prepare(
         `UPDATE registrations SET parent_name = ?2, email = ?3, street = ?4, house_number = ?5, address_key = ?6, note = ?7,
-           updated_at = ?8 WHERE id = ?1`,
+           address_review = ?9, updated_at = ?8 WHERE id = ?1`,
       )
-      .bind(id, next.parent_name, next.email, next.street, next.house_number, address, next.note, now),
+      .bind(id, next.parent_name, next.email, next.street, next.house_number, address, next.note, now, next.address_review),
   ];
   if (address !== current.address_key || next.email !== current.email) {
     const { results } = await db.prepare("SELECT id, name FROM participants WHERE registration_id = ?1").bind(id).all<{ id: number; name: string }>();
@@ -475,7 +514,7 @@ export function csvCell(value: unknown) {
 async function exportCsv(db: D1Database, config: RegistrationEvent) {
   const { results } = await db
     .prepare(
-      `SELECT r.reference, r.status AS registration_status, r.parent_name, r.email, r.street, r.house_number,
+      `SELECT r.reference, r.status AS registration_status, r.parent_name, r.email, r.street, r.house_number, r.address_review,
          p.name, p.age, p.status, p.picked_up_at, o.status AS mail_status, r.suspected_duplicate, r.note, r.created_at
        FROM participants p JOIN registrations r ON r.id = p.registration_id LEFT JOIN mail_outbox o ON o.registration_id = r.id
        WHERE r.event_id = ?1 ORDER BY r.seq, p.id`,
@@ -489,8 +528,9 @@ async function exportCsv(db: D1Database, config: RegistrationEvent) {
     "E-mail",
     "Straat",
     "Huisnummer",
+    "Adres nakijken",
     "Naam",
-    "Leeftijd",
+    "Leeftijd op evenementdag",
     "Status deelnemer",
     "Cadeau afgehaald",
     "Mailstatus",
@@ -506,6 +546,7 @@ async function exportCsv(db: D1Database, config: RegistrationEvent) {
       r.email,
       r.street,
       r.house_number,
+      r.address_review ? "ja" : "nee",
       r.name,
       r.age,
       r.status === "active" ? "actief" : "geannuleerd",
@@ -528,35 +569,14 @@ async function exportCsv(db: D1Database, config: RegistrationEvent) {
   });
 }
 
-// Na het evenement: namen, e-mail en adressen wissen; aantallen en leeftijden blijven voor de statistiek.
+// Na het evenement: namen, e-mail en adressen wissen; aantallen en leeftijden blijven voor de historiek (zie wissen.ts).
 async function erase(request: Request, db: D1Database, eventId: string) {
   const body = (await readJson(request)) ?? {};
   if (body.confirm !== "WISSEN") return fail(400, "VALIDATIE", "Typ WISSEN om te bevestigen.");
   const current = await summary(db, eventId);
   if (!current) return fail(404, "NIET_GEVONDEN", "Onbekend evenement.");
   if (current.status !== "closed") return fail(409, "VERBODEN", "Sluit eerst de inschrijvingen.");
-  const now = nowIso();
-  await db.batch([
-    db.prepare("UPDATE participants SET name = '[gewist]', child_key = 'gewist:' || id, updated_at = ?2 WHERE event_id = ?1").bind(eventId, now),
-    db
-      .prepare(
-        `UPDATE mail_outbox SET
-           last_error = CASE WHEN status IN ('pending', 'sending') THEN 'Gegevens gewist vóór verzending.' ELSE NULL END,
-           status = CASE WHEN status IN ('pending', 'sending') THEN 'failed' ELSE status END, lease_until = NULL
-         WHERE registration_id IN (SELECT id FROM registrations WHERE event_id = ?1)`,
-      )
-      .bind(eventId),
-    db
-      .prepare(
-        `UPDATE registrations SET parent_name = '[gewist]', email = '[gewist]', street = NULL, house_number = NULL,
-           address_key = NULL, note = NULL, updated_at = ?2 WHERE event_id = ?1`,
-      )
-      .bind(eventId, now),
-    db.prepare("UPDATE events SET personal_data_erased_at = ?2, updated_at = ?2 WHERE id = ?1").bind(eventId, now),
-    // Ook de kortlopende misbruiklogboeken (onomkeerbaar gemaakte internetadressen).
-    db.prepare("DELETE FROM login_attempts"),
-    db.prepare("DELETE FROM submit_log"),
-  ]);
+  await db.batch(eraseStatements(db, eventId, nowIso()));
   return json(await summary(db, eventId));
 }
 
@@ -577,6 +597,7 @@ export async function handleAdmin(request: Request, env: Env, path: string[]) {
 
   if (section === "evenementen") {
     await ensureEvents(db);
+    await eraseExpired(db);
     if (!key && method === "GET") return json(await summaries(db));
     const config = key && Object.hasOwn(registrationEvents, key) ? registrationEvents[key] : undefined;
     if (!config) return fail(404, "NIET_GEVONDEN", "Onbekend evenement.");

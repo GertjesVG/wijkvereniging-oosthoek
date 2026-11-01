@@ -104,6 +104,7 @@ export const api = {
       houseNumber?: string;
       note?: string;
       status?: "active" | "cancelled";
+      addressApproved?: true;
     },
   ) => request<AdminRegistration>("PATCH", `/api/beheer/inschrijvingen/${id}`, patch),
   addParticipant: (id: number, participant: { name: string; age: number }) =>

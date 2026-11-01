@@ -27,6 +27,7 @@ const fakeSubmit = (request: RegistrationRequest) =>
           parentName: request.parent.name,
           email: request.parent.email,
           address: request.address,
+          addressReview: false,
           participants: request.participants,
         }),
       500,
