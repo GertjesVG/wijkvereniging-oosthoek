@@ -39,13 +39,14 @@ test("geen diploma/flyeractie, 33 sponsors en uitsluitend bevestigde websiteknop
       await expect(link).toHaveAttribute("rel", "noopener noreferrer");
     } else await expect(card.locator(".sponsor-website")).toHaveCount(0);
   }
+  const publicUrl =
+    "https://gertjesvg.github.io/wijkvereniging-oosthoek/sinterklaas/";
   await page.goto("/#/contact");
-  await expect(
-    page.getByText(
-      "Een deelbare QR-code volgt zodra het vaste websiteadres is bevestigd.",
-    ),
-  ).toBeVisible();
-  await expect(page.locator(".share-qr")).toHaveCount(0);
+  const qr = page.getByRole("img", { name: `QR-code naar ${publicUrl}` });
+  await expect(qr).toBeVisible();
+  const png = PNG.sync.read(await qr.screenshot());
+  const decoded = jsQR(new Uint8ClampedArray(png.data), png.width, png.height);
+  expect(decoded?.data).toBe(publicUrl);
 });
 
 test("praktische informatie en sponsorkaarten blijven leesbaar op mobiel en desktop", async ({

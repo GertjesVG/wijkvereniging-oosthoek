@@ -86,8 +86,11 @@ test("flyer en diploma’s zijn geen openbare bestanden; originelen blijven beho
     );
 });
 
-test("QR-doel blijft leeg tot het definitieve publieke adres bevestigd is", () => {
-  assert.equal(verifiedPublicUrl(event.publicWebsite), null);
+test("QR-doel is alleen het bevestigde vaste Sinterklaas-adres", () => {
+  assert.equal(
+    verifiedPublicUrl(event.publicWebsite),
+    "https://gertjesvg.github.io/wijkvereniging-oosthoek/sinterklaas/",
+  );
   for (const url of [
     null,
     "http://localhost:5173/",

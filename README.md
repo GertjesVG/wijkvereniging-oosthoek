@@ -24,7 +24,7 @@ Node 24 en npm zijn gebruikt. Op een nieuwe computer: installeer Node en voer ee
 
 De actuele afwerkingsronde biedt alleen de kleurplaat publiek aan. Diploma's en dubbelzijdige flyer blijven uitsluitend als originele projectbronnen bewaard. Op de sponsorpagina staan 20 bevestigde websiteknoppen; adressen/telefoons/e-mails zijn behouden. Het opgegeven sponsoronderzoek-JSON ontbrak, daarom is de bevestigde status uit het onderzoeksdocument gebruikt.
 
-QR: `event.publicWebsite.url` staat op het vaste Sinterklaas-adres (zie GitHub Pages hieronder). `verified` blijft `false` tot de online eindcontrole; daarna verschijnt op Contact automatisch de QR met SVG-download. Lokale en tijdelijke tunneladressen leveren geen bezoekers-QR op. Storybook bevat voorbereiding en een duidelijk gelabeld voorbeeld op het gereserveerde testadres example.org. Na publicatie moet de echte code nog op telefoons worden gescand vóór verspreiding.
+QR: `event.publicWebsite.url` staat op het vaste Sinterklaas-adres (zie GitHub Pages hieronder). Na de online eindcontrole van 1 november 2026 staat `verified` op `true`: Contact toont de QR met SVG-download. Lokale en tijdelijke tunneladressen leveren geen bezoekers-QR op. Storybook bevat voorbereiding en een duidelijk gelabeld voorbeeld op het gereserveerde testadres example.org. Na publicatie moet de echte code nog op telefoons worden gescand vóór verspreiding.
 
 De eerder gedeelde externe tunnel serveert nog de vorige `dist/`-versie. Deze uitsluitend lokale ronde is gecontroleerd met `npm run build -- --outDir <sessie-temp>/oosthoek-local-finishing-dist`, zodat lokaal bouwen de externe preview niet stilzwijgend bijwerkt. Deel een volgende versie pas na GO.
 
@@ -44,7 +44,7 @@ De lettertypen en illustraties worden lokaal geladen. De gegenereerde hoofdillus
 
 ## GitHub Pages
 
-Repository `GertjesVG/wijkvereniging-oosthoek` (privé), branch `main`. De workflow `.github/workflows/pages.yml` bouwt met `npm ci` en `npm run build` en zet de website online onder `/sinterklaas/`. Hij publiceert pas als Settings → Pages → Source op **GitHub Actions** staat; zolang dat niet zo is, stopt hij bij `configure-pages` zonder iets online te zetten. Pushen, de repository openbaar maken en Pages aanzetten gebeuren alleen na expliciete GO.
+Repository `GertjesVG/wijkvereniging-oosthoek` (openbaar sinds 1 november 2026), branch `main`. Pages staat aan: **elke push naar `main` zet de site meteen online.** De workflow `.github/workflows/pages.yml` bouwt met `npm ci` en `npm run build` en zet de website online onder `/sinterklaas/`. Hij publiceert pas als Settings → Pages → Source op **GitHub Actions** staat; zolang dat niet zo is, stopt hij bij `configure-pages` zonder iets online te zetten. Commits in deze repository gebruiken het GitHub-noreply-adres, zodat geen privé-e-mailadres openbaar wordt.
 
 | Adres | Doel |
 | --- | --- |
