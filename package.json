@@ -1,0 +1,36 @@
+{
+  "name": "sinterklaas-oosthoek",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 5173 --strictPort",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview --host 127.0.0.1 --port 4173 --strictPort",
+    "storybook": "storybook dev -p 6008 --host 127.0.0.1 --no-open --disable-telemetry",
+    "build-storybook": "storybook build --disable-telemetry",
+    "test": "node --test tests/*.test.mjs",
+    "test:browser": "playwright test"
+  },
+  "dependencies": {
+    "@fontsource/cormorant-garamond": "^5.2.8",
+    "@fontsource/dm-sans": "^5.2.8",
+    "lucide-react": "^0.577.0",
+    "qrcode": "^1.5.4",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.58.0",
+    "@storybook/react-vite": "10.6.5",
+    "@types/node": "^24.0.0",
+    "@types/qrcode": "^1.5.6",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-react": "6.1.2",
+    "jsqr": "^1.4.0",
+    "storybook": "10.6.5",
+    "typescript": "^5.9.3",
+    "vite": "8.3.5"
+  }
+}

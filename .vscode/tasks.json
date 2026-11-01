@@ -1,0 +1,60 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Website: start preview",
+      "type": "shell",
+      "command": "npm run dev",
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": { "regexp": "^(?!)$" },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "vite",
+          "endsPattern": "Local:"
+        }
+      },
+      "presentation": { "reveal": "always", "panel": "dedicated" }
+    },
+    {
+      "label": "Storybook: start componenten",
+      "type": "shell",
+      "command": "npm run storybook",
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": { "regexp": "^(?!)$" },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "storybook",
+          "endsPattern": "Local:"
+        }
+      },
+      "presentation": { "reveal": "always", "panel": "dedicated" }
+    },
+    {
+      "label": "Website: open in browser",
+      "type": "shell",
+      "command": "Start-Process 'http://127.0.0.1:5173/'",
+      "problemMatcher": []
+    },
+    {
+      "label": "Storybook: open in browser",
+      "type": "shell",
+      "command": "Start-Process 'http://127.0.0.1:6008/'",
+      "problemMatcher": []
+    },
+    {
+      "label": "Start website + Storybook",
+      "dependsOn": ["Website: start preview", "Storybook: start componenten"],
+      "dependsOrder": "parallel",
+      "problemMatcher": []
+    },
+    {
+      "label": "Website: controle en build",
+      "type": "shell",
+      "command": "npm run build",
+      "group": "build",
+      "problemMatcher": []
+    }
+  ]
+}

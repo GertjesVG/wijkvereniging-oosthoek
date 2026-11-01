@@ -1,0 +1,266 @@
+[
+  {
+    "name": "ZEEPVENTJE",
+    "category": "Onderhouds- en schoonmaakproducten",
+    "address": "Opstal 7, Beerse",
+    "phones": [],
+    "email": "zeepventje@skynet.be",
+    "website": null
+  },
+  {
+    "name": "Delaplace Tuinen",
+    "category": "Tuinaanleg en onderhoud",
+    "address": "Veldstraat 116, Beerse",
+    "phones": ["0496 99 60 13"],
+    "email": "info@delaplace.be",
+    "website": "https://www.delaplace.be/"
+  },
+  {
+    "name": "Strijkatelier Aerts Britt",
+    "category": "Strijkatelier",
+    "address": "Opstal 5, Beerse",
+    "phones": ["0494 45 12 78"],
+    "email": null,
+    "website": null
+  },
+  {
+    "name": "Gipsmachinecenter G.M.C.",
+    "category": "Gipsmachines en toebehoren",
+    "address": "Leemstraat 42, Beerse",
+    "phones": ["0496 28 10 93", "014 63 26 09"],
+    "email": "info@gipsmachines.be",
+    "website": "https://www.gipsmachines.be/"
+  },
+  {
+    "name": "Taxi Adrienne EDLIH",
+    "category": "Koerier, taxi en luchthavenvervoer",
+    "address": "Paddesteenstraat 6 bus 1, Beerse",
+    "phones": ["0477 42 98 05"],
+    "email": "adriennev@belgacom.net",
+    "website": null
+  },
+  {
+    "name": "Herenkapsalon Dooley’s",
+    "category": "Herenkapper",
+    "address": "Leemstraat 38, Beerse",
+    "phones": ["014 61 89 12"],
+    "email": "dooley1@telenet.be",
+    "website": null
+  },
+  {
+    "name": "GNP",
+    "category": "Elektriciteitswerken",
+    "address": "Oosteneinde 16/1, Beerse",
+    "phones": ["0473 86 59 48"],
+    "email": "goos.werner@outlook.com",
+    "website": null
+  },
+  {
+    "name": "Drankhandel Den Brouwer",
+    "category": "Drankenhandel",
+    "address": "Antwerpsesteenweg 95, Vosselaar",
+    "phones": ["014 35 87 23"],
+    "email": "info@denbrouwer.be",
+    "website": "https://www.denbrouwer.be/"
+  },
+  {
+    "name": "Haarstudio Imago",
+    "category": "Kapsalon",
+    "address": "Veldstraat 149, Beerse",
+    "phones": ["014 61 68 07"],
+    "email": "info@haarstudio-imago.be",
+    "website": "https://www.haarstudio-imago.be/"
+  },
+  {
+    "name": "Een Hart Voor Zorg",
+    "category": "Thuisverpleging",
+    "address": "Tulpenstraat 4, Beerse",
+    "phones": ["0479 50 73 54"],
+    "email": "christavandenheuvel@telenet.be",
+    "website": "https://www.thuisverpleginghartvoorzorg.com/"
+  },
+  {
+    "name": "Bouwwerken Rombouts",
+    "category": "Bouwwerken",
+    "address": "Oosteneinde 23, Beerse",
+    "phones": ["014 61 72 86"],
+    "email": "info@bouwrombouts.be",
+    "website": "https://www.bouwrombouts.be/"
+  },
+  {
+    "name": "Aerts",
+    "category": "Grafzerken, arduin en marmer",
+    "address": "Veldstraat 114, Beerse",
+    "phones": ["0486 26 10 20"],
+    "email": "info@grafzerkenaerts.be",
+    "website": "https://www.grafzerkenaerts.be/"
+  },
+  {
+    "name": "Slagerij Havermans Dennis",
+    "category": "Klasse Slager",
+    "address": "Houtseweg 41, Beerse",
+    "phones": ["014 61 41 41"],
+    "email": "info@havermans.be",
+    "website": "https://www.havermans.be/"
+  },
+  {
+    "name": "Van Bladel R.",
+    "category": "Fietsen en visbenodigdheden",
+    "address": "Veldstraat 29, Beerse",
+    "phones": ["0475 73 18 00", "014 61 76 48"],
+    "email": "vbrbaits@gmail.com",
+    "website": "https://vbrbaits.be/"
+  },
+  {
+    "name": "Stanny Roefs & Zonen",
+    "category": "Bouwmaterialen",
+    "address": "Gorenstraat 2, Beerse",
+    "phones": ["014 61 37 35"],
+    "email": "info@stannyroefs.be",
+    "website": "https://stannyroefs.be/"
+  },
+  {
+    "name": "VerZeker BV",
+    "category": "Verzekeringsmakelaar",
+    "address": "Vaartstraat 76, Merksplas",
+    "phones": ["014 21 28 91"],
+    "email": "info@verzeker-beter.be",
+    "website": null
+  },
+  {
+    "name": "Walbers Zonweringen",
+    "category": "Zonwering",
+    "address": "Bisschopslaan 100, Beerse",
+    "phones": ["014 61 26 67"],
+    "email": "info@walbers.be",
+    "website": "https://www.walbers.be/"
+  },
+  {
+    "name": "Brasserie De Sjokola",
+    "category": "Brasserie",
+    "address": "Vredestraat 13, Beerse",
+    "phones": ["014 61 03 00"],
+    "email": "desjokola@gmail.com",
+    "website": "https://www.desjokola.be/"
+  },
+  {
+    "name": "Wienerberger / Nova",
+    "category": "Bouwmaterialen",
+    "address": "Steenbakkersdam 10, Beerse",
+    "phones": ["014 61 10 99"],
+    "email": "kobe.vandeneynde@wienerberger.com",
+    "website": "https://www.wienerberger.be/"
+  },
+  {
+    "name": "Joy's Decor & Retouches",
+    "category": "Decoratie en kledingretouches",
+    "address": "Veldstraat 48, Beerse",
+    "phones": ["0486 46 64 37"],
+    "email": null,
+    "website": null
+  },
+  {
+    "name": "Fietsen Eric",
+    "category": "Fietsen",
+    "address": "Kattespoelstraat 7, Beerse",
+    "phones": ["0498 21 10 22"],
+    "email": "fietsen.eric@hotmail.com",
+    "website": null
+  },
+  {
+    "name": "Jacko Sound",
+    "category": "Geluid en techniek + verhuur springkastelen",
+    "address": "Kattespoelstraat 40, Beerse",
+    "phones": ["0475 92 93 93"],
+    "email": "info@jackosound.be",
+    "website": "https://www.jackosound.be/"
+  },
+  {
+    "name": "Tegeldiscount",
+    "category": "Tegels",
+    "address": "Turnhoutsebaan 132, Oostmalle",
+    "phones": ["03 311 68 91"],
+    "email": "tegeldiscount@telenet.be",
+    "website": "https://www.tegeldiscountbvba.be/"
+  },
+  {
+    "name": "Traiteur Delaplace - De Open Keuken",
+    "category": "Traiteur",
+    "address": "Molenstraat 26, Vosselaar",
+    "phones": ["014 41 72 91"],
+    "email": "info@de-open-keuken.be",
+    "website": "https://www.deopenkeuken.be/"
+  },
+  {
+    "name": "Color Nuance - Wim Stessens",
+    "category": "Schilder- en decoratiewerken",
+    "address": "Dr. P. Janssenstraat 84, Beerse",
+    "phones": ["0496 95 34 98"],
+    "email": "info@color-nuance.be",
+    "website": "https://www.color-nuance.be/"
+  },
+  {
+    "name": "Garage Peeters Wim",
+    "category": "Garage",
+    "address": "Kattespoelstraat 38, Beerse",
+    "phones": ["014 61 05 97"],
+    "email": null,
+    "website": null
+  },
+  {
+    "name": "Scheyltjens Wim",
+    "category": "Centrale verwarming",
+    "address": "Kattespoelstraat 29, Beerse",
+    "phones": ["0476 71 07 96"],
+    "email": "wimscheyltjens@skynet.be",
+    "website": null
+  },
+  {
+    "name": "David Neirynck",
+    "category": "Boekhoudkantoor en fiscaal accountant",
+    "address": "Sint-Elooistraat 16, Beerse",
+    "phones": ["014 70 31 50"],
+    "email": null,
+    "website": "https://boekhoudkantoorneirynck.be/"
+  },
+  {
+    "name": "Polyesterwerken Stevens J.",
+    "category": "Polyesterwerken",
+    "address": "Krikskensstraat 24, Beerse",
+    "phones": ["0497 60 89 30"],
+    "email": "info@johan-stevens.be",
+    "website": "https://johan-stevens.be/"
+  },
+  {
+    "name": "Grafico Printing",
+    "category": "Drukkerij",
+    "address": "Duivenstraat 40, Vosselaar",
+    "phones": ["014 61 65 03"],
+    "email": "grafico.printing@skynet.be",
+    "website": null
+  },
+  {
+    "name": "SIS",
+    "category": "Sanitaire werken",
+    "address": "Kattespoelstraat 5, Beerse",
+    "phones": ["014 61 25 82"],
+    "email": "sisbvba.fs@gmail.com",
+    "website": null
+  },
+  {
+    "name": "Selouco",
+    "category": "Ventilatiesystemen",
+    "address": "Dr. Paul Janssenstraat 46, Beerse",
+    "phones": ["014 74 91 79"],
+    "email": null,
+    "website": null
+  },
+  {
+    "name": "Stef Nuyens",
+    "category": "Ramen en deuren",
+    "address": "Hofeinde 219, Vosselaar",
+    "phones": ["0499 39 44 13"],
+    "email": "stef.nuyens@outlook.com",
+    "website": "https://stefnuyens.be/"
+  }
+]
