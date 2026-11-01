@@ -1,5 +1,6 @@
 node_modules/
 dist/
+_site/
 storybook-static/
 test-results/
 playwright-report/

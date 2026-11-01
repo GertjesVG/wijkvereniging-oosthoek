@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 5173 --strictPort",
     "build": "tsc -b && vite build",
+    "build:cloudflare": "npm run build -- --outDir _site/sinterklaas && node cloudflare-pages.mjs",
     "preview": "vite preview --host 127.0.0.1 --port 4173 --strictPort",
     "storybook": "storybook dev -p 6008 --host 127.0.0.1 --no-open --disable-telemetry",
     "build-storybook": "storybook build --disable-telemetry",
