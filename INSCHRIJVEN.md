@@ -47,8 +47,7 @@ Eén gratis inschrijfsysteem voor alle evenementen van VZW Wijkvereniging Oostho
 | Snelle controles (ook mail en Apps Script) | `npm test` |
 | Volledige keten met lokale database, fictieve gegevens | `npm run test:inschrijving` |
 | Alles bouwen zoals Cloudflare | `npm run build:cloudflare` |
-| Lokale server met functies (na de build) | `npm run dev:api` (poort 8788) |
-| Beheer met automatisch verversen | `npm run dev:beheer` (poort 5174, gebruikt `dev:api`) |
+| Lokale server met functies en beheer (na de build) | `npm run dev:api`, beheer op `http://127.0.0.1:8788/beheer/` |
 
 Voor `dev:api` maak je zelf een bestand `.dev.vars` in deze map met `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET`, `ADMIN_PASSWORD` en `MAIL_API_TOKEN` (gebruik de testsleutels uit de Turnstile-documentatie en zelfgekozen testwaarden). Dat bestand staat in `.gitignore` en hoort nooit in git. De lokale database maak je met `npx wrangler d1 migrations apply oosthoek-inschrijvingen --local`.
 

@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { mkdir } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 const routes = [
   "home",
   "cadeauactie",
@@ -74,10 +75,11 @@ test("sponsors zoeken, geen resultaat en wissen", async ({ page }) => {
 });
 test("geen nepinschrijving, geen ongevraagde externe kaart of kinderopslag", async ({
   page,
+  baseURL,
 }) => {
   const external: string[] = [];
   page.on("request", (req) => {
-    if (!req.url().startsWith("http://127.0.0.1:5173"))
+    if (!req.url().startsWith(baseURL!))
       external.push(req.url());
   });
   await page.goto("/#/cadeauactie");
@@ -139,7 +141,8 @@ test("lokale links en downloads leveren bestanden, FAQ opent", async ({
   await expect(page.locator("details[open]")).toHaveCount(1);
 });
 test("visuele bewijsbeelden", async ({ page }) => {
-  const dir = "../../Bewijs";
+  // Bewijs\ van het project, ongeacht de map waaruit de tests starten.
+  const dir = fileURLToPath(new URL("../../../../Bewijs", import.meta.url));
   await mkdir(dir, { recursive: true });
   await page.setViewportSize({ width: 1440, height: 1100 });
   await page.goto("/");
