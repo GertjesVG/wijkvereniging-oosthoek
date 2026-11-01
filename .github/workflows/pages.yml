@@ -1,10 +1,14 @@
-# Bouwt de website en zet ze op GitHub Pages onder /sinterklaas/: dat adres is altijd de Sinterklaaswebsite zelf, nooit een doorverwijzing.
-# Publiceert pas als Settings → Pages → Source op "GitHub Actions" staat; anders stopt configure-pages zonder iets online te zetten.
-name: Website publiceren
+# De website staat sinds 1 november 2026 op Cloudflare Pages (https://wijkvereniging-oosthoek.pages.dev/), die zelf vanuit main bouwt.
+# GitHub Pages houdt alleen de oude adressen en gedrukte QR-codes werkend: elke pagina stuurt door naar hetzelfde pad op Cloudflare,
+# met zoekdeel en #-route. Daarom draait deze workflow alleen als de doorverwijzing zelf wijzigt: geen tweede kopie van de site.
+name: Oude adressen doorverwijzen
 
 on:
   push:
     branches: [main]
+    paths:
+      - github-pages/**
+      - .github/workflows/pages.yml
   workflow_dispatch:
 
 permissions:
@@ -24,15 +28,12 @@ jobs:
         with:
           persist-credentials: false
       - uses: actions/configure-pages@v6
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 24
-          cache: npm
-      - run: npm ci
-      - run: npm run build -- --outDir _site/sinterklaas
-      # Alleen het hoofdadres mag later wisselen (bv. een overzicht met het actuele evenement).
-      - name: Hoofdadres voorlopig naar Sinterklaas
-        run: printf '%s\n' '<!doctype html><html lang="nl-BE"><head><meta charset="UTF-8"><meta http-equiv="refresh" content="0; url=sinterklaas/"><title>Wijkvereniging Oosthoek</title></head><body><p><a href="sinterklaas/">Naar de Sinterklaaswebsite van Oosthoek</a></p></body></html>' > _site/index.html
+      # Hoofdadres, /sinterklaas/ en elk ander oud pad (via 404.html) krijgen dezelfde doorverwijzing.
+      - run: |
+          mkdir -p _site/sinterklaas
+          cp github-pages/index.html _site/index.html
+          cp github-pages/index.html _site/sinterklaas/index.html
+          cp github-pages/index.html _site/404.html
       - uses: actions/upload-pages-artifact@v5
         with:
           path: _site

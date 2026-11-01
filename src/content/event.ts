@@ -4,9 +4,9 @@ export const event = {
   year: 2026,
   date: "2026-11-28",
   timeZone: "Europe/Brussels",
-  // Vast QR-adres: de Sinterklaaswebsite zelf op /sinterklaas/ (zie .github/workflows/pages.yml). Online gecontroleerd op 1 november 2026; vóór drukwerk nog scannen met echte telefoons.
+  // Vast QR-adres: de Sinterklaaswebsite zelf op /sinterklaas/ van Cloudflare Pages (online gecontroleerd 1 november 2026). Het oude GitHub-adres en de gedrukte QR-codes daarvan sturen door (github-pages/index.html).
   publicWebsite: {
-    url: "https://gertjesvg.github.io/wijkvereniging-oosthoek/sinterklaas/",
+    url: "https://wijkvereniging-oosthoek.pages.dev/sinterklaas/",
     verified: true,
   } as PublicWebsite,
   organisation: {

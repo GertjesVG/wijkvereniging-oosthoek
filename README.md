@@ -24,7 +24,7 @@ Node 24 en npm zijn gebruikt. Op een nieuwe computer: installeer Node en voer ee
 
 De actuele afwerkingsronde biedt alleen de kleurplaat publiek aan. Diploma's en dubbelzijdige flyer blijven uitsluitend als originele projectbronnen bewaard. Op de sponsorpagina staan 20 bevestigde websiteknoppen; adressen/telefoons/e-mails zijn behouden. Het opgegeven sponsoronderzoek-JSON ontbrak, daarom is de bevestigde status uit het onderzoeksdocument gebruikt.
 
-QR: `event.publicWebsite.url` staat op het vaste Sinterklaas-adres (zie GitHub Pages hieronder). Na de online eindcontrole van 1 november 2026 staat `verified` op `true`: Contact toont de QR met SVG-download. Lokale en tijdelijke tunneladressen leveren geen bezoekers-QR op. Storybook bevat voorbereiding en een duidelijk gelabeld voorbeeld op het gereserveerde testadres example.org. Na publicatie moet de echte code nog op telefoons worden gescand vóór verspreiding.
+QR: `event.publicWebsite.url` staat op het vaste Sinterklaas-adres op Cloudflare (zie Publicatie hieronder). Na de online eindcontrole van 1 november 2026 staat `verified` op `true`: Contact toont de QR met SVG-download. Lokale en tijdelijke tunneladressen leveren geen bezoekers-QR op. Storybook bevat voorbereiding en een duidelijk gelabeld voorbeeld op het gereserveerde testadres example.org. Na publicatie moet de echte code nog op telefoons worden gescand vóór verspreiding.
 
 De eerder gedeelde externe tunnel serveert nog de vorige `dist/`-versie. Deze uitsluitend lokale ronde is gecontroleerd met `npm run build -- --outDir <sessie-temp>/oosthoek-local-finishing-dist`, zodat lokaal bouwen de externe preview niet stilzwijgend bijwerkt. Deel een volgende versie pas na GO.
 
@@ -42,14 +42,17 @@ De lettertypen en illustraties worden lokaal geladen. De gegenereerde hoofdillus
 2. Officiële vertrektijden, route en haltes. Die ontbreken in de bronnen. De klikbare OpenStreetMap is alleen een omgevingskaart van Beerse, geen route.
 3. GPS-dienst met actuele tijdstempel en correcte toestand bij ontbrekende/verouderde gegevens. Er is nu geen live GPS of nagebootste beweging.
 
-## GitHub Pages
+## Publicatie: Cloudflare Pages
 
-Repository `GertjesVG/wijkvereniging-oosthoek` (openbaar sinds 1 november 2026), branch `main`. Pages staat aan: **elke push naar `main` zet de site meteen online.** De workflow `.github/workflows/pages.yml` bouwt met `npm ci` en `npm run build` en zet de website online onder `/sinterklaas/`. Hij publiceert pas als Settings → Pages → Source op **GitHub Actions** staat; zolang dat niet zo is, stopt hij bij `configure-pages` zonder iets online te zetten. Commits in deze repository gebruiken het GitHub-noreply-adres, zodat geen privé-e-mailadres openbaar wordt.
+Repository `GertjesVG/wijkvereniging-oosthoek` (openbaar), branch `main`. Cloudflare Pages (project `wijkvereniging-oosthoek`, gratis) is via de Git-integratie gekoppeld: **elke push naar `main` zet de site meteen online.** Cloudflare bouwt met `npm run build:cloudflare` naar `_site` (website onder `/sinterklaas/`, plus `_redirects` en `404.html` uit `cloudflare-pages.mjs`). Commits in deze repository gebruiken het GitHub-noreply-adres, zodat geen privé-e-mailadres openbaar wordt.
 
 | Adres | Doel |
 | --- | --- |
-| https://gertjesvg.github.io/wijkvereniging-oosthoek/ | hoofdadres; verwijst nu door naar Sinterklaas en mag later het actuele evenement uitlichten |
-| https://gertjesvg.github.io/wijkvereniging-oosthoek/sinterklaas/ | de Sinterklaaswebsite zelf en het vaste QR-adres; blijft elk jaar Sinterklaas |
+| https://wijkvereniging-oosthoek.pages.dev/ | hoofdadres; verwijst nu (302) door naar Sinterklaas en mag later het actuele evenement uitlichten |
+| https://wijkvereniging-oosthoek.pages.dev/sinterklaas/ | de Sinterklaaswebsite zelf en het vaste QR-adres; blijft elk jaar Sinterklaas |
+| https://gertjesvg.github.io/wijkvereniging-oosthoek/… | oud adres (eerste QR-codes en flyer): stuurt door naar hetzelfde pad op Cloudflare, met `?…` en `#/…` |
+
+GitHub Pages blijft aan, maar alleen voor die doorverwijzing: `.github/workflows/pages.yml` zet `github-pages/index.html` op het hoofdadres, op `/sinterklaas/` en als `404.html` (elk ander oud pad). De workflow draait alleen als die bestanden wijzigen, dus nooit een tweede kopie van de site. Zet GitHub Pages niet uit zolang er nog oude QR-codes in omloop zijn.
 
 De Sinterklaaswebsite staat zelf op `/sinterklaas/`, zonder doorverwijzing, zodat dat adres nooit naar een ander evenement kan wijzen. Lokaal (`npm run dev`, `npm run preview`) blijft alles op de hoofdmap. Hashlinks (`#/route`) en relatieve paden (`base: './'`) werken onder dit pad zonder serverregels. Nooit kindergegevens of secrets toevoegen.
 
