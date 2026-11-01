@@ -24,7 +24,7 @@ Node 24 en npm zijn gebruikt. Op een nieuwe computer: installeer Node en voer ee
 
 De actuele afwerkingsronde biedt alleen de kleurplaat publiek aan. Diploma's en dubbelzijdige flyer blijven uitsluitend als originele projectbronnen bewaard. Op de sponsorpagina staan 20 bevestigde websiteknoppen; adressen/telefoons/e-mails zijn behouden. Het opgegeven sponsoronderzoek-JSON ontbrak, daarom is de bevestigde status uit het onderzoeksdocument gebruikt.
 
-QR: stel `event.publicWebsite.url` pas in op het vaste publieke HTTPS-adres. `verified` blijft `false` tot de online eindcontrole; daarna verschijnt op Contact automatisch de QR met SVG-download. Lokale en tijdelijke tunneladressen leveren geen bezoekers-QR op. Storybook bevat voorbereiding en een duidelijk gelabeld voorbeeld op het gereserveerde testadres example.org. Na publicatie moet de echte code nog op telefoons worden gescand vóór verspreiding.
+QR: `event.publicWebsite.url` staat op het vaste Sinterklaas-adres (zie GitHub Pages hieronder). `verified` blijft `false` tot de online eindcontrole; daarna verschijnt op Contact automatisch de QR met SVG-download. Lokale en tijdelijke tunneladressen leveren geen bezoekers-QR op. Storybook bevat voorbereiding en een duidelijk gelabeld voorbeeld op het gereserveerde testadres example.org. Na publicatie moet de echte code nog op telefoons worden gescand vóór verspreiding.
 
 De eerder gedeelde externe tunnel serveert nog de vorige `dist/`-versie. Deze uitsluitend lokale ronde is gecontroleerd met `npm run build -- --outDir <sessie-temp>/oosthoek-local-finishing-dist`, zodat lokaal bouwen de externe preview niet stilzwijgend bijwerkt. Deel een volgende versie pas na GO.
 
@@ -42,9 +42,24 @@ De lettertypen en illustraties worden lokaal geladen. De gegenereerde hoofdillus
 2. Officiële vertrektijden, route en haltes. Die ontbreken in de bronnen. De klikbare OpenStreetMap is alleen een omgevingskaart van Beerse, geen route.
 3. GPS-dienst met actuele tijdstempel en correcte toestand bij ontbrekende/verouderde gegevens. Er is nu geen live GPS of nagebootste beweging.
 
-## Later op GitHub Pages
+## GitHub Pages
 
-Er is geen repository op GitHub aangemaakt en er is niets gepubliceerd. De gebouwde `dist/`-map is statisch. Relatieve assetpaden (`base: './'`) en hashlinks ondersteunen een GitHub-projectpad zonder serverherschrijving. Na expliciete GO kunnen repository en publicatieworkflow worden ingericht; nooit kinderengegevens of secrets toevoegen.
+Repository `GertjesVG/wijkvereniging-oosthoek` (privé), branch `main`. De workflow `.github/workflows/pages.yml` bouwt met `npm ci` en `npm run build` en zet `dist/` online. Hij publiceert pas als Settings → Pages → Source op **GitHub Actions** staat; zolang dat niet zo is, stopt hij bij `configure-pages` zonder iets online te zetten. Pushen, de repository openbaar maken en Pages aanzetten gebeuren alleen na expliciete GO.
+
+| Adres | Doel |
+| --- | --- |
+| https://gertjesvg.github.io/wijkvereniging-oosthoek/ | website van de vereniging (nu de Sinterklaaswebsite) |
+| https://gertjesvg.github.io/wijkvereniging-oosthoek/sinterklaas/ | vast QR-adres voor Sinterklaas, elk jaar hetzelfde |
+
+`public/sinterklaas/index.html` stuurt het QR-adres door naar de juiste pagina. Verandert de opbouw later, pas dan alleen dat doel aan: het QR-adres en gedrukte flyers blijven geldig. Hashlinks (`#/route`) en relatieve paden (`base: './'`) werken onder het projectpad zonder serverregels. Nooit kindergegevens of secrets toevoegen.
+
+## Later een ander evenement
+
+Nog niet gebouwd. Zo blijft het eenvoudig:
+
+1. Elk evenement krijgt een eigen vast adres, zoals `/garageverkoop/`, `/wijkfeest/` of `/paasfeest/`, op dezelfde manier als `public/sinterklaas/`.
+2. De openbare gegevens van dat evenement komen in een eigen bestand onder `src/content/`, naar het voorbeeld van `event.ts`.
+3. Pas als er echt een tweede evenement online komt: een korte overzichtspagina op het hoofdadres, en `public/sinterklaas/index.html` laten doorverwijzen naar de Sinterklaaspagina.
 
 Technische bronnen: [Vite statische publicatie](https://vite.dev/guide/static-deploy), [Storybook React/Vite](https://storybook.js.org/docs/get-started/frameworks/react-vite/).
 

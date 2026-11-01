@@ -4,8 +4,11 @@ export const event = {
   year: 2026,
   date: "2026-11-28",
   timeZone: "Europe/Brussels",
-  // Pas invullen en bevestigen na controle van het definitieve publieke adres.
-  publicWebsite: { url: null, verified: false } as PublicWebsite,
+  // Vast QR-adres (public/sinterklaas/). verified pas op true na de online eindcontrole en een scan met echte telefoons.
+  publicWebsite: {
+    url: "https://gertjesvg.github.io/wijkvereniging-oosthoek/sinterklaas/",
+    verified: false,
+  } as PublicWebsite,
   organisation: {
     name: "VZW Wijkvereniging Oosthoek",
     address: "Opstal 5, 2340 Beerse",
