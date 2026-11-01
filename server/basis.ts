@@ -6,8 +6,8 @@ export type Env = {
   TURNSTILE_SITE_KEY?: string;
   TURNSTILE_SECRET?: string;
   ADMIN_PASSWORD?: string;
-  MAIL_WEBHOOK_URL?: string;
-  MAIL_SECRET?: string;
+  // Gedeeld geheim met het Apps Script (scripteigenschap met dezelfde naam), minstens 32 tekens.
+  MAIL_API_TOKEN?: string;
   // Alleen voor tests: schaalt de wachttijd tussen mailpogingen (standaard 1).
   MAIL_BACKOFF_FACTOR?: string;
 };
@@ -67,8 +67,20 @@ export function normalize(value: string) {
     .trim();
 }
 
+// "12 B" = "12b", "12-3" = "12/3", maar "12/3" blijft verschillen van "123".
 export function addressKey(street: string, houseNumber: string) {
-  return `${normalize(street)}|${normalize(houseNumber).replace(/ /g, "")}`;
+  return `${normalize(street)}|${normalize(houseNumber).replace(/(\d) (?=\d)/g, "$1/").replace(/ /g, "")}`;
+}
+
+// Eén internetaansluiting: een IPv4-adres, of bij IPv6 het /64-blok (een aansluiting krijgt een heel blok).
+export function connectionOf(ip: string | null) {
+  if (!ip) return "onbekend";
+  if (!ip.includes(":") || ip.includes(".")) return ip;
+  const [head, tail] = ip.toLowerCase().split("::");
+  const left = head ? head.split(":") : [];
+  const right = tail ? tail.split(":") : [];
+  const groups = tail === undefined ? left : [...left, ...Array(8 - left.length - right.length).fill("0"), ...right];
+  return `${groups.slice(0, 4).map((g) => g.replace(/^0+(?=.)/, "")).join(":")}::/64`;
 }
 
 export function childKey(name: string, address: string | null, email: string) {
@@ -78,6 +90,13 @@ export function childKey(name: string, address: string | null, email: string) {
 export async function sha256Hex(value: string) {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
   return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+// Controleert "Authorization: Bearer <geheim>"; vergelijkt de hashes, zodat lengte en duur niets verraden.
+export async function bearerMatches(request: Request, secret: string) {
+  const header = request.headers.get("Authorization") ?? "";
+  const given = header.startsWith("Bearer ") ? header.slice(7) : "";
+  return given.length > 0 && sameText(await sha256Hex(given), await sha256Hex(secret));
 }
 
 // Vergelijkt zonder vroegtijdig te stoppen, zodat de duur niets verraadt.

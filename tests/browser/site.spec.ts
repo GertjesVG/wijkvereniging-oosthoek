@@ -162,7 +162,7 @@ test("Storybook toont de componentvarianten en responsive hero", async ({
     type: string;
   }[];
   const stories = entries.filter((e) => e.type === "story");
-  expect(stories.length).toBe(11);
+  expect(stories.length).toBe(14);
   for (const story of stories) {
     await page.goto(
       "http://127.0.0.1:6008/iframe.html?id=" + story.id + "&viewMode=story",

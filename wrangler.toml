@@ -1,6 +1,7 @@
 # Cloudflare Pages-configuratie van de website en het inschrijfsysteem (functions/).
 # Zodra dit bestand op main staat, is het de bron van waarheid voor bindings; geheimen staan alleen in Cloudflare
-# (Settings → Variables and Secrets): TURNSTILE_SECRET, ADMIN_PASSWORD, MAIL_SECRET, MAIL_WEBHOOK_URL.
+# (Settings → Variables and Secrets): TURNSTILE_SECRET, ADMIN_PASSWORD (min. 16 tekens), MAIL_API_TOKEN (min. 32 tekens,
+# dezelfde waarde als de scripteigenschap MAIL_API_TOKEN van het Apps Script). Lokaal: .dev.vars (nooit in git).
 name = "wijkvereniging-oosthoek"
 pages_build_output_dir = "./_site"
 compatibility_date = "2026-10-01"

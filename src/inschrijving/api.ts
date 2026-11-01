@@ -32,6 +32,7 @@ export type RegistrationResponse = {
 export type ApiErrorCode =
   | "VALIDATIE"
   | "DUBBEL"
+  | "AL_ONTVANGEN"
   | "VOLZET"
   | "GESLOTEN"
   | "TURNSTILE"
@@ -64,6 +65,8 @@ export type AdminEventSummary = {
   pickedUp: number;
   mail: Record<MailStatus, number>;
   personalDataErased: boolean;
+  // Nog goed te keuren beslissingen; zolang er één is, kan de inschrijving niet open.
+  pendingDecisions: string[];
 };
 
 export type AdminParticipant = {

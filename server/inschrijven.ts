@@ -1,11 +1,16 @@
 // Openbare kant: status van een evenement en een nieuwe inschrijving. Geeft nooit gegevens van anderen terug.
 import type { PublicEventStatus, RegistrationResponse } from "../src/inschrijving/api.ts";
 import { registrationEvents } from "../src/inschrijving/evenementen.ts";
-import { errorMessage, fail, json, nowIso, readJson, type Ctx, type Env } from "./basis.ts";
-import { processOutbox } from "./mail.ts";
-import { validateRegistration } from "./validatie.ts";
+import { connectionOf, errorMessage, fail, json, nowIso, readJson, sha256Hex, type Env } from "./basis.ts";
+import { validateRegistration, type CleanRegistration } from "./validatie.ts";
 
 const SITEVERIFY = "https://challenges.cloudflare.com/turnstile/v0/siteverify";
+// Nieuwe inschrijvingen per internetaansluiting per dag. Ruim voor gezinnen, klein genoeg tegen het leegboeken van de actie.
+const MAX_PER_CONNECTION_PER_DAY = 5;
+const DAY_MS = 24 * 3600_000;
+
+const eventFor = (id: unknown) =>
+  typeof id === "string" && Object.hasOwn(registrationEvents, id) ? registrationEvents[id] : undefined;
 
 async function counts(db: D1Database, eventId: string) {
   return db
@@ -19,8 +24,10 @@ async function counts(db: D1Database, eventId: string) {
 }
 
 export async function publicStatus(env: Env, eventId: string) {
-  if (!registrationEvents[eventId]) return fail(404, "NIET_GEVONDEN", "Onbekend evenement.");
-  const configured = Boolean(env.DB && env.TURNSTILE_SECRET && env.TURNSTILE_SITE_KEY);
+  const config = eventFor(eventId);
+  if (!config) return fail(404, "NIET_GEVONDEN", "Onbekend evenement.");
+  const configured =
+    Boolean(env.DB && env.TURNSTILE_SECRET && env.TURNSTILE_SITE_KEY) && config.pendingDecisions.length === 0;
   const row = configured ? await counts(env.DB!, eventId) : null;
   const available = row ? Math.max(0, row.capacity - row.active) : 0;
   const status: PublicEventStatus["status"] =
@@ -47,32 +54,46 @@ async function verifyTurnstile(env: Env, response: string, ip: string | null) {
   }
 }
 
-async function existing(db: D1Database, submissionId: string): Promise<RegistrationResponse | null> {
+async function existing(db: D1Database, submissionId: string) {
   const registration = await db
     .prepare("SELECT id, reference, parent_name, email, street, house_number FROM registrations WHERE submission_id = ?1")
     .bind(submissionId)
     .first<{ id: number; reference: string; parent_name: string; email: string; street: string | null; house_number: string | null }>();
   if (!registration) return null;
   const { results } = await db
-    .prepare("SELECT name, age FROM participants WHERE registration_id = ?1 ORDER BY id")
+    .prepare("SELECT name, age, child_key FROM participants WHERE registration_id = ?1 ORDER BY id")
     .bind(registration.id)
-    .all<{ name: string; age: number | null }>();
-  return {
+    .all<{ name: string; age: number | null; child_key: string }>();
+  const response: RegistrationResponse = {
     reference: registration.reference,
     parentName: registration.parent_name,
     email: registration.email,
     address: registration.street ? { street: registration.street, houseNumber: registration.house_number ?? "" } : null,
-    participants: results,
+    participants: results.map(({ name, age }) => ({ name, age })),
   };
+  return { response, email: registration.email, keys: results.map((p) => p.child_key) };
 }
 
-export async function register(request: Request, env: Env, ctx: Ctx) {
+// Hetzelfde formulier opnieuw verstuurd: dezelfde inschrijving terug. Andere inhoud met hetzelfde ID krijgt niets te zien.
+async function replay(db: D1Database, data: CleanRegistration) {
+  const stored = await existing(db, data.submissionId);
+  if (!stored) return null;
+  const sorted = (keys: string[]) => [...keys].sort().join("\n");
+  const same =
+    stored.email.toLowerCase() === data.email.toLowerCase() &&
+    sorted(stored.keys) === sorted(data.participants.map((p) => p.childKey));
+  return same
+    ? json(stored.response, 200)
+    : fail(409, "AL_ONTVANGEN", "Deze inschrijving werd al ontvangen. Kijk in je mailbox naar de bevestiging, of neem contact op als er iets niet klopt.");
+}
+
+export async function register(request: Request, env: Env) {
   if (!env.DB || !env.TURNSTILE_SECRET || !env.TURNSTILE_SITE_KEY)
     return fail(503, "NIET_GECONFIGUREERD", "De inschrijving is nog niet beschikbaar.");
   const db = env.DB;
   const body = await readJson(request);
   if (!body) return fail(400, "VALIDATIE", "Ongeldige inzending.");
-  const config = typeof body.eventId === "string" ? registrationEvents[body.eventId] : undefined;
+  const config = eventFor(body.eventId);
   if (!config) return fail(404, "NIET_GEVONDEN", "Onbekend evenement.");
   const checked = validateRegistration(config, body);
   if (!checked.ok)
@@ -80,14 +101,22 @@ export async function register(request: Request, env: Env, ctx: Ctx) {
   const data = checked.value;
 
   // Dezelfde inzending opnieuw (bv. na een haperende verbinding): zelfde inschrijving, geen tweede.
-  const again = await existing(db, data.submissionId);
-  if (again) return json(again, 200);
+  const again = await replay(db, data);
+  if (again) return again;
 
   const state = await counts(db, config.id);
-  if (state?.status !== "open") return fail(423, "GESLOTEN", "De inschrijvingen zijn gesloten.");
+  if (state?.status !== "open" || config.pendingDecisions.length)
+    return fail(423, "GESLOTEN", "De inschrijvingen zijn gesloten.");
   const ip = request.headers.get("CF-Connecting-IP");
   if (!(await verifyTurnstile(env, data.challenge, ip)))
     return fail(403, "TURNSTILE", "De controle tegen spam is mislukt. Probeer het opnieuw.");
+
+  // Telt vooraf; een paar gelijktijdige inzendingen kunnen er net over gaan, genoeg om leegboeken te verhinderen.
+  const client = (await sha256Hex(`inschrijving\n${connectionOf(ip)}`)).slice(0, 32);
+  await db.prepare("DELETE FROM submit_log WHERE created_at < ?1").bind(nowIso(-DAY_MS)).run();
+  const recent = await db.prepare("SELECT COUNT(*) AS n FROM submit_log WHERE client_key = ?1").bind(client).first<{ n: number }>();
+  if ((recent?.n ?? 0) >= MAX_PER_CONNECTION_PER_DAY)
+    return fail(429, "TE_VEEL_POGINGEN", "Er zijn vandaag al veel inschrijvingen via deze internetverbinding. Probeer morgen opnieuw of neem contact op met de vereniging.");
 
   const keys = data.participants.map((p) => p.childKey);
   const { results: known } = await db
@@ -153,6 +182,7 @@ export async function register(request: Request, env: Env, ctx: Ctx) {
       )
       .bind(config.id),
     db.prepare("INSERT INTO mail_outbox (registration_id, next_attempt_at) SELECT id, ?2 FROM registrations WHERE submission_id = ?1").bind(sub, now),
+    db.prepare("INSERT INTO submit_log (client_key, created_at) VALUES (?1, ?2)").bind(client, now),
   ];
   try {
     await db.batch(statements);
@@ -169,13 +199,13 @@ export async function register(request: Request, env: Env, ctx: Ctx) {
         { available });
     }
     if (message.includes("registrations.submission_id")) {
-      const same = await existing(db, sub);
-      if (same) return json(same, 200);
+      const same = await replay(db, data);
+      if (same) return same;
     }
     if (message.includes("participants.event_id, participants.child_key"))
       return fail(409, "DUBBEL", "Een of meer kinderen lijken al ingeschreven. Neem contact op als dat niet klopt.");
     throw error;
   }
-  ctx.waitUntil(processOutbox(env, 3).catch((e) => console.error("mail", errorMessage(e))));
-  return json(await existing(db, sub), 201);
+  // De bevestigingsmail staat nu in mail_outbox; het Apps Script haalt ze binnen enkele minuten op.
+  return json((await existing(db, sub))!.response, 201);
 }

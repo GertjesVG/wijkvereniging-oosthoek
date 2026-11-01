@@ -389,6 +389,32 @@ textarea:disabled {
 .inline-form .field {
   width: 130px;
 }
+.mail-preview {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.mail-preview summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+.mail-preview iframe {
+  display: block;
+  width: 100%;
+  max-width: 680px;
+  height: 70vh;
+  min-height: 420px;
+  margin: 10px 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+}
+.mail-preview pre {
+  max-width: 680px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 0.85rem;
+}
 .erase {
   margin-top: 14px;
   padding-top: 14px;

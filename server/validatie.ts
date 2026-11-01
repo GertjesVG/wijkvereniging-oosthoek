@@ -19,6 +19,9 @@ const email = /^[^\s@<>()[\]",;:\\]+@[^\s@<>()[\]",;:\\]+\.[^\s@<>()[\]",;:\\]{2
 // Huisnummer met eventuele letter of bus: 12, 12A, 12 bus 3, 12/3.
 const houseNumber = /^[0-9]{1,5}[a-z0-9 /.-]{0,12}$/i;
 const controlChars = /[\u0000-\u001f\u007f]/;
+// Voornamen komen in de bevestigingsmail: alleen letters, spatie, koppelteken en apostrof, dus geen links of code.
+const childName = /^\p{L}[\p{L}\p{M} '’-]*$/u;
+export const CHILD_NAME_HINT = "Vul een voornaam in: alleen letters, spatie, - of '.";
 const challengeField = "turnstileToken";
 
 const text = (value: unknown) => (typeof value === "string" ? value.trim().replace(/\s+/g, " ") : "");
@@ -81,6 +84,7 @@ export function validateRegistration(
     const item = (raw ?? {}) as Record<string, unknown>;
     const name = text(item.name);
     checkText(fields, `participants.${i}.name`, name, 1, 50, "de voornaam");
+    if (name && !fields[`participants.${i}.name`] && !childName.test(name)) fields[`participants.${i}.name`] = CHILD_NAME_HINT;
     let value: number | null = null;
     if (age) {
       value = typeof item.age === "number" ? item.age : Number.NaN;
@@ -117,6 +121,10 @@ export function cleanText(value: unknown, min: number, max: number) {
   const result = text(value);
   return result.length >= min && result.length <= max && !controlChars.test(result) ? result : null;
 }
+export const cleanChildName = (value: unknown) => {
+  const name = cleanText(value, 1, 50);
+  return name && childName.test(name) ? name : null;
+};
 export const cleanEmail = (value: unknown) => {
   const mail = text(value);
   return email.test(mail) && mail.length <= 254 ? mail : null;

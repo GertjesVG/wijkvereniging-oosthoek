@@ -1,5 +1,6 @@
 // Evenementen met online inschrijving, gedeeld door website, beheer en server (functions/).
-// Nieuw evenement = nieuw blok hieronder. Capaciteit en open/dicht staan in de database en wijzig je in het beheerdashboard;
+// Nieuw evenement = nieuw blok hieronder, plus een bevestigingsmail met dezelfde sleutel in bevestigingsmail.ts.
+// Capaciteit en open/dicht staan in de database en wijzig je in het beheerdashboard;
 // het evenement staat na de eerste beheeraanroep automatisch "dicht" in de database.
 export type RegistrationEvent = {
   id: string;
@@ -18,7 +19,11 @@ export type RegistrationEvent = {
   };
   // null = geen adres nodig. Lege straatlijst = vrij straatveld, nakijken in het beheer.
   area: { name: string; streets: string[] } | null;
-  mail: { subject: string; intro: string; closing: string };
+  // Uiterlijk op deze datum worden namen, e-mail en adressen gewist (privacyverklaring, knop in het beheer).
+  deleteBy: string;
+  // Beslissingen die de vereniging nog formeel moet goedkeuren. Zolang deze lijst niet leeg is,
+  // weigert de server het evenement open te zetten: echte inschrijvingen blijven dan onmogelijk.
+  pendingDecisions: string[];
 };
 
 export const registrationEvents: Record<string, RegistrationEvent> = {
@@ -38,13 +43,13 @@ export const registrationEvents: Record<string, RegistrationEvent> = {
     },
     // Officiële stratenlijst van Wijk Oosthoek ontbreekt nog; tot dan vrij straatveld.
     area: { name: "Wijk Oosthoek", streets: [] },
-    mail: {
-      subject: "Bevestiging inschrijving Sinterklaas in Oosthoek",
-      intro:
-        "Bedankt voor je inschrijving voor Sinterklaas in Oosthoek op zaterdag 28 november 2026. Elk ingeschreven kind krijgt één cadeautje van de Sint.",
-      closing:
-        "Klopt er iets niet of wil je annuleren? Antwoord dan op deze mail en vermeld je inschrijvingsnummer.",
-    },
+    // Voorstel; nog te bevestigen door de vereniging.
+    deleteBy: "2027-01-31",
+    pendingDecisions: [
+      "leeftijdsgrens (voorstel: 0 tot 12 jaar)",
+      "officiële stratenlijst van Wijk Oosthoek (nu vrij straatveld)",
+      "bewaartermijn (voorstel: wissen uiterlijk 31 januari 2027)",
+    ],
   },
 };
 

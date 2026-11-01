@@ -6,12 +6,15 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 5173 --strictPort",
     "build": "tsc -b && vite build",
-    "build:cloudflare": "npm run build -- --outDir _site/sinterklaas && node cloudflare-pages.mjs",
+    "build:cloudflare": "npm run build -- --outDir _site/sinterklaas && vite build --mode beheer && node cloudflare-pages.mjs",
+    "dev:api": "wrangler pages dev _site --ip 127.0.0.1 --port 8788",
+    "dev:beheer": "vite --mode beheer --host 127.0.0.1 --port 5174 --strictPort",
     "preview": "vite preview --host 127.0.0.1 --port 4173 --strictPort",
     "storybook": "storybook dev -p 6008 --host 127.0.0.1 --no-open --disable-telemetry",
     "build-storybook": "storybook build --disable-telemetry",
     "test": "node --test tests/*.test.mjs",
-    "test:browser": "playwright test"
+    "test:browser": "playwright test",
+    "test:inschrijving": "node tests/integratie/inschrijving.mjs"
   },
   "dependencies": {
     "@fontsource/cormorant-garamond": "^5.2.8",

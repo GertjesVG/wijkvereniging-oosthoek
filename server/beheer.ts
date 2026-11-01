@@ -6,6 +6,7 @@ import { registrationEvents, type RegistrationEvent } from "../src/inschrijving/
 import {
   addressKey,
   childKey,
+  connectionOf,
   errorMessage,
   fail,
   json,
@@ -13,17 +14,15 @@ import {
   readJson,
   sameText,
   sha256Hex,
-  type Ctx,
   type Env,
 } from "./basis.ts";
-import { processOutbox, sendOne } from "./mail.ts";
-import { cleanEmail, cleanHouseNumber, cleanText } from "./validatie.ts";
+import { CHILD_NAME_HINT, cleanChildName, cleanEmail, cleanHouseNumber, cleanText } from "./validatie.ts";
 
 const COOKIE = "oosthoek_beheer";
 const SESSION_SECONDS = 8 * 3600;
 const WINDOW_MS = 15 * 60_000;
-const MAX_FAILURES_PER_CLIENT = 10;
-const MAX_FAILURES_TOTAL = 100;
+// Per internetaansluiting; geen grens over iedereen samen, anders kan een buitenstaander het beheer blokkeren.
+const MAX_ATTEMPTS_PER_CLIENT = 10;
 const loginField = "password";
 const encoder = new TextEncoder();
 
@@ -70,21 +69,21 @@ export function trustedMutation(request: Request) {
 async function login(request: Request, env: Env) {
   const db = env.DB!;
   const body = await readJson(request);
-  const ip = request.headers.get("CF-Connecting-IP") ?? "onbekend";
-  const client = (await sha256Hex(`beheer-login\n${ip}`)).slice(0, 32);
-  await db.prepare("DELETE FROM login_attempts WHERE attempted_at < ?1").bind(nowIso(-WINDOW_MS)).run();
+  const client = (await sha256Hex(`beheer-login\n${connectionOf(request.headers.get("CF-Connecting-IP"))}`)).slice(0, 32);
+  // Eerst de poging noteren en dan pas tellen: zo krijgt ook een salvo gelijktijdige pogingen er samen hooguit 10.
+  await db.batch([
+    db.prepare("DELETE FROM login_attempts WHERE attempted_at < ?1").bind(nowIso(-WINDOW_MS)),
+    db.prepare("INSERT INTO login_attempts (client_key, attempted_at) VALUES (?1, ?2)").bind(client, nowIso()),
+  ]);
   const tally = await db
-    .prepare("SELECT COUNT(*) AS total, COALESCE(SUM(client_key = ?1), 0) AS mine FROM login_attempts")
+    .prepare("SELECT COUNT(*) AS mine FROM login_attempts WHERE client_key = ?1")
     .bind(client)
-    .first<{ total: number; mine: number }>();
-  if ((tally?.mine ?? 0) >= MAX_FAILURES_PER_CLIENT || (tally?.total ?? 0) >= MAX_FAILURES_TOTAL)
+    .first<{ mine: number }>();
+  if ((tally?.mine ?? 0) > MAX_ATTEMPTS_PER_CLIENT)
     return fail(429, "TE_VEEL_POGINGEN", "Te veel mislukte pogingen. Probeer het over een kwartier opnieuw.");
   const given = typeof body?.[loginField] === "string" ? (body[loginField] as string) : "";
   const match = given.length > 0 && sameText(await sha256Hex(given), await sha256Hex(env.ADMIN_PASSWORD!));
-  if (!match) {
-    await db.prepare("INSERT INTO login_attempts (client_key, attempted_at) VALUES (?1, ?2)").bind(client, nowIso()).run();
-    return fail(401, "NIET_INGELOGD", "Onjuist wachtwoord.");
-  }
+  if (!match) return fail(401, "NIET_INGELOGD", "Onjuist wachtwoord.");
   await db.prepare("DELETE FROM login_attempts WHERE client_key = ?1").bind(client).run();
   return json(null, 204, { "Set-Cookie": sessionCookie(await createSession(env), SESSION_SECONDS) });
 }
@@ -125,15 +124,20 @@ function toSummary(row: SummaryRow): AdminEventSummary {
     pickedUp: row.picked_up,
     mail: mail as Record<MailStatus, number>,
     personalDataErased: row.erased !== null,
+    pendingDecisions: config.pendingDecisions,
   };
 }
 
-async function summaries(db: D1Database) {
+// Elk evenement uit evenementen.ts krijgt bij het eerste gebruik een databaserij (dicht, standaardcapaciteit).
+async function ensureEvents(db: D1Database) {
   await db.batch(
     Object.values(registrationEvents).map((e) =>
       db.prepare("INSERT OR IGNORE INTO events (id, capacity) VALUES (?1, ?2)").bind(e.id, e.defaultCapacity),
     ),
   );
+}
+
+async function summaries(db: D1Database) {
   const { results } = await db.prepare(`${SUMMARY_SQL} ORDER BY e.id`).all<SummaryRow>();
   return results.filter((row) => registrationEvents[row.id]).map(toSummary);
 }
@@ -152,6 +156,8 @@ async function updateEvent(request: Request, db: D1Database, eventId: string) {
       return fail(400, "VALIDATIE", "Ongeldige status.");
     if (body.status === "open" && current.personalDataErased)
       return fail(409, "VERBODEN", "De gegevens van dit evenement zijn gewist; het kan niet opnieuw open.");
+    if (body.status === "open" && current.pendingDecisions.length)
+      return fail(409, "VERBODEN", `Nog niet vrijgegeven. Eerst goedkeuren: ${current.pendingDecisions.join("; ")}.`);
     await db.prepare("UPDATE events SET status = ?2, updated_at = ?3 WHERE id = ?1").bind(eventId, body.status, nowIso()).run();
   }
   if (body.capacity !== undefined) {
@@ -337,12 +343,24 @@ async function updateRegistration(request: Request, db: D1Database, id: number) 
       );
   }
   if (body.status && body.status !== current.status) {
-    const [from, to] = body.status === "cancelled" ? ["active", "cancelled"] : ["cancelled", "active"];
+    // Heractiveren zet alleen de kinderen terug die samen met de inschrijving geannuleerd werden, niet wie al apart geannuleerd was.
     statements.push(
-      db.prepare("UPDATE registrations SET status = ?2 WHERE id = ?1").bind(id, to),
-      db.prepare("UPDATE participants SET status = ?3, updated_at = ?4 WHERE registration_id = ?1 AND status = ?2").bind(id, from, to, now),
+      db.prepare("UPDATE registrations SET status = ?2 WHERE id = ?1").bind(id, body.status),
+      body.status === "cancelled"
+        ? db
+            .prepare(
+              `UPDATE participants SET status = 'cancelled', cancelled_with_registration = 1, picked_up_at = NULL, updated_at = ?2
+               WHERE registration_id = ?1 AND status = 'active'`,
+            )
+            .bind(id, now)
+        : db
+            .prepare(
+              `UPDATE participants SET status = 'active', cancelled_with_registration = 0, updated_at = ?2
+               WHERE registration_id = ?1 AND cancelled_with_registration = 1`,
+            )
+            .bind(id, now),
     );
-    if (to === "active") statements.push(capacityGuard(db, current.event_id));
+    if (body.status === "active") statements.push(capacityGuard(db, current.event_id));
   }
   return apply(db, statements, id);
 }
@@ -354,11 +372,11 @@ async function addParticipant(request: Request, db: D1Database, id: number) {
   if (current.status !== "active") return fail(409, "VERBODEN", "Heractiveer eerst de inschrijving.");
   const config = registrationEvents[current.event_id];
   const body = (await readJson(request)) ?? {};
-  const name = cleanText(body.name, 1, 50);
+  const name = cleanChildName(body.name);
   const age = ageFor(config, body.age);
   if (!name || age === undefined)
     return fail(400, "VALIDATIE", "Controleer naam en leeftijd.", {
-      fields: { ...(!name && { name: "Vul een voornaam in." }), ...(age === undefined && { age: "Ongeldige leeftijd." }) },
+      fields: { ...(!name && { name: CHILD_NAME_HINT }), ...(age === undefined && { age: "Ongeldige leeftijd." }) },
     });
   const now = nowIso();
   return apply(
@@ -393,9 +411,9 @@ async function updateParticipant(request: Request, db: D1Database, participantId
   let status = participant.status;
   let pickedUp = participant.picked_up_at;
   if (body.name !== undefined) {
-    const value = cleanText(body.name, 1, 50);
+    const value = cleanChildName(body.name);
     if (value) name = value;
-    else fields.name = "Vul een voornaam in.";
+    else fields.name = CHILD_NAME_HINT;
   }
   if (body.age !== undefined) {
     const value = ageFor(config, body.age);
@@ -416,15 +434,18 @@ async function updateParticipant(request: Request, db: D1Database, participantId
   if (Object.keys(fields).length) return fail(400, "VALIDATIE", "Controleer de gemarkeerde velden.", { fields });
   const statements = [
     db
-      .prepare("UPDATE participants SET name = ?2, age = ?3, status = ?4, picked_up_at = ?5, child_key = ?6, updated_at = ?7 WHERE id = ?1")
+      .prepare(
+        `UPDATE participants SET name = ?2, age = ?3, status = ?4, picked_up_at = ?5, child_key = ?6, updated_at = ?7,
+           cancelled_with_registration = 0 WHERE id = ?1`,
+      )
       .bind(participantId, name, age, status, pickedUp, childKey(name, registration.address_key, registration.email), nowIso()),
   ];
   if (status === "active" && participant.status !== "active") statements.push(capacityGuard(db, registration.event_id));
   return apply(db, statements, participant.registration_id);
 }
 
-async function resendConfirmation(env: Env, id: number) {
-  const db = env.DB!;
+// Zet de bevestiging opnieuw in de wachtrij met een nieuwe generatie: het script ziet een nieuw bericht-id.
+async function resendConfirmation(db: D1Database, id: number) {
   const current = await editable(db, id);
   if (!current) return fail(404, "NIET_GEVONDEN", "Onbekende inschrijving.");
   if (current.erased || current.status !== "active")
@@ -438,7 +459,7 @@ async function resendConfirmation(env: Env, id: number) {
     )
     .bind(id, nowIso())
     .first<{ id: number }>();
-  if (row) await sendOne(env, row.id);
+  if (!row) return fail(404, "NIET_GEVONDEN", "Onbekende inschrijving.");
   return json(await registrationById(db, id));
 }
 
@@ -532,13 +553,16 @@ async function erase(request: Request, db: D1Database, eventId: string) {
       )
       .bind(eventId, now),
     db.prepare("UPDATE events SET personal_data_erased_at = ?2, updated_at = ?2 WHERE id = ?1").bind(eventId, now),
+    // Ook de kortlopende misbruiklogboeken (onomkeerbaar gemaakte internetadressen).
+    db.prepare("DELETE FROM login_attempts"),
+    db.prepare("DELETE FROM submit_log"),
   ]);
   return json(await summary(db, eventId));
 }
 
 // ---------- Router ----------
 
-export async function handleAdmin(request: Request, env: Env, ctx: Ctx, path: string[]) {
+export async function handleAdmin(request: Request, env: Env, path: string[]) {
   if (!env.DB || !env.ADMIN_PASSWORD || env.ADMIN_PASSWORD.length < 16)
     return fail(503, "NIET_GECONFIGUREERD", "Het beheer is nog niet ingesteld.");
   const db = env.DB;
@@ -552,11 +576,9 @@ export async function handleAdmin(request: Request, env: Env, ctx: Ctx, path: st
     return fail(401, "NIET_INGELOGD", "Log opnieuw in.");
 
   if (section === "evenementen") {
-    if (!key && method === "GET") {
-      ctx.waitUntil(processOutbox(env, 3).catch((e) => console.error("mail", errorMessage(e))));
-      return json(await summaries(db));
-    }
-    const config = key ? registrationEvents[key] : undefined;
+    await ensureEvents(db);
+    if (!key && method === "GET") return json(await summaries(db));
+    const config = key && Object.hasOwn(registrationEvents, key) ? registrationEvents[key] : undefined;
     if (!config) return fail(404, "NIET_GEVONDEN", "Onbekend evenement.");
     if (!action && method === "PATCH") return updateEvent(request, db, config.id);
     if (action === "inschrijvingen" && method === "GET") return json(await listRegistrations(db, config.id));
@@ -567,7 +589,7 @@ export async function handleAdmin(request: Request, env: Env, ctx: Ctx, path: st
   if (Number.isInteger(id) && id > 0 && path.length <= 3) {
     if (section === "inschrijvingen" && !action && method === "PATCH") return updateRegistration(request, db, id);
     if (section === "inschrijvingen" && action === "deelnemers" && method === "POST") return addParticipant(request, db, id);
-    if (section === "inschrijvingen" && action === "mail" && method === "POST") return resendConfirmation(env, id);
+    if (section === "inschrijvingen" && action === "mail" && method === "POST") return resendConfirmation(db, id);
     if (section === "deelnemers" && !action && method === "PATCH") return updateParticipant(request, db, id);
   }
   return fail(404, "NIET_GEVONDEN", "Onbekende beheeropdracht.");

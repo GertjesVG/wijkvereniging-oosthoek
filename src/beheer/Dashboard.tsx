@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Download, LogOut, RefreshCw, Trash2 } from "lucide-react";
 import type { AdminEventSummary, AdminRegistration } from "../inschrijving/api";
+import { renderConfirmation } from "../inschrijving/bevestigingsmail";
 import { AdminError, api, describeError, exportUrl, setUnauthorizedHandler } from "./client";
 import { RegistrationItem } from "./RegistrationItem";
 import { ErrorNote, useAction } from "./ui";
@@ -59,6 +60,41 @@ function Stat({ label, value, hint }: { label: string; value: string | number; h
       <dd>{value}</dd>
       {hint && <small>{hint}</small>}
     </div>
+  );
+}
+
+// Toont de bevestigingsmail zoals ouders ze krijgen, met verzonnen voorbeeldgegevens. De tekst ligt vast in
+// src/inschrijving/bevestigingsmail.ts (goedgekeurd ontwerp; de meeste tekst staat in de illustraties).
+function MailPreview({ eventId }: { eventId: string }) {
+  const [open, setOpen] = useState(false);
+  const mail = useMemo(
+    () => (open ? renderConfirmation(eventId, { reference: "SINT26-0123", childNames: ["Noor", "Milan"] }) : null),
+    [open, eventId],
+  );
+  return (
+    <details className="mail-preview" onToggle={(e) => setOpen(e.currentTarget.open)}>
+      <summary>Bevestigingsmail bekijken (voorbeeld)</summary>
+      {mail ? (
+        <>
+          <p className="muted small">
+            Onderwerp: <strong>{mail.subject}</strong> · afzender: {mail.fromName} · voorbeeldgegevens, geen echte
+            inschrijving. Het script verstuurt wachtende mails elke 5 minuten.
+          </p>
+          {/* Beelden van dezelfde publicatie als het beheer, zodat het voorbeeld ook op een testadres klopt. */}
+          <iframe
+            title="Voorbeeld van de bevestigingsmail"
+            sandbox=""
+            srcDoc={mail.html.replaceAll("https://wijkvereniging-oosthoek.pages.dev/sinterklaas/email/", "/sinterklaas/email/")}
+          />
+          <details>
+            <summary>Tekstversie (voor mailprogramma's zonder opmaak)</summary>
+            <pre>{mail.text}</pre>
+          </details>
+        </>
+      ) : (
+        open && <p className="muted small">Voor dit evenement is geen bevestigingsmail ingesteld.</p>
+      )}
+    </details>
   );
 }
 
@@ -130,7 +166,7 @@ function EventPanel({
           aria-checked={open}
           className={`switch ${open ? "is-on" : ""}`}
           onClick={setStatus}
-          disabled={toggle.busy}
+          disabled={toggle.busy || (!open && event.pendingDecisions.length > 0)}
         >
           <span className="switch-track" aria-hidden="true">
             <span className="switch-thumb" />
@@ -138,6 +174,12 @@ function EventPanel({
           <span>Inschrijving {open ? "open" : "dicht"}</span>
         </button>
       </div>
+      {event.pendingDecisions.length > 0 && (
+        <p className="note">
+          De inschrijving kan nog niet open: eerst goedkeuren door de vereniging:{" "}
+          {event.pendingDecisions.join("; ")}.
+        </p>
+      )}
       <ErrorNote>{toggle.error}</ErrorNote>
 
       <dl className="stats">
@@ -181,6 +223,8 @@ function EventPanel({
         </a>
       </div>
       <ErrorNote>{cap.error}</ErrorNote>
+
+      <MailPreview eventId={event.id} />
 
       <div className="erase">
         {event.personalDataErased ? (
