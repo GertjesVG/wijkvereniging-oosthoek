@@ -62,6 +62,8 @@ async function finish(env: Env, id: number, generation: number, ok: boolean, att
 }
 
 // Claimt de mails die nu aan de beurt zijn (of waarvan de lease verlopen is) in één statement, dus nooit dubbel.
+// Een actieve inschrijving met "Adres nakijken" krijgt nog geen bevestiging: die mail wacht tot het adres goedgekeurd
+// of verbeterd is. Geannuleerde inschrijvingen worden wel opgehaald, zodat hun mail hieronder als mislukt afgesloten wordt.
 export async function claimMail(env: Env, max: number): Promise<MailJob[]> {
   const db = env.DB!;
   // Het script komt elke 5 minuten langs: ook het moment om verlopen persoonsgegevens te wissen (als dat aan staat).
@@ -70,9 +72,10 @@ export async function claimMail(env: Env, max: number): Promise<MailJob[]> {
   const { results: claimed } = await db
     .prepare(
       `UPDATE mail_outbox SET status = 'sending', attempts = attempts + 1, lease_until = ?1
-       WHERE id IN (SELECT id FROM mail_outbox
-         WHERE (status = 'pending' AND next_attempt_at <= ?2) OR (status = 'sending' AND lease_until <= ?2)
-         ORDER BY next_attempt_at LIMIT ?3)
+       WHERE id IN (SELECT o.id FROM mail_outbox o JOIN registrations r ON r.id = o.registration_id
+         WHERE ((o.status = 'pending' AND o.next_attempt_at <= ?2) OR (o.status = 'sending' AND o.lease_until <= ?2))
+           AND NOT (r.status = 'active' AND r.address_review = 1)
+         ORDER BY o.next_attempt_at LIMIT ?3)
        RETURNING id, generation, attempts, registration_id`,
     )
     .bind(nowIso(LEASE_MS), now, Math.max(0, Math.min(max, MAX_PER_CLAIM)))

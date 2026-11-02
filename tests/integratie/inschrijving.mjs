@@ -149,7 +149,7 @@ function family({ kids = 1, email, street, houseNumber, names, parent } = {}) {
     eventId: EVENT,
     submissionId: randomUUID(),
     parent: { name: parent ?? `Testouder ${n}`, email: email ?? `gezin${n}@example.org` },
-    address: { street: street ?? "Fictieve Dreef", houseNumber: houseNumber ?? String(n) },
+    address: { street: street ?? "Zandstraat", houseNumber: houseNumber ?? String(n) },
     participants: (names ?? Array.from({ length: kids }, (_, i) => `Kind${letters(n)}-${"abcdefgh"[i]}`)).map((name, i) => ({ name, age: 3 + (i % 9) })),
     confirmations: { area: true, privacy: true },
     turnstileToken: dummyAnswer,
@@ -235,7 +235,7 @@ try {
 
   let firstFamily;
   await step("gezinsinschrijving met meerdere kinderen en uniek nummer", async () => {
-    firstFamily = family({ names: ["Noor", "Milan", "N'Golo"], email: "fictief.gezin@example.org", street: "Fictieve Dreef", houseNumber: "7" });
+    firstFamily = family({ names: ["Noor", "Milan", "N'Golo"], email: "fictief.gezin@example.org", street: "Zandstraat", houseNumber: "7" });
     const res = await register(firstFamily);
     assert.equal(res.status, 201, res.text);
     assert.equal(res.data.reference, "SINT26-0001");
@@ -255,7 +255,7 @@ try {
   });
 
   await step("hetzelfde kind opnieuw = geweigerd; zelfde e-mail met ander kind = gemarkeerd als mogelijk dubbel", async () => {
-    const dup = await register(family({ names: ["noor"], street: "fictieve dreef", houseNumber: "7" }));
+    const dup = await register(family({ names: ["noor"], street: "zandstraat", houseNumber: "7" }));
     assert.equal(dup.status, 409);
     assert.equal(dup.data.error, "DUBBEL");
     const suspect = await register(family({ names: ["Lars"], email: "Fictief.Gezin@example.org" }));
@@ -490,6 +490,14 @@ try {
     assert.match(byRef(outside.data.reference).addressReview.reason, /hoort niet bij Wijk Oosthoek/);
     assert.match(byRef(unknown.data.reference).addressReview.reason, /niet in de officiële stratenlijst/);
     assert.equal((await summary()).addressReview, 2);
+    // Adres nakijken = nog geen bevestigingsmail; pas na goedkeuring of verbetering.
+    const mailRound = async () => {
+      const jobs = (await mailApi("wachtrij", { max: 50 })).data.jobs;
+      await mailApi("resultaat", { results: jobs.map((j) => ({ outboxId: j.outboxId, generation: j.generation, ok: true })) });
+      return jobs.map((j) => j.id.split(":")[0]).sort();
+    };
+    assert.deepEqual(await mailRound(), [ok.data.reference, inRange.data.reference].sort());
+    assert.deepEqual(await mailRound(), []);
     // Verbeterd naar een nummer binnen de grens: vlag weg. Verbeterd naar een straat buiten de wijk: vlag terug.
     const fixed = await admin("PATCH", `/inschrijvingen/${byRef(outside.data.reference).id}`, { houseNumber: "12" });
     assert.equal(fixed.data.addressReview, null);
@@ -499,6 +507,7 @@ try {
     const approved = await admin("PATCH", `/inschrijvingen/${byRef(unknown.data.reference).id}`, { addressApproved: true });
     assert.equal(approved.data.addressReview, null);
     assert.equal((await summary()).addressReview, 1);
+    assert.deepEqual(await mailRound(), [outside.data.reference, unknown.data.reference].sort());
     const csv = await admin("GET", `/evenementen/${EVENT}/export`);
     const [head, ...rows] = csv.text.trim().split("\r\n");
     assert.match(head, /"Huisnummer";"Adres nakijken";"Naam";"Leeftijd op evenementdag"/);
@@ -528,7 +537,7 @@ try {
   await step("bewaartermijn: na de wisdatum sluit en wist de ophaalronde van het Apps Script; de historiek blijft", async () => {
     assert.equal((await call("GET", `/api/evenementen/${EVENT}`)).data.status, "closed");
     assert.equal((await register(family())).status, 423);
-    // Eerst alleen een ophaalronde, zonder beheer: er wachtten 5 mails, maar na het wissen gaat er geen enkele meer weg.
+    // Eerst alleen een ophaalronde, zonder beheer: er wachtte nog een mail, maar na het wissen gaat er geen enkele meer weg.
     assert.equal((await mailApi("wachtrij", { max: 50 })).data.jobs.length, 0);
     await login();
     const s = await summary();

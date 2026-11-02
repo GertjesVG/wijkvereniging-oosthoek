@@ -178,7 +178,8 @@ export function RegistrationDetails({
             <p>
               <strong>Adres nakijken.</strong>{" "}
               {reg.addressReview.reason ?? "Gemarkeerd om na te kijken."} Ligt het adres toch in de wijk, keur het dan
-              goed; anders kun je het adres verbeteren of de inschrijving annuleren.
+              goed; anders kun je het adres verbeteren of de inschrijving annuleren. De bevestigingsmail vertrekt pas
+              na goedkeuring of verbetering.
             </p>
             <button type="button" className="btn btn-small" disabled={review.busy} onClick={approveAddress}>
               Adres goedgekeurd

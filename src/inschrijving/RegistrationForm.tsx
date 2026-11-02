@@ -233,7 +233,9 @@ function ConfirmationPanel({
           </p>
         )}
         <p>
-          Je ontvangt binnen enkele minuten een bevestigingsmail op{" "}
+          {result.addressReview
+            ? "Je ontvangt de bevestigingsmail zodra het adres is nagekeken, op "
+            : "Je ontvangt binnen enkele minuten een bevestigingsmail op "}
           <strong>{result.email}</strong>. Zie je niets? Kijk dan ook in je
           spam. Heb je vragen? Antwoord op die mail of stuur een bericht naar{" "}
           <a href={`mailto:${event.organisation.email}`}>
