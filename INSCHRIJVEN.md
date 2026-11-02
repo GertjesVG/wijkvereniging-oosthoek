@@ -22,7 +22,8 @@ Eén gratis inschrijfsysteem voor alle evenementen van VZW Wijkvereniging Oostho
 - **Historiek**: het beheer toont per evenement en editie het aantal inschrijvingen, kinderen, afgehaald, geannuleerd, de bezetting en de leeftijdsverdeling. Die cijfers blijven na het wissen van de persoonsgegevens. Laat oude evenementen daarom in `src/inschrijving/evenementen.ts` staan.
 - De bevestigingsmail komt eerst in een wachtrij. Het Apps Script haalt elke 5 minuten de wachtende mails op, verstuurt ze vanaf vzwoosthoek@gmail.com en meldt het resultaat terug. Mislukt een mail, dan volgt automatisch een nieuwe poging (na 1, 5, 15 minuten … tot een dag; na 9 pogingen "mislukt"). Het script onthoudt elke verstuurde mail, dus nooit twee keer dezelfde. Het script heeft geen webadres en kan dus niet als open mailrelais misbruikt worden.
 - De mail gebruikt het goedgekeurde feestelijke ontwerp (`src/inschrijving/bevestigingsmail.ts`, beelden in `public/email/`). Alleen inschrijvingsnummer en voornamen worden ingevuld, als echte tekst. In het beheer staat een voorbeeld.
-- Beheer: inschrijvingen zoeken en filteren, vrije plaatsen, mailstatus, corrigeren, annuleren, kind toevoegen, cadeau afgehaald, opnieuw mailen, CSV voor Excel, inschrijving open/dicht, capaciteit, en na het evenement alle persoonsgegevens wissen.
+- Beheer: inschrijvingen zoeken en filteren, vrije plaatsen, mailstatus, corrigeren, annuleren, kind toevoegen, cadeau afgehaald, opnieuw mailen, CSV voor Excel, inschrijving open/dicht, capaciteit, een knop naar de antwoorden van ouders in Gmail, en na het evenement alle persoonsgegevens wissen.
+- **Antwoorden van ouders**: de mail heeft geen aparte Reply-To, dus een antwoord komt binnen op vzwoosthoek@gmail.com. Een Gmail-filter (`subject:("Sinterklaas Oosthoek 2026")`, label toepassen, ingesteld op 2 november 2026) zet die antwoorden onder het bestaande label **2026 - Sinterklaas**; ze blijven ook in de inbox. De database blijft de officiële inschrijvingslijst; Gmail is alleen voor correspondentie. Geen CC of BCC naar de vereniging.
 
 ## Beveiliging in het kort
 
@@ -65,9 +66,17 @@ Al gedaan: het Cloudflare Pages-project `wijkvereniging-oosthoek` (Git-koppeling
 6. **Beheertoegang**: `/beheer/` met het wachtwoord uit stap 4. Geen Cloudflare Access op `pages.dev` (dat zou de hele site afschermen); kan later met een eigen domein.
 7. **Publiceren** (aparte GO): `feature/inschrijvingen` samenvoegen in `main` en pushen; Cloudflare publiceert automatisch, met de geheimen uit stap 4.
 8. **Apps Script** in het bestaande project (zie hieronder), pas na stap 7.
-9. **Productieproef** met fictieve gegevens: in `/beheer/` inloggen, inschrijving open, één inschrijving met het testadres, binnen 5 minuten de mail controleren in Gmail, testinschrijving annuleren, inschrijving weer dicht. Pas dan de echte inschrijving aankondigen.
+9. **Productieproef** met fictieve gegevens, op een gsm met mobiele data (met NordVPN verbonden laadt Turnstile niet op de pc van Gert):
+   1. In `/beheer/` inloggen, inschrijving open.
+   2. Inschrijving A: fictief kind, het goedgekeurde testadres als e-mail, een adres in de wijk (bv. Opstal 5). De echte Turnstile-controle moet slagen.
+   3. Inschrijving B: fictief kind, zelfde testadres, een adres buiten de lijst (bv. Gerststraat 3) → "Adres nakijken".
+   4. Beheer: A en B staan erin, B met de badge "Adres nakijken"; mailteller 2 wachtend (A en B).
+   5. Binnen 5 minuten: precies één mail voor A op het testadres, met het juiste nummer en de juiste voornaam; beheer toont A "verstuurd", B nog wachtend en géén mail voor B.
+   6. Vanaf het testadres op de mail van A antwoorden: het antwoord staat in Gmail van vzwoosthoek@gmail.com onder het label 2026 - Sinterklaas (knop "Antwoorden van ouders (Gmail)" in het beheer).
+   7. A en B annuleren, inschrijving weer dicht. B krijgt dan nooit een mail; bij de volgende ophaalronde staat de mail van B op "mislukt" (geannuleerd), dat is juist.
+   Pas dan (aparte GO) de echte inschrijving aankondigen.
 
-**Na het evenement, uiterlijk op de wisdatum:** inschrijving dicht, in het beheer "persoonsgegevens wissen" (of automatisch, zie Bewaartermijn), en in Gmail van vzwoosthoek@gmail.com de verstuurde bevestigingen verwijderen (map Verzonden, zoeken op `subject:"Bevestiging inschrijving — Sinterklaas Oosthoek 2026"`, daarna de prullenbak legen). Die kopieën bevatten voornamen en e-mailadressen.
+**Na het evenement, uiterlijk op de wisdatum:** inschrijving dicht, in het beheer "persoonsgegevens wissen" (of automatisch, zie Bewaartermijn), en in Gmail van vzwoosthoek@gmail.com de verstuurde bevestigingen verwijderen (map Verzonden, zoeken op `subject:"Bevestiging inschrijving — Sinterklaas Oosthoek 2026"`, daarna de prullenbak legen). Die kopieën bevatten voornamen en e-mailadressen; de antwoorden onder het label 2026 - Sinterklaas ook.
 
 ### Apps Script bijwerken (bestaand project, geen nieuw)
 
@@ -82,4 +91,4 @@ In het project "Oosthoek — Automatische bevestigingsmails" van vzwoosthoek@gma
 
 ## Een volgend evenement
 
-Een blok toevoegen in `src/inschrijving/evenementen.ts` (reeks, titel, datum, nummerprefix, capaciteit, wat er per deelnemer gevraagd wordt, wijk, wisdatum, `autoErase`) en een bevestigingsmail met dezelfde sleutel in `src/inschrijving/bevestigingsmail.ts`. Deelnemers, aantallen en mails blijven per evenement gescheiden. Het formulier op een nieuwe evenementpagina gebruikt dezelfde componenten.
+Een blok toevoegen in `src/inschrijving/evenementen.ts` (reeks, titel, datum, nummerprefix, capaciteit, wat er per deelnemer gevraagd wordt, wijk, wisdatum, `autoErase`) en een bevestigingsmail met dezelfde sleutel in `src/inschrijving/bevestigingsmail.ts`. Voor de antwoorden in Gmail: in Gmail een label volgens de bestaande gewoonte (bv. `2027 - Garageverkoop`, bestaat al) en een filter op woorden uit het nieuwe onderwerp, en die twee in het veld `gmail` van het sjabloon zetten; `npm test` controleert dat de filterwoorden in het onderwerp staan. Deelnemers, aantallen en mails blijven per evenement gescheiden. Het formulier op een nieuwe evenementpagina gebruikt dezelfde componenten.

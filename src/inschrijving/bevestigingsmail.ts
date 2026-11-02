@@ -10,6 +10,9 @@ export type ConfirmationTemplate = {
   fromName: string;
   html: string;
   text: string;
+  // Antwoorden van ouders in Gmail van vzwoosthoek@gmail.com: een filter op deze onderwerpwoorden zet ze onder dit
+  // label. Filter en label maak je in Gmail zelf (Instellingen → Filters); de woorden moeten in subject staan.
+  gmail?: { label: string; subjectFilter: string };
 };
 
 export type ConfirmationValues = { reference: string; childNames: string[] };
@@ -63,8 +66,18 @@ export const confirmationTemplates: Record<string, ConfirmationTemplate> = {
     fromName: "VZW Wijkvereniging Oosthoek",
     html: sinterklaasHtml,
     text: sinterklaasText,
+    // Bestaand label van de vereniging; filter subject:("Sinterklaas Oosthoek 2026") ingesteld op 2 november 2026.
+    gmail: { label: "2026 - Sinterklaas", subjectFilter: "Sinterklaas Oosthoek 2026" },
   },
 };
+
+// Link voor het beheer naar de antwoorden van ouders (Gmail-label van het verenigingsaccount); null = geen label.
+export function repliesInGmail(eventId: string) {
+  const label = confirmationTemplates[eventId]?.gmail?.label;
+  return label
+    ? `https://mail.google.com/mail/u/?authuser=vzwoosthoek@gmail.com#label/${encodeURIComponent(label).replace(/%20/g, "+")}`
+    : null;
+}
 
 const htmlEntities: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
 export const escapeHtml = (value: string) => value.replace(/[&<>"']/g, (c) => htmlEntities[c]);

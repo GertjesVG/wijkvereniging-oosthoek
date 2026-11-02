@@ -7,7 +7,7 @@ import { readFileSync } from "node:fs";
 import { randomBytes, randomUUID } from "node:crypto";
 import vm from "node:vm";
 import { registrationEvents, sinterklaasRegistration } from "../src/inschrijving/evenementen.ts";
-import { confirmationTemplates, joinNames, renderConfirmation } from "../src/inschrijving/bevestigingsmail.ts";
+import { confirmationTemplates, joinNames, renderConfirmation, repliesInGmail } from "../src/inschrijving/bevestigingsmail.ts";
 import { checkArea, cleanChildName, validateRegistration } from "../server/validatie.ts";
 import { deleteByPassed, dueForAutoErase, todayInBelgium } from "../server/wissen.ts";
 import { addressKey, connectionOf } from "../server/basis.ts";
@@ -36,6 +36,18 @@ test("feestelijke mail is exact het aangeleverde sjabloon en de tekstversie", ()
 
 test("elk evenement met inschrijving heeft een eigen bevestigingsmail", () => {
   for (const id of Object.keys(registrationEvents)) assert.ok(confirmationTemplates[id], id);
+});
+
+test("Gmail-filter vangt de antwoorden en het beheer linkt naar het juiste label", () => {
+  for (const [id, template] of Object.entries(confirmationTemplates)) {
+    if (template.gmail) assert.ok(template.subject.includes(template.gmail.subjectFilter), id);
+  }
+  // Zelfde adres als het label in Gmail zelf (nagekeken op 2 november 2026).
+  assert.equal(
+    repliesInGmail("sinterklaas-2026"),
+    "https://mail.google.com/mail/u/?authuser=vzwoosthoek@gmail.com#label/2026+-+Sinterklaas",
+  );
+  assert.equal(repliesInGmail("onbekend"), null);
 });
 
 test("mail vult inschrijvingsnummer en alle voornamen in, veilig als HTML", () => {

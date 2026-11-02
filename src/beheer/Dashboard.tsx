@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
-import { Download, LogOut, RefreshCw, Trash2 } from "lucide-react";
+import { Download, LogOut, Mail, RefreshCw, Trash2 } from "lucide-react";
 import type { AdminEventSummary, AdminRegistration } from "../inschrijving/api";
-import { renderConfirmation } from "../inschrijving/bevestigingsmail";
+import { renderConfirmation, repliesInGmail } from "../inschrijving/bevestigingsmail";
 import { AdminError, api, describeError, exportUrl, setUnauthorizedHandler } from "./client";
 import { RegistrationItem } from "./RegistrationItem";
 import { ErrorNote, formatDay, useAction } from "./ui";
@@ -152,6 +152,7 @@ function EventPanel({
   }
 
   const mailWaiting = event.mail.pending + event.mail.sending;
+  const gmail = repliesInGmail(event.id);
 
   return (
     <section className="panel" aria-labelledby="event-title">
@@ -227,6 +228,12 @@ function EventPanel({
           <Download size={15} aria-hidden="true" />
           CSV-export (Excel)
         </a>
+        {gmail && (
+          <a className="btn btn-small" href={gmail} target="_blank" rel="noopener noreferrer">
+            <Mail size={15} aria-hidden="true" />
+            Antwoorden van ouders (Gmail)
+          </a>
+        )}
       </div>
       <ErrorNote>{cap.error}</ErrorNote>
 
