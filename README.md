@@ -38,7 +38,7 @@ De lettertypen en illustraties worden lokaal geladen. De gegenereerde hoofdillus
 
 ## Nog aan te sluiten
 
-1. Echte inschrijfdienst inclusief bevestiging en eventueel voorraadbeheer. Het formulier is bewust uitgeschakeld: niets wordt opgeslagen of verstuurd. Een status aanpassen alleen maakt géén werkende inschrijfdienst. Voorwaarden en privacydetails moeten worden aangeleverd vóór aansluiting.
+1. Inschrijvingen en bevestigingsmails: gebouwd en lokaal getest, nog niet actief. Werking, beveiliging, tests en de activeringsstappen staan in [INSCHRIJVEN.md](INSCHRIJVEN.md). Tot de activering blijft het formulier dicht.
 2. Officiële vertrektijden, route en haltes. Die ontbreken in de bronnen. De klikbare OpenStreetMap is alleen een omgevingskaart van Beerse, geen route.
 3. GPS-dienst met actuele tijdstempel en correcte toestand bij ontbrekende/verouderde gegevens. Er is nu geen live GPS of nagebootste beweging.
 

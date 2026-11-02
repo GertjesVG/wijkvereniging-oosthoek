@@ -20,6 +20,8 @@ import {
 import { ButtonLink, PageHeading, Rules, StatusNote } from "./components";
 import { asset, dateLabel, event } from "./content/event";
 import sponsors from "./content/sponsors.json";
+import { sinterklaasRegistration } from "./inschrijving/evenementen";
+import { RegistrationPanel } from "./inschrijving/RegistrationPanel";
 import { ShareCode } from "./ShareCode";
 import "./pages.css";
 
@@ -84,71 +86,7 @@ function GiftPage() {
             Kleurplaat & wedstrijdregels
           </ButtonLink>
         </section>
-        <section
-          className="paper-panel registration-panel"
-          aria-labelledby="registration-heading"
-        >
-          <div className="panel-heading">
-            <span className="eyebrow">KINDERINSCHRIJVING</span>
-            <Gift size={24} aria-hidden="true" />
-          </div>
-          <h2 id="registration-heading">
-            Schrijf je kleine
-            <br />
-            Sinterklaasfan in
-          </h2>
-          <StatusNote>{event.registration.message}</StatusNote>
-          <p className="quiet-copy">
-            Dit is een voorbeeld van het toekomstige formulier. Je kunt nog geen
-            gegevens invullen of verzenden.
-          </p>
-          <fieldset
-            disabled
-            className="registration-fields"
-            aria-describedby="registration-unavailable"
-          >
-            <legend className="visually-hidden">
-              Nog niet actief inschrijfformulier
-            </legend>
-            <label>
-              Voornaam van het kind
-              <input
-                type="text"
-                placeholder="Nog niet beschikbaar"
-                autoComplete="off"
-              />
-            </label>
-            <label>
-              Leeftijd van het kind
-              <select defaultValue="">
-                <option value="">Nog niet beschikbaar</option>
-              </select>
-            </label>
-            <label>
-              E-mailadres ouder of voogd
-              <input
-                type="email"
-                placeholder="Nog niet beschikbaar"
-                autoComplete="off"
-              />
-            </label>
-            <button type="button" className="button button-primary" disabled>
-              <Gift size={17} aria-hidden="true" />
-              Inschrijving nog niet geopend
-            </button>
-          </fieldset>
-          <p className="form-footnote" id="registration-unavailable">
-            <ShieldCheck size={16} aria-hidden="true" />
-            Er worden nu geen persoonsgegevens verzameld.
-          </p>
-          <div className="confirmation-explanation">
-            <h3>En de bevestiging?</h3>
-            <p>
-              Een inschrijving is pas geldig na een echte bevestiging. Je kunt
-              hier op dit moment geen cadeautje reserveren.
-            </p>
-          </div>
-        </section>
+        <RegistrationPanel />
       </div>
     </>
   );
@@ -616,6 +554,13 @@ function ContactPage() {
   );
 }
 
+const registration = sinterklaasRegistration;
+const deleteByLabel = new Intl.DateTimeFormat("nl-BE", {
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+}).format(new Date(`${registration.deleteBy}T12:00:00`));
+
 function PrivacyPage() {
   const org = event.organisation;
   return (
@@ -624,21 +569,21 @@ function PrivacyPage() {
         eyebrow="ZORGVULDIG MET JOUW GEGEVENS"
         title="Privacy, helder uitgelegd."
       >
-        Hier lees je wat deze website op dit moment doet met persoonsgegevens en
-        welke koppelingen nog ontbreken.
+        Hier lees je welke gegevens we vragen als je kinderen inschrijft voor de
+        cadeauactie, waarvoor we ze gebruiken en wanneer we ze wissen.
       </PageHeading>
       <div className="privacy-layout">
         <aside className="privacy-summary">
           <ShieldCheck size={42} strokeWidth={1.4} aria-hidden="true" />
           <h2>
-            Je kunt rustig
+            Alleen wat nodig is
             <br />
-            rondkijken.
+            voor het cadeautje.
           </h2>
           <ul>
             <li>
               <Check size={17} aria-hidden="true" />
-              Geen actief inschrijfformulier
+              Per kind alleen voornaam en leeftijd
             </li>
             <li>
               <Check size={17} aria-hidden="true" />
@@ -646,7 +591,7 @@ function PrivacyPage() {
             </li>
             <li>
               <Check size={17} aria-hidden="true" />
-              Geen opslag van kinderdata
+              Gewist uiterlijk {deleteByLabel}
             </li>
             <li>
               <Check size={17} aria-hidden="true" />
@@ -667,24 +612,55 @@ function PrivacyPage() {
           </section>
           <section>
             <span className="section-number">02</span>
-            <h2>Deze lokale website</h2>
+            <h2>De website zelf</h2>
             <p>
-              Je bekijkt een testversie van de website. Een gedeeld previewadres
-              loopt via Cloudflare, dat daarbij verbindingsgegevens zoals je
-              IP-adres ontvangt. De pagina’s verzamelen geen inschrijvingen en
-              slaan geen namen, leeftijden of e-mailadressen op. Het
-              voorbeeldformulier is uitgeschakeld. De sponsorzoekfunctie werkt
-              alleen op deze pagina en wordt niet bewaard.
-            </p>
-            <p>
-              Er zijn geen advertentie- of analysetrackers toegevoegd. De
-              website gebruikt geen cookies of lokale browseropslag om bezoekers
-              te volgen. Afbeeldingen, lettertypen en downloads worden lokaal
-              geladen.
+              De website staat bij Cloudflare, dat daarbij verbindingsgegevens
+              zoals je IP-adres ontvangt. Er zijn geen advertentie- of
+              analysetrackers. De website gebruikt geen cookies of lokale
+              browseropslag om bezoekers te volgen. Afbeeldingen, lettertypen en
+              downloads komen van de website zelf. De sponsorzoekfunctie werkt
+              alleen op jouw scherm en wordt niet bewaard.
             </p>
           </section>
           <section>
             <span className="section-number">03</span>
+            <h2>Inschrijven voor de cadeauactie</h2>
+            <p>
+              Een ouder of verantwoordelijke schrijft de kinderen in. We vragen
+              je naam en e-mailadres, je straat en huisnummer (de actie is voor
+              kinderen uit {registration.area?.name ?? "de wijk"}) en per kind
+              alleen de voornaam en de leeftijd. Je krijgt een
+              inschrijvingsnummer.
+            </p>
+            <p>
+              We gebruiken die gegevens alleen om het juiste aantal cadeautjes
+              voor te bereiden, één cadeautje per kind te geven, je een
+              bevestiging te sturen en je vragen te beantwoorden. Of je adres in{" "}
+              {registration.area?.name ?? "de wijk"} ligt, kijken we na met de
+              wijkindeling van de gemeente Beerse. Inschrijven is
+              vrijwillig; zonder deze gegevens kunnen we geen cadeautje
+              voorzien.
+            </p>
+            <p>
+              Alleen de vrijwilligers van de vereniging die het
+              beheerwachtwoord kennen, zien de inschrijvingen. De gegevens staan
+              in een afgeschermde database bij Cloudflare. Een spamcontrole van
+              Cloudflare (Turnstile) bekijkt bij het verzenden of er een mens
+              achter het formulier zit. Tegen misbruik bewaren we hooguit een
+              dag een onomkeerbaar gemaakte code van je internetverbinding,
+              zonder je adres zelf. De bevestigingsmail vertrekt via het
+              Gmail-account van de vereniging ({org.email}) bij Google. We
+              verkopen of delen niets met anderen.
+            </p>
+            <p>
+              Uiterlijk op {deleteByLabel} wissen we namen, e-mailadressen en
+              adressen. Daarna houden we per editie alleen aantallen en
+              leeftijden over, zonder namen, om volgende edities voor te
+              bereiden.
+            </p>
+          </section>
+          <section>
+            <span className="section-number">04</span>
             <h2>Kaart en contactlinks</h2>
             <p>
               Een beschikbare omgevingskaart wordt pas geladen nadat je op de
@@ -699,29 +675,15 @@ function PrivacyPage() {
             </p>
           </section>
           <section>
-            <span className="section-number">04</span>
-            <h2>Voordat inschrijven mogelijk wordt</h2>
-            <p>
-              De inschrijfdienst, bevestigingsmail en GPS-dienst zijn nog niet
-              gekoppeld. Voor activering moet de vereniging vastleggen welke
-              gegevens nodig zijn, met welk doel en op welke grond ze verwerkt
-              worden, wie toegang heeft en wanneer ze verwijderd worden. De
-              bewaartermijn is nog niet vastgesteld.
-            </p>
-            <p>
-              Deze pagina wordt dan aangevuld met de gekozen diensten, de
-              informatie voor ouders en de manier waarop je een verzoek over je
-              gegevens kunt doen. Er worden nu geen persoonsgegevens gevraagd om
-              op een wachtlijst te komen.
-            </p>
-          </section>
-          <section>
             <span className="section-number">05</span>
             <h2>Een vraag of verzoek?</h2>
             <p>
-              Neem contact op met de vereniging via{" "}
-              <a href={`mailto:${org.email}`}>{org.email}</a>. Vermeld alleen
-              wat nodig is om je vraag te beantwoorden.
+              Je mag altijd vragen welke gegevens we van je hebben, ze laten
+              verbeteren of de inschrijving laten annuleren en wissen. Mail
+              daarvoor naar <a href={`mailto:${org.email}`}>{org.email}</a> en
+              vermeld je inschrijvingsnummer. Vermeld alleen wat nodig is om je
+              vraag te beantwoorden. Ben je niet tevreden over ons antwoord, dan
+              kun je terecht bij de Gegevensbeschermingsautoriteit.
             </p>
           </section>
         </div>

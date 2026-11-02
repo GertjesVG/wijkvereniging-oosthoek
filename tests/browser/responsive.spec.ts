@@ -66,11 +66,13 @@ test("hero behoudt gezicht, mijter en beide paarden bij verkleinen en maximalise
 
 test("zoomherverdeling 100–200% en bruikbare rechtstreekse paginalinks", async ({
   browser,
+  baseURL,
 }) => {
   // Browserzoom verandert CSS-viewport én pixelschaal. Emuleer beide samen;
   // dit test reflow, niet de zoomknop van de zichtbare Chrome-interface.
   for (const zoom of [1, 1.25, 1.5, 2]) {
     const context = await browser.newContext({
+      baseURL,
       viewport: {
         width: Math.round(1920 / zoom),
         height: Math.round(1080 / zoom),
@@ -78,7 +80,7 @@ test("zoomherverdeling 100–200% en bruikbare rechtstreekse paginalinks", async
       deviceScaleFactor: zoom,
     });
     const page = await context.newPage();
-    await page.goto("http://127.0.0.1:5173/");
+    await page.goto("/");
     await expect(page.locator("#hero-title")).toBeVisible();
     expect(
       await page.evaluate(
@@ -97,7 +99,7 @@ test("zoomherverdeling 100–200% en bruikbare rechtstreekse paginalinks", async
           "privacy",
         ]
       : ["contact"]) {
-      await page.goto("http://127.0.0.1:5173/#/" + route);
+      await page.goto("/#/" + route);
       await expect(page.locator("h1")).toBeVisible();
       expect(
         await page.evaluate(

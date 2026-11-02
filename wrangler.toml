@@ -1,0 +1,23 @@
+# Cloudflare Pages-configuratie van de website en het inschrijfsysteem (functions/).
+# Zodra dit bestand op main staat, is het de bron van waarheid voor bindings; geheimen staan alleen in Cloudflare
+# (Settings → Variables and Secrets): TURNSTILE_SECRET, ADMIN_PASSWORD (min. 16 tekens), MAIL_API_TOKEN (min. 32 tekens,
+# dezelfde waarde als de scripteigenschap MAIL_API_TOKEN van het Apps Script). Lokaal: .dev.vars (nooit in git).
+name = "wijkvereniging-oosthoek"
+pages_build_output_dir = "./_site"
+compatibility_date = "2026-10-01"
+
+[vars]
+# Openbare Turnstile-sitekey (widget voor wijkvereniging-oosthoek.pages.dev). Het formulier opent pas als ook het geheim
+# TURNSTILE_SECRET in Cloudflare staat; dat geheim komt nooit in dit bestand. Lokaal overschrijft .dev.vars deze waarde.
+TURNSTILE_SITE_KEY = "0x4AAAAAAFvuHbVEJkgOfaOF"
+
+# De binding "DB" komt uit dit bestand, niet uit het dashboard. Database in EU-jurisdictie.
+[[d1_databases]]
+binding = "DB"
+database_name = "oosthoek-inschrijvingen"
+database_id = "2885e43b-710d-4c88-b905-87d7ab91f72f"
+migrations_dir = "migrations"
+
+# Previews van andere takken krijgen bewust geen database: daar kan niemand echt inschrijven.
+[env.preview.vars]
+TURNSTILE_SITE_KEY = ""

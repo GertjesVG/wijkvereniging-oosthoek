@@ -3,6 +3,18 @@
 import { writeFileSync } from "node:fs";
 
 writeFileSync("_site/_redirects", "/ /sinterklaas/ 302\n");
+// Het beheer: niet in zoekmachines, niet in een frame van een andere site, niets in de browsercache.
+writeFileSync(
+  "_site/_headers",
+  [
+    "/beheer/*",
+    "  X-Robots-Tag: noindex, nofollow",
+    "  Referrer-Policy: no-referrer",
+    "  X-Frame-Options: DENY",
+    "  Cache-Control: no-store",
+    "",
+  ].join("\n"),
+);
 // Met een eigen 404.html valt Cloudflare niet terug op single-page-gedrag voor onbekende paden.
 writeFileSync(
   "_site/404.html",
