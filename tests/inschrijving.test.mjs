@@ -239,9 +239,9 @@ test("Sinterklaas 2026: beslissingen van de vereniging en de gemeentelijke strat
   assert.equal(config.area.streets.length, 27);
   assert.deepEqual(Object.keys(config.area.partialStreets), ["Steenbakkersdam", "Steenovensstraat"]);
   assert.equal(new Set([...config.area.streets, ...Object.keys(config.area.partialStreets)]).size, 29);
-  // Wisdatum is een voorstel: automatisch wissen blijft uit tot de vereniging akkoord gaat.
+  // Wisdatum goedgekeurd door de vereniging (Gert, 3 november 2026): vanaf die dag wist de server automatisch.
   assert.equal(config.deleteBy, "2027-01-31");
-  assert.equal(config.autoErase, false);
+  assert.equal(config.autoErase, true);
   assert.equal(config.series, "Sinterklaas in Oosthoek");
 });
 
@@ -251,9 +251,9 @@ test("bewaartermijn: automatisch wissen alleen met akkoord en vanaf de wisdatum 
   assert.equal(todayInBelgium(new Date("2027-01-30T23:01:00Z")), "2027-01-31");
   assert.equal(deleteByPassed(config, "2027-01-30"), false);
   assert.equal(deleteByPassed(config, "2027-01-31"), true);
-  assert.deepEqual(dueForAutoErase([config], "2027-06-01"), []);
-  assert.deepEqual(dueForAutoErase([{ ...config, autoErase: true }], "2027-01-30"), []);
-  assert.deepEqual(dueForAutoErase([{ ...config, autoErase: true }], "2027-01-31"), ["sinterklaas-2026"]);
+  assert.deepEqual(dueForAutoErase([{ ...config, autoErase: false }], "2027-06-01"), []);
+  assert.deepEqual(dueForAutoErase([config], "2027-01-30"), []);
+  assert.deepEqual(dueForAutoErase([config], "2027-01-31"), ["sinterklaas-2026"]);
 });
 
 test("beheersessie: alleen geldig met het juiste wachtwoord en binnen 8 uur", async () => {

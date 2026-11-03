@@ -1,7 +1,7 @@
 // Volledige keten lokaal: Pages Functions + D1 (wrangler pages dev, lokale database) met uitsluitend fictieve gegevens.
 // Gebruik: npm run test:inschrijving. Werkt op een tijdelijke kopie van functions/, server/ en de gedeelde bestanden.
 // Aanpassingen alleen in die kopie: in fase A een nog goed te keuren beslissing (zodat het evenement niet open kan),
-// in fase D automatisch wissen aan en daarna een wisdatum in het verleden, en overal wijst Turnstile-siteverify naar een
+// in fase D en G een wisdatum in het verleden (G ook een tweede, fictief evenement), en overal wijst Turnstile-siteverify naar een
 // lokale nabootsing die de Cloudflare-testsleutels volgt (1x… keurt goed, 2x… keurt af) en elke controle telt.
 // De echte code blijft ongewijzigd.
 import assert from "node:assert/strict";
@@ -467,9 +467,9 @@ try {
   });
   stop(server);
 
-  // Fase D: nieuwe database; adrescontrole, historiek en automatisch wissen (autoErase alleen in de kopie aan).
+  // Fase D: nieuwe database; adrescontrole, historiek en automatisch wissen (autoErase staat in de echte instelling aan).
   const dirD = path.join(work, "d");
-  prepare(dirD, (source) => replaceOnce(source, "autoErase: false", "autoErase: true"));
+  prepare(dirD);
   server = await start(dirD, serverVars(1));
   await step("adrescontrole: officiële straat binnen de grens = in orde; daarbuiten of onbekend = aanvaard en nakijken", async () => {
     await login();
@@ -651,6 +651,72 @@ try {
     await admin("POST", `/evenementen/${EVENT}/wissen`, { confirm: "WISSEN" });
     const rest = (await registrations())[0];
     assert.equal((await admin("DELETE", `/inschrijvingen/${rest.id}`, { confirm: rest.reference })).status, 409);
+  });
+  stop(server);
+
+  // Fase G: nieuwe database met de echte bewaarinstelling en een tweede, fictief evenement (alleen in de kopie).
+  // Eerst inschrijvingen in beide; daarna ligt alleen de wisdatum van Sinterklaas in het verleden.
+  const OTHER = "testfeest-2027";
+  const dirG = path.join(work, "g");
+  prepare(dirG, (source) =>
+    replaceOnce(
+      source,
+      "export const sinterklaasRegistration",
+      `registrationEvents["${OTHER}"] = { ...registrationEvents["${EVENT}"], id: "${OTHER}", series: "Testfeest", ` +
+        `title: "Testfeest 2027", date: "2027-04-03", referencePrefix: "TEST27-", deleteBy: "2099-12-31" };\n` +
+        "export const sinterklaasRegistration",
+    ),
+  );
+  server = await start(dirG, serverVars(1));
+  const byId = async (id) => (await admin("GET", "/evenementen")).data.find((e) => e.id === id);
+  const listOf = async (id) => (await admin("GET", `/evenementen/${id}/inschrijvingen`)).data;
+  const keep = (s) => ({ status: s.status, capacity: s.capacity, registrations: s.registrations, active: s.active, cancelled: s.cancelled, pickedUp: s.pickedUp, ages: s.ages });
+  let before;
+  await step("bewaartermijn (voorbereiding): echte instelling = automatisch wissen aan, wisdatum 31 januari 2027", async () => {
+    await login();
+    const s = await byId(EVENT);
+    assert.deepEqual([s.autoErase, s.deleteBy, s.deleteByPassed], [true, "2027-01-31", false]);
+    for (const id of [EVENT, OTHER]) await admin("PATCH", `/evenementen/${id}`, { status: "open" });
+    const a = await register(family({ names: ["Fien", "Jules"], email: "wis.test@example.org", parent: "Wis Testouder" }));
+    const b = await register(family({ names: ["Lotte"] }));
+    const c = await register({ ...family({ names: ["Rik"], email: "blijft@example.org", parent: "Blijf Testouder" }), eventId: OTHER });
+    assert.deepEqual([a.data.reference, b.data.reference, c.data.reference], ["SINT26-0001", "SINT26-0002", "TEST27-0001"]);
+    const sint = await listOf(EVENT);
+    await admin("PATCH", `/deelnemers/${sint.find((r) => r.reference === "SINT26-0001").participants[0].id}`, { pickedUp: true });
+    await admin("PATCH", `/deelnemers/${sint.find((r) => r.reference === "SINT26-0002").participants[0].id}`, { status: "cancelled" });
+    before = { sint: keep(await byId(EVENT)), other: keep(await byId(OTHER)) };
+    assert.deepEqual([before.sint.registrations, before.sint.active, before.sint.cancelled, before.sint.pickedUp], [2, 2, 1, 1]);
+    assert.equal(before.other.active, 1);
+  });
+  stop(server);
+
+  const eventsG = path.join(dirG, "src/inschrijving/evenementen.ts");
+  writeFileSync(eventsG, replaceOnce(readFileSync(eventsG, "utf8"), 'deleteBy: "2027-01-31"', 'deleteBy: "2026-01-01"'));
+  server = await start(dirG, serverVars(1));
+  await step("bewaartermijn: wist alleen Sinterklaas; anonieme historiek, nummers en het andere evenement blijven intact", async () => {
+    await login();
+    const sint = await byId(EVENT);
+    assert.deepEqual([sint.personalDataErased, sint.status], [true, "closed"]);
+    // Historiek: zelfde aantallen, leeftijdsverdeling, afgehaald en geannuleerd; capaciteit ongewijzigd.
+    assert.deepEqual({ ...keep(sint), status: before.sint.status }, before.sint);
+    const erased = await listOf(EVENT);
+    assert.deepEqual(erased.map((r) => r.reference).sort(), ["SINT26-0001", "SINT26-0002"]);
+    assert.ok(erased.every((r) => r.parentName === "[gewist]" && r.email === "[gewist]" && r.street === null && r.houseNumber === null && r.note === null));
+    assert.ok(erased.every((r) => r.participants.every((p) => p.name === "[gewist]" && p.age !== null)));
+    // Ook de CSV-export bevat daarna geen namen of e-mailadressen meer.
+    const csv = (await admin("GET", `/evenementen/${EVENT}/export`)).text;
+    for (const word of ["Fien", "Jules", "Lotte", "wis.test@example.org", "Wis Testouder", "Zandstraat"]) assert.ok(!csv.includes(word), word);
+    // Wachtende mails van het gewiste evenement vertrekken nooit meer; die van het andere evenement wel.
+    assert.deepEqual([sint.mail.pending, sint.mail.failed], [0, 2]);
+    const other = await byId(OTHER);
+    assert.deepEqual([other.personalDataErased, other.mail.pending], [false, 1]);
+    assert.deepEqual(keep(other), before.other);
+    const kept = await listOf(OTHER);
+    assert.deepEqual([kept[0].parentName, kept[0].email, kept[0].participants[0].name], ["Blijf Testouder", "blijft@example.org", "Rik"]);
+    // Het andere evenement blijft gewoon werken en telt verder; Sinterklaas kan niet meer open.
+    const next = await register({ ...family({ names: ["Mats"] }), eventId: OTHER });
+    assert.equal(next.data.reference, "TEST27-0002");
+    assert.equal((await admin("PATCH", `/evenementen/${EVENT}`, { status: "open" })).status, 409);
   });
 } catch (error) {
   failed = true;
