@@ -13,11 +13,13 @@
     "build-storybook": "storybook build --disable-telemetry",
     "test": "node --test tests/*.test.mjs",
     "test:browser": "playwright test",
-    "test:inschrijving": "node tests/integratie/inschrijving.mjs"
+    "test:inschrijving": "node tests/integratie/inschrijving.mjs",
+    "test:gps": "node tests/integratie/gps.mjs"
   },
   "dependencies": {
     "@fontsource/cormorant-garamond": "^5.2.8",
     "@fontsource/dm-sans": "^5.2.8",
+    "leaflet": "1.9.4",
     "lucide-react": "^0.577.0",
     "qrcode": "^1.5.4",
     "react": "19.3.1",
@@ -27,6 +29,7 @@
     "@cloudflare/workers-types": "5.20261101.1",
     "@playwright/test": "^1.58.0",
     "@storybook/react-vite": "10.6.5",
+    "@types/leaflet": "1.9.22",
     "@types/node": "^24.0.0",
     "@types/qrcode": "^1.5.6",
     "@types/react": "^19.2.0",

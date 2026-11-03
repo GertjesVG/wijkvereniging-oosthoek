@@ -2,8 +2,11 @@ import { Gift, MapPin, Download, ArrowRight, Radio } from "lucide-react";
 import { event, asset } from "./content/event";
 import sponsors from "./content/sponsors.json";
 import { ButtonLink, DateTag, FeatureCard } from "./components";
+import { useLiveGps } from "./gps/useLiveGps";
 
 export default function Home() {
+  // Eén keer kijken of de live GPS loopt; verversen gebeurt alleen op de routepagina.
+  const { view } = useLiveGps({ poll: false });
   return (
     <>
       <Hero />
@@ -75,7 +78,7 @@ export default function Home() {
                 <span>
                   Livekaart
                   <br />
-                  <strong>nog niet actief</strong>
+                  <strong>{view.kind === "off" ? "nog niet actief" : "nu actief"}</strong>
                 </span>
               </div>
             </div>

@@ -3,6 +3,7 @@ import { Download, LogOut, Mail, RefreshCw, Trash2 } from "lucide-react";
 import type { AdminEventSummary, AdminRegistration } from "../inschrijving/api";
 import { renderConfirmation, repliesInGmail } from "../inschrijving/bevestigingsmail";
 import { AdminError, api, describeError, exportUrl, setUnauthorizedHandler } from "./client";
+import { GpsPanel } from "./GpsPanel";
 import { RegistrationItem } from "./RegistrationItem";
 import { ErrorNote, formatDay, useAction } from "./ui";
 
@@ -673,6 +674,7 @@ function Dashboard({
         </div>
       </header>
       <main className="page">
+        <GpsPanel />
         {!event ? (
           <p className="empty">Er zijn geen evenementen.</p>
         ) : (

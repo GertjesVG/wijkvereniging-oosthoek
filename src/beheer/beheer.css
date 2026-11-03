@@ -112,6 +112,8 @@ button {
   margin: 0 auto;
   padding: 18px 16px 60px;
   display: grid;
+  /* minmax(0, …): een brede tabel scrolt in haar eigen .table-wrap in plaats van de hele pagina op de gsm te verbreden. */
+  grid-template-columns: minmax(0, 1fr);
   gap: 18px;
 }
 .panel {
@@ -379,6 +381,20 @@ textarea:disabled {
   gap: 12px 24px;
   align-items: flex-end;
   justify-content: space-between;
+}
+/* Live GPS: tekst in plaats van grote cijfers, en een knop die op de gsm makkelijk te raken is. */
+.gps-panel .stat dd {
+  font-size: 1.05rem;
+  padding: 3px 0;
+}
+.gps-controls {
+  justify-content: flex-start;
+  gap: 12px 16px;
+}
+.gps-main {
+  min-height: 48px;
+  padding-inline: 22px;
+  font-size: 1rem;
 }
 .inline-form {
   display: flex;

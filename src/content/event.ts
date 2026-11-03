@@ -20,10 +20,13 @@ export const event = {
     status: "unavailable" as "unavailable" | "closed",
     message: "De online inschrijving is nog niet beschikbaar.",
   },
+  // Live GPS van de huifkar: het beheer zet ze aan en uit (GPS.md). De route- en startpagina vragen de status op.
   gps: {
-    status: "unavailable" as const,
-    message: "De livepositie is nog niet beschikbaar.",
+    offMessage: "De live GPS is nu niet actief. Tijdens de rondrit volg je hier de huifkar.",
+    dayMessage: "Tijdens de rondrit volg je de huifkar live op de routepagina.",
   },
+  // Letterlijk zo aangeleverd door de vereniging (3 november 2026): geen straat of huisnummer toevoegen.
+  departure: "Vertrek om 10.30 uur aan Wijkhuis Oosthoek.",
   programme: [
     {
       title: "Sinterklaas in de wijk",

@@ -16,6 +16,7 @@ import {
   sha256Hex,
   type Env,
 } from "./basis.ts";
+import { handleGpsAdmin } from "./gps.ts";
 import { CHILD_NAME_HINT, checkArea, cleanChildName, cleanEmail, cleanHouseNumber, cleanText } from "./validatie.ts";
 import { deleteByPassed, eraseExpired, eraseStatements } from "./wissen.ts";
 
@@ -628,6 +629,8 @@ export async function handleAdmin(request: Request, env: Env, path: string[]) {
   if (!(await validSession(env, request.headers.get("Cookie"))))
     return fail(401, "NIET_INGELOGD", "Log opnieuw in.");
 
+  // Live GPS: status, Start en Stop (server/gps.ts).
+  if (section === "gps" && !key) return handleGpsAdmin(request, env, db);
   if (section === "evenementen") {
     await ensureEvents(db);
     await eraseExpired(db);
