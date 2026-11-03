@@ -613,106 +613,202 @@
   color: var(--muted);
   margin: 18px 0;
 }
+/* Sponsorkaarten: één kaart voor alle 33 sponsors (ontwerp: Zeepventje-kaart uit Documentatie\Sponsors).
+   Elke kaart is een subgrid van zes rijen, zodat logo, scheidingslijnen en knoppen in een rij op dezelfde
+   hoogte staan, hoe lang de naam ook is en hoeveel contactgegevens er ook zijn. */
 .sponsor-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 26px 24px;
 }
 .sponsor-card {
-  position: relative;
-  border: 1px solid #e6d8c1;
-  background: #fffdf8;
-  border-radius: 11px;
-  padding: 26px 23px;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  transition:
-    box-shadow 0.2s,
-    border-color 0.2s;
-}
-.sponsor-card:hover {
-  border-color: #c8ab77;
-  box-shadow: 0 8px 24px #684a2110;
-}
-.sponsor-star {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  color: #c59c56;
-  font-size: 1.05rem;
-}
-.sponsor-category {
-  font-size: 0.65rem;
-  color: var(--muted);
-  margin: 0 20px 12px 0;
-  line-height: 1.5 !important;
-  min-height: 2.9em;
-}
-.sponsor-card h2 {
-  font-size: 1.75rem;
-  color: var(--red);
-  margin: 0 0 16px;
-  line-height: 1.05;
-}
-.sponsor-address {
-  display: flex;
-  gap: 7px;
-  font-size: 0.78rem;
-  color: var(--muted);
-  margin: 0 0 20px;
-  line-height: 1.5 !important;
-}
-.sponsor-address svg {
-  flex: none;
-  margin-top: 3px;
-}
-.sponsor-contacts {
-  margin-top: auto;
-  padding-top: 14px;
-  border-top: 1px solid #eee5d7;
   display: grid;
-  gap: 9px;
+  grid-row: span 6;
+  grid-template-rows: subgrid;
+  row-gap: 0;
+  min-width: 0;
+  padding: 22px 24px 18px;
+  border: 1px solid #ceb078;
+  border-radius: 18px;
+  background: linear-gradient(115deg, #fffdf9, #fffaf3);
+  box-shadow:
+    0 12px 24px #65481a14,
+    0 2px 4px #65481a0f;
 }
-.sponsor-contacts a {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  overflow-wrap: anywhere;
-  word-break: break-word;
+@supports not (grid-template-rows: subgrid) {
+  .sponsor-card {
+    display: flex;
+    flex-direction: column;
+  }
+  .sponsor-details {
+    margin-top: auto !important;
+  }
+}
+.sponsor-logo {
+  display: grid;
+  /* vaste rij en kolom: zo is 100% van het logo de zone zelf en wordt er nooit iets afgesneden */
+  grid-template: minmax(0, 1fr) / minmax(0, 1fr);
+  place-items: center;
+  aspect-ratio: 5 / 2;
+  min-width: 0;
+  margin-bottom: 20px;
+  border-radius: 12px;
+  overflow: hidden;
+  container-type: inline-size;
+}
+/* Logo met een eigen vlak (achtergrondkleur via backdrop): ademruimte binnen dat vlak. */
+.sponsor-logo.has-backdrop {
+  padding: 3% 4%;
+  box-shadow: inset 0 0 0 1px #6a4b1a14;
+}
+.sponsor-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+/* Sponsor zonder bevestigd logo: de naam, verzorgd gezet, nooit een verzonnen beeldmerk. */
+.sponsor-nameplate {
+  padding: 6%;
+  background: linear-gradient(160deg, #fbf3e4, #f5e9d3);
+  box-shadow: inset 0 0 0 1px #e4d0a6;
+  text-align: center;
+}
+.sponsor-nameplate span {
+  font-family: var(--serif);
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: 0.01em;
   color: var(--navy);
-  text-decoration: none;
-  font-size: 0.73rem;
+  overflow-wrap: anywhere;
 }
-.sponsor-contacts a:hover {
+.sponsor-nameplate.is-short span {
+  font-size: 20cqi;
+  letter-spacing: 0.12em;
+}
+.sponsor-nameplate.is-medium span {
+  font-size: 13cqi;
+}
+.sponsor-nameplate.is-long span {
+  font-size: 10cqi;
+}
+.sponsor-eyebrow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 8px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  line-height: 1.4 !important;
+  text-transform: uppercase;
+  color: #8f6a2a;
+}
+.sponsor-eyebrow span {
+  font-size: 1.15rem;
+  line-height: 1;
+  letter-spacing: 0;
+  color: #bc914e;
+}
+.sponsor-title {
+  margin-bottom: 18px;
+}
+.sponsor-title h2 {
+  margin: 0 0 8px;
+  font-size: 2.05rem;
+  font-weight: 600;
+  line-height: 1.04;
+  letter-spacing: -0.01em;
+  color: var(--red);
+  overflow-wrap: break-word;
+}
+.sponsor-title p {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.4 !important;
+  color: #23384f;
+}
+.sponsor-details {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  margin: 0;
+  padding: 14px 0 0;
+  list-style: none;
+  border-top: 1px solid #d6bb83;
+}
+.sponsor-details li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: #23384f;
+}
+.sponsor-details li > span {
+  min-width: 0;
+  padding: 4px 0;
+  overflow-wrap: anywhere;
+}
+.sponsor-details svg {
+  flex: none;
+  margin-top: 4px;
+  color: var(--red);
+}
+.sponsor-details a {
+  display: inline-block;
+  color: inherit;
+  text-decoration: none;
+}
+.sponsor-details a:hover {
+  color: var(--red);
   text-decoration: underline;
   text-underline-offset: 3px;
-  color: var(--red);
 }
-.sponsor-contacts svg {
-  color: var(--red);
-  flex: none;
+.sponsor-phones a + a::before {
+  content: "/";
+  display: inline-block;
+  margin: 0 0.45em;
+  color: #23384f;
 }
-.sponsor-website {
-  display: inline-flex;
+.sponsor-action {
+  display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-top: 20px;
-  padding: 12px 14px;
-  border: 1px solid #dbc9aa;
-  border-radius: 7px;
+  min-height: 50px;
+  margin: 18px 0 16px;
+  padding: 11px 18px;
+  border: 1.5px solid var(--red);
+  border-radius: 11px;
   color: var(--red);
+  font-size: 0.95rem;
+  font-weight: 700;
   text-decoration: none;
-  font-size: 0.78rem;
-  font-weight: 600;
+  transition: background-color 0.2s;
 }
-.sponsor-website:hover {
-  background: #f5ead9;
-  border-color: #b18a4b;
+.sponsor-action:hover {
+  background: #a8002b0d;
 }
-.sponsor-website svg {
+.sponsor-action svg {
   flex: none;
+}
+.sponsor-thanks {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  padding-top: 14px;
+  border-top: 1px solid #caaa6a;
+  font-size: 0.88rem;
+  font-style: italic;
+  line-height: 1.35 !important;
+  color: #23384f;
+}
+.sponsor-thanks svg {
+  flex: none;
+  color: var(--red);
 }
 .empty-search {
   text-align: center;
@@ -1016,22 +1112,13 @@
     margin-bottom: 15px;
   }
   .sponsor-grid {
-    gap: 13px;
+    gap: 18px;
   }
   .sponsor-card {
-    padding: 22px 17px;
+    padding: 18px 18px 14px;
   }
-  .sponsor-card h2 {
-    font-size: 1.6rem;
-  }
-  .sponsor-category {
-    font-size: 0.62rem;
-  }
-  .sponsor-address {
-    font-size: 0.72rem;
-  }
-  .sponsor-contacts a {
-    font-size: 0.7rem;
+  .sponsor-title h2 {
+    font-size: 1.85rem;
   }
   .sponsor-source-note {
     flex-direction: column;
@@ -1073,24 +1160,6 @@
   }
 }
 @media (max-width: 460px) {
-  .sponsor-grid {
-    grid-template-columns: 1fr;
-  }
-  .sponsor-card {
-    padding: 24px;
-  }
-  .sponsor-category {
-    min-height: 0;
-  }
-  .sponsor-card h2 {
-    font-size: 1.9rem;
-  }
-  .sponsor-contacts a {
-    font-size: 0.8rem;
-  }
-  .sponsor-address {
-    font-size: 0.8rem;
-  }
   .sponsor-search input {
     font-size: 0.72rem;
   }
@@ -1116,8 +1185,13 @@
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .sponsor-card,
+  .sponsor-action,
   .faq-list summary svg {
     transition: none;
+  }
+}
+@media (max-width: 600px) {
+  .sponsor-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

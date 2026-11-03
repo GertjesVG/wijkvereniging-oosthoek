@@ -6,6 +6,7 @@ import { verifiedPublicUrl } from "../src/content/public-website.ts";
 import { event } from "../src/content/event.ts";
 import { reglement } from "../src/content/reglement.ts";
 import { sinterklaasRegistration } from "../src/inschrijving/evenementen.ts";
+import { sponsorLogos } from "../src/content/sponsor-logos.ts";
 const sponsors = JSON.parse(
   readFileSync(
     new URL("../src/content/sponsors.json", import.meta.url),
@@ -61,6 +62,35 @@ test("alleen de 20 bevestigde eigen sponsorwebsites worden aangeboden", () => {
   assert.equal(
     sponsors.find((s) => s.name === "Gipsmachinecenter G.M.C.").address,
     "Leemstraat 42, Beerse",
+  );
+});
+
+test("24 sponsorlogo’s op naam gekoppeld en als eigen bestand aanwezig; 9 sponsors krijgen een naamplaat", () => {
+  const names = new Set(sponsors.map((s) => s.name));
+  assert.equal(Object.keys(sponsorLogos).length, 24);
+  for (const [name, logo] of Object.entries(sponsorLogos)) {
+    assert.ok(names.has(name), name);
+    assert.match(logo.file, /^sponsor-[a-z0-9-]+\.(webp|svg)$/);
+    assert.ok(
+      existsSync(new URL(`../public/assets/${logo.file}`, import.meta.url)),
+      logo.file,
+    );
+    assert.ok(logo.width > 0 && logo.height > 0, name);
+    if (logo.backdrop) assert.match(logo.backdrop, /^#[0-9a-f]{6}$/);
+  }
+  assert.deepEqual(
+    sponsors.filter((s) => !sponsorLogos[s.name]).map((s) => s.name),
+    [
+      "Taxi Adrienne EDLIH",
+      "GNP",
+      "Bouwwerken Rombouts",
+      "Tegeldiscount",
+      "Garage Peeters Wim",
+      "Scheyltjens Wim",
+      "Grafico Printing",
+      "SIS",
+      "Selouco",
+    ],
   );
 });
 

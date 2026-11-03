@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import { PNG } from "pngjs";
 import jsQR from "jsqr";
 import sponsors from "../../src/content/sponsors.json" with { type: "json" };
+import { sponsorLogos } from "../../src/content/sponsor-logos";
 
 test("geen diploma/flyeractie, 33 sponsors en uitsluitend bevestigde websiteknoppen", async ({
   page,
@@ -38,7 +39,24 @@ test("geen diploma/flyeractie, 33 sponsors en uitsluitend bevestigde websiteknop
       await expect(link).toHaveAttribute("target", "_blank");
       await expect(link).toHaveAttribute("rel", "noopener noreferrer");
     } else await expect(card.locator(".sponsor-website")).toHaveCount(0);
+    // Eén actie per kaart: website, anders e-mail, anders bellen.
+    await expect(card.locator(".sponsor-action")).toHaveAttribute(
+      "href",
+      sponsor.website ??
+        (sponsor.email
+          ? `mailto:${sponsor.email}`
+          : `tel:${sponsor.phones[0].replace(/[^\d+]/g, "")}`),
+    );
+    const logo = sponsorLogos[sponsor.name];
+    await expect(card.locator(".sponsor-logo img")).toHaveCount(logo ? 1 : 0);
+    if (logo)
+      await expect(card.locator(".sponsor-logo img")).toHaveAttribute(
+        "alt",
+        `Logo van ${sponsor.name}`,
+      );
+    else await expect(card.locator(".sponsor-nameplate")).toHaveText(sponsor.name);
   }
+  await expect(page.locator(".sponsor-action")).toHaveCount(33);
   const publicUrl =
     "https://wijkvereniging-oosthoek.pages.dev/sinterklaas/";
   await page.goto("/#/contact");

@@ -300,9 +300,6 @@ button:disabled {
   min-height: 2.75rem;
   align-items: center;
 }
-.sponsor-contacts a {
-  min-height: 2rem;
-}
 
 @media (max-width: 75rem) {
   .menu-toggle {
