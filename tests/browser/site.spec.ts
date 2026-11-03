@@ -1,6 +1,9 @@
 import { test, expect } from "@playwright/test";
 import { mkdir } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
+// Lege kaarttegel (1×1 PNG): kaarttests zonder verbinding met OpenStreetMap.
+const TILE =
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
 const routes = [
   "home",
   "cadeauactie",
@@ -95,23 +98,28 @@ test("geen nepinschrijving, geen ongevraagde externe kaart of kinderopslag", asy
   expect(
     await page.evaluate(() => localStorage.length + sessionStorage.length),
   ).toBe(0);
-  await page.route("https://www.openstreetmap.org/**", (r) =>
-    r.fulfill({
-      body: "<html><body>Kaarttest zonder externe verbinding</body></html>",
-      contentType: "text/html",
-    }),
+  // De stratenlijst staat er zonder kaart; de kaart (OpenStreetMap) pas na een klik, hier met lege tegels.
+  const streets = page.locator(".route-list button");
+  await expect(streets).toHaveCount(24);
+  await expect(streets.first()).toHaveText("1Gorenstraat");
+  await expect(streets.last()).toHaveText("24Oosteneinde");
+  await expect(page.locator(".leaflet-container")).toHaveCount(0);
+  await page.route("https://tile.openstreetmap.org/**", (r) =>
+    r.fulfill({ body: Buffer.from(TILE, "base64"), contentType: "image/png" }),
   );
-  await page.getByRole("button", { name: "Bekijk de omgevingskaart" }).click();
-  await expect(page.locator("iframe")).toHaveAttribute(
-    "src",
-    /openstreetmap.org\/export\/embed/,
-  );
+  await page.getByRole("button", { name: "Bekijk de route op de kaart" }).click();
   await expect(
-    page.getByRole("region", {
-      name: "Omgevingskaart van Beerse",
-      exact: true,
-    }),
+    page.getByRole("region", { name: "Kaart met de route van de huifkar", exact: true }),
   ).toBeVisible();
+  await expect(page.locator(".route-number")).toHaveCount(24);
+  await expect(page.locator(".sint-marker")).toHaveCount(0);
+  await expect(page.locator(".route-legend")).toContainText("Indicatieve kaart");
+  await expect(page.locator(".leaflet-control-attribution")).toContainText("OpenStreetMap");
+  expect(external.every((url) => url.startsWith("https://tile.openstreetmap.org/"))).toBe(true);
+  // Een straat in de lijst kiezen: dezelfde straat licht op de kaart op.
+  await streets.nth(20).click();
+  await expect(streets.nth(20)).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator(".route-number.is-active")).toHaveText("21");
 });
 test("lokale links en downloads leveren bestanden, FAQ opent", async ({
   page,

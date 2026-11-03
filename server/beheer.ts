@@ -5,10 +5,12 @@ import type { AdminEventSummary, AdminRegistration, MailStatus } from "../src/in
 import { registrationEvents, type RegistrationEvent } from "../src/inschrijving/evenementen.ts";
 import {
   addressKey,
+  capacityGuard,
   childKey,
   connectionOf,
   errorMessage,
   fail,
+  freePlaces,
   json,
   nowIso,
   readJson,
@@ -92,7 +94,7 @@ async function login(request: Request, env: Env) {
 
 // ---------- Overzicht per evenement ----------
 
-const SUMMARY_SQL = `SELECT e.id, e.status, e.capacity, e.personal_data_erased_at AS erased,
+const SUMMARY_SQL = `SELECT e.id, e.status, e.capacity, e.capacity_limited AS limited, e.personal_data_erased_at AS erased,
   (SELECT COUNT(*) FROM participants p WHERE p.event_id = e.id AND p.status = 'active') AS active,
   (SELECT COUNT(*) FROM participants p WHERE p.event_id = e.id AND p.status = 'active' AND p.picked_up_at IS NOT NULL) AS picked_up,
   (SELECT COUNT(*) FROM registrations r WHERE r.event_id = e.id AND r.status = 'active') AS registrations,
@@ -108,6 +110,7 @@ type SummaryRow = {
   id: string;
   status: "open" | "closed";
   capacity: number;
+  limited: number;
   erased: string | null;
   active: number;
   picked_up: number;
@@ -126,9 +129,9 @@ function toSummary(row: SummaryRow): AdminEventSummary {
     title: config.title,
     date: config.date,
     status: row.status,
-    capacity: row.capacity,
+    capacity: row.limited === 1 ? row.capacity : null,
     active: row.active,
-    available: Math.max(0, row.capacity - row.active),
+    available: freePlaces(row.limited, row.capacity, row.active),
     registrations: row.registrations,
     pickedUp: row.picked_up,
     mail: mail as Record<MailStatus, number>,
@@ -147,11 +150,13 @@ function toSummary(row: SummaryRow): AdminEventSummary {
   };
 }
 
-// Elk evenement uit evenementen.ts krijgt bij het eerste gebruik een databaserij (dicht, standaardcapaciteit).
+// Elk evenement uit evenementen.ts krijgt bij het eerste gebruik een databaserij (dicht, standaardmaximum of geen).
 async function ensureEvents(db: D1Database) {
   await db.batch(
     Object.values(registrationEvents).map((e) =>
-      db.prepare("INSERT OR IGNORE INTO events (id, capacity) VALUES (?1, ?2)").bind(e.id, e.defaultCapacity),
+      db
+        .prepare("INSERT OR IGNORE INTO events (id, capacity, capacity_limited) VALUES (?1, ?2, ?3)")
+        .bind(e.id, e.defaultCapacity ?? 0, e.defaultCapacity === null ? 0 : 1),
     ),
   );
 }
@@ -181,20 +186,23 @@ async function updateEvent(request: Request, db: D1Database, eventId: string) {
       return fail(409, "VERBODEN", "De wisdatum van dit evenement is bereikt; het kan niet meer open.");
     await db.prepare("UPDATE events SET status = ?2, updated_at = ?3 WHERE id = ?1").bind(eventId, body.status, nowIso()).run();
   }
-  if (body.capacity !== undefined) {
+  // capacity: null = geen maximum; een getal = maximum aantal actieve kinderen.
+  if (body.capacity === null) {
+    await db.prepare("UPDATE events SET capacity_limited = 0, updated_at = ?2 WHERE id = ?1").bind(eventId, nowIso()).run();
+  } else if (body.capacity !== undefined) {
     const capacity = body.capacity;
     if (typeof capacity !== "number" || !Number.isInteger(capacity) || capacity < 0 || capacity > 10_000)
-      return fail(400, "VALIDATIE", "Vul een geheel aantal tussen 0 en 10000 in.");
+      return fail(400, "VALIDATIE", "Vul een geheel aantal tussen 0 en 10000 in, of laat het veld leeg voor geen maximum.");
     // Nooit lager dan het aantal ingeschreven kinderen; in één statement, dus ook juist bij gelijktijdige inschrijvingen.
     const result = await db
       .prepare(
-        `UPDATE events SET capacity = ?2, updated_at = ?3 WHERE id = ?1
+        `UPDATE events SET capacity = ?2, capacity_limited = 1, updated_at = ?3 WHERE id = ?1
          AND ?2 >= (SELECT COUNT(*) FROM participants WHERE event_id = ?1 AND status = 'active')`,
       )
       .bind(eventId, capacity, nowIso())
       .run();
     if (!result.meta.changes)
-      return fail(409, "VALIDATIE", "De capaciteit kan niet lager dan het aantal ingeschreven kinderen.");
+      return fail(409, "VALIDATIE", "Het maximum kan niet lager dan het aantal ingeschreven kinderen.");
   }
   return json(await summary(db, eventId));
 }
@@ -297,14 +305,6 @@ async function editable(db: D1Database, id: number) {
     .first<Editable>();
 }
 
-const capacityGuard = (db: D1Database, eventId: string) =>
-  db
-    .prepare(
-      `INSERT OR REPLACE INTO guard_capacity (id, ok) VALUES (1,
-         (SELECT COUNT(*) FROM participants WHERE event_id = ?1 AND status = 'active') <= (SELECT capacity FROM events WHERE id = ?1))`,
-    )
-    .bind(eventId);
-
 // Voert een batch uit en vertaalt databasecontroles naar begrijpelijke meldingen.
 async function apply(db: D1Database, statements: D1PreparedStatement[], registrationId: number) {
   try {
@@ -312,7 +312,7 @@ async function apply(db: D1Database, statements: D1PreparedStatement[], registra
   } catch (error) {
     const message = errorMessage(error);
     if (message.includes("volzet"))
-      return fail(409, "VOLZET", "Niet genoeg vrije plaatsen. Verhoog eerst de capaciteit.");
+      return fail(409, "VOLZET", "Het ingestelde maximum is bereikt. Verhoog of wis eerst het maximum.");
     if (message.includes("participants.event_id, participants.child_key"))
       return fail(409, "DUBBEL", "Dit kind is al actief ingeschreven bij dit evenement.");
     throw error;

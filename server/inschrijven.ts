@@ -1,7 +1,7 @@
 // Openbare kant: status van een evenement en een nieuwe inschrijving. Geeft nooit gegevens van anderen terug.
 import type { PublicEventStatus, RegistrationResponse } from "../src/inschrijving/api.ts";
 import { registrationEvents } from "../src/inschrijving/evenementen.ts";
-import { connectionOf, errorMessage, fail, json, nowIso, readJson, sha256Hex, type Env } from "./basis.ts";
+import { capacityGuard, connectionOf, errorMessage, fail, freePlaces, json, nowIso, readJson, sha256Hex, type Env } from "./basis.ts";
 import { validateRegistration, type CleanRegistration } from "./validatie.ts";
 import { deleteByPassed } from "./wissen.ts";
 
@@ -16,13 +16,17 @@ const eventFor = (id: unknown) =>
 async function counts(db: D1Database, eventId: string) {
   return db
     .prepare(
-      `SELECT e.status, e.capacity,
+      `SELECT e.status, e.capacity, e.capacity_limited AS limited,
          (SELECT COUNT(*) FROM participants p WHERE p.event_id = e.id AND p.status = 'active') AS active
        FROM events e WHERE e.id = ?1`,
     )
     .bind(eventId)
-    .first<{ status: "open" | "closed"; capacity: number; active: number }>();
+    .first<{ status: "open" | "closed"; capacity: number; limited: number; active: number }>();
 }
+
+// null = geen maximum ingesteld; dan toont en belooft de website geen aantal.
+const freeOf = (row: { capacity: number; limited: number; active: number } | null) =>
+  row ? freePlaces(row.limited, row.capacity, row.active) : null;
 
 export async function publicStatus(env: Env, eventId: string) {
   const config = eventFor(eventId);
@@ -32,9 +36,9 @@ export async function publicStatus(env: Env, eventId: string) {
     config.pendingDecisions.length === 0 &&
     !deleteByPassed(config);
   const row = configured ? await counts(env.DB!, eventId) : null;
-  const available = row ? Math.max(0, row.capacity - row.active) : 0;
+  const available = freeOf(row);
   const status: PublicEventStatus["status"] =
-    row?.status !== "open" ? "closed" : available > 0 ? "open" : "full";
+    row?.status !== "open" ? "closed" : available === 0 ? "full" : "open";
   return json({
     id: eventId,
     status,
@@ -193,12 +197,7 @@ export async function register(request: Request, env: Env) {
         )
         .bind(sub, config.id, p.name, p.age, p.childKey, now),
     ),
-    db
-      .prepare(
-        `INSERT OR REPLACE INTO guard_capacity (id, ok) VALUES (1,
-           (SELECT COUNT(*) FROM participants WHERE event_id = ?1 AND status = 'active') <= (SELECT capacity FROM events WHERE id = ?1))`,
-      )
-      .bind(config.id),
+    capacityGuard(db, config.id),
     db.prepare("INSERT INTO mail_outbox (registration_id, next_attempt_at) SELECT id, ?2 FROM registrations WHERE submission_id = ?1").bind(sub, now),
     db.prepare("INSERT INTO submit_log (client_key, created_at) VALUES (?1, ?2)").bind(client, now),
   ];
@@ -208,8 +207,9 @@ export async function register(request: Request, env: Env) {
     const message = errorMessage(error);
     if (message.includes("gesloten")) return fail(423, "GESLOTEN", "De inschrijvingen zijn gesloten.");
     if (message.includes("volzet")) {
-      const after = await counts(db, config.id);
-      const available = after ? Math.max(0, after.capacity - after.active) : 0;
+      const available = freeOf(await counts(db, config.id));
+      // Het maximum werd net gewist in het beheer: gewoon opnieuw proberen.
+      if (available === null) return fail(409, "ONBEKEND", "Er werd net iets aangepast. Verstuur het formulier opnieuw.");
       return fail(409, "VOLZET",
         available
           ? `Er zijn nog maar ${available} cadeautjes beschikbaar. Pas het aantal kinderen aan.`

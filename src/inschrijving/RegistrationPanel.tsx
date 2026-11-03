@@ -128,7 +128,8 @@ function isStatus(value: unknown): value is PublicEventStatus {
   return (
     typeof v.id === "string" &&
     (v.status === "open" || v.status === "closed" || v.status === "full") &&
-    typeof v.available === "number" &&
+    // null = geen maximum ingesteld.
+    (v.available === null || typeof v.available === "number") &&
     (v.turnstileSiteKey === null || typeof v.turnstileSiteKey === "string")
   );
 }

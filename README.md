@@ -28,7 +28,7 @@ QR: `event.publicWebsite.url` staat op het vaste Sinterklaas-adres op Cloudflare
 
 De eerder gedeelde externe tunnel serveert nog de vorige `dist/`-versie. Deze uitsluitend lokale ronde is gecontroleerd met `npm run build -- --outDir <sessie-temp>/oosthoek-local-finishing-dist`, zodat lokaal bouwen de externe preview niet stilzwijgend bijwerkt. Deel een volgende versie pas na GO.
 
-- `src/content/event.ts`: datum, jaartal, programma, verenigingsgegevens, status, routehaltes, downloadpaden, wedstrijdregels en campagnekoppen. Gebruik `YYYY-MM-DD` voor de datum en pas het jaartal tegelijk aan. Controleer steeds de officiële bron voor wijzigingen.
+- `src/content/event.ts`: datum, jaartal, programma, verenigingsgegevens, status, route (straten in volgorde), downloadpaden, wedstrijdregels en campagnekoppen. Gebruik `YYYY-MM-DD` voor de datum en pas het jaartal tegelijk aan. Controleer steeds de officiële bron voor wijzigingen.
 - `src/content/sponsors.json`: alle 33 officiële sponsors met categorie, adres, telefoons en e-mail. Geen verzonnen logo's of websites.
 - `src/content/sponsor-logos.ts`: de 24 bevestigde sponsorlogo's (sponsorpakket 3 november 2026), op exacte naam gekoppeld; bestanden als `public/assets/sponsor-*.webp`. Een sponsor zonder regel krijgt zijn naam als typografische plaat. Een officieel logo toevoegen = bestand in `public/assets/` plus één regel in dit bestand (uitleg bovenaan).
 - `src/Pages.tsx`: overige vaste paginateksten en FAQ. Het datumlabel in FAQ wordt automatisch uit de evenementgegevens afgeleid.
@@ -40,7 +40,7 @@ De lettertypen en illustraties worden lokaal geladen. De gegenereerde hoofdillus
 ## Nog aan te sluiten
 
 1. Inschrijvingen en bevestigingsmails: actief sinds 3 november 2026. Werking, beveiliging en tests staan in [INSCHRIJVEN.md](INSCHRIJVEN.md).
-2. Route en haltes. Het vertrek staat vast ("Vertrek om 10.30 uur aan Wijkhuis Oosthoek."); route en haltes volgen later. De klikbare OpenStreetMap is alleen een omgevingskaart van Beerse, geen route.
+2. Route 2026: definitief (Gert, 3 november 2026). Vertrek "Vertrek om 10.30 uur aan Wijkhuis Oosthoek.", 24 straten in vaste volgorde in `event.route.stops`; geen haltes of tijden per straat. De routekaart (`src/gps/LiveMap.tsx`, OpenStreetMap, pas na een klik of tijdens de live GPS) kleurt de 24 straten en nummert ze; de straatligging staat in `src/content/route-kaart.json` (zie onder). Zolang `event.route.mapChecked` op `false` staat, heet de kaart "indicatief": de rijweg in en tussen de straten is niet nagekeken.
 3. Live GPS van de huifkar: gebouwd en lokaal getest (OwnTracks op de Pixel, start en stop in het beheer), nog niet gepubliceerd. Instellen, gebruik op 28 november, belasting en de stappen om in gebruik te nemen staan in [GPS.md](GPS.md).
 
 ## Publicatie: Cloudflare Pages
@@ -75,4 +75,4 @@ De kleurplaat spreekt over een extra cadeautje; de expliciete flyerregel **maxim
 
 Sponsorkaarten volgen de Zeepventje-kaart uit het sponsorpakket (`Documentatie/Sponsors`); alleen de logo's daaruit zijn overgenomen, als webversie (lege rand weg, verkleind, kleuren ongewijzigd). Namen en contactgegevens blijven die van de officiële flyer in `sponsors.json`. De oude lokale Oosthoek-site onder `D:/Test/Projecten/Oosthoek/Sinterklaas-2026/website` is read-only geïnspecteerd; favicon en huifkarillustratie zijn als bronasset hergebruikt. De oude documenten bevatten aanvullende conceptvoorwaarden, maar die gelden hier niet als officiële regels.
 
-Omgevingskaart: centrum Beerse rond 51.319 / 4.854 gecontroleerd via [Mapcarta](https://mapcarta.com/17950548) en [GPS-coördinaten Beerse](https://www.gps-latitude-longitude.com/gps-coordinates-of-beerse); er is geen adres-, halte- of voertuigmarker afgeleid. OpenStreetMap wordt pas na een klik geladen en toont eigen attributie.
+Routekaart: `src/content/route-kaart.json` is op 3 november 2026 gemaakt uit OpenStreetMap (Overpass, alle wegen met `highway` in het vak 51.314–51.342 N, 4.852–4.890 O). Per straat de wegen met exact die naam, een nummer halverwege de langste weg, en waar twee opeenvolgende straten elkaar niet raken alleen het stuk van de kortste berijdbare verbinding buiten de route (nu enkel Hofeinde, tussen 1 en 2). De netwerkcontrole (doodlopende eindes, eenrichtingsstukken, brug) staat in `Bewijs\route-2026-osm-analyse-2026-11-03.txt` van het project. Geen vertrekmarker: Wijkhuis Oosthoek staat niet in OpenStreetMap. OpenStreetMap wordt pas na een klik geladen (of tijdens de live GPS) en toont eigen attributie.

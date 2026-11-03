@@ -380,14 +380,8 @@
   font-size: 0.66rem;
   color: #e7cb99;
 }
-.route-map-panel iframe {
-  display: block;
-  width: 100%;
-  height: 480px;
-  border: 0;
-}
-/* Livekaart (src/gps/LiveMap.tsx). Leaflet gebruikt hoge z-index-waarden: isolation houdt ze binnen de kaart,
-   zodat ze nooit over het menu komen. */
+/* Route- en livekaart (src/gps/LiveMap.tsx). Leaflet gebruikt hoge z-index-waarden: isolation houdt ze binnen de
+   kaart, zodat ze nooit over het menu komen. */
 .live-map-wrap {
   position: relative;
 }
@@ -398,11 +392,18 @@
   isolation: isolate;
   z-index: 0;
 }
-.live-map-center {
+.live-map-actions {
   position: absolute;
   top: 12px;
   right: 12px;
   z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  max-width: calc(100% - 70px);
+}
+.live-map-center {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -436,6 +437,71 @@
 }
 .sint-marker.is-stale .sint-pin {
   background: #858b90;
+}
+/* Volgnummer van een straat op de kaart (gelijk aan het nummer in de lijst). */
+.route-number span {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--red);
+  border-radius: 50%;
+  background: #fff;
+  color: var(--red);
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1;
+  box-shadow: 0 1px 4px #0c293d55;
+  cursor: pointer;
+}
+.route-number.is-active span {
+  border-color: #fff;
+  background: var(--gold);
+  color: var(--navy);
+}
+.route-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 18px;
+  padding: 12px 20px;
+  border-top: 1px solid #ffffff1f;
+  font-size: 0.7rem;
+  color: #d5e0e3;
+}
+.route-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.route-legend strong {
+  margin-left: auto;
+  color: #e7cb99;
+  font-weight: 600;
+}
+.legend-street {
+  width: 22px;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--red);
+  box-shadow: 0 0 0 2px #fff;
+}
+.legend-number {
+  display: grid;
+  place-items: center;
+  width: 17px;
+  height: 17px;
+  border: 2px solid var(--red);
+  border-radius: 50%;
+  background: #fff;
+  color: var(--red);
+  font-size: 0.55rem;
+  font-style: normal;
+  font-weight: 700;
+}
+.legend-link {
+  width: 22px;
+  border-top: 3px dotted #fff;
 }
 .live-dot {
   flex: none;
@@ -513,11 +579,76 @@
   color: var(--muted);
   font-size: 0.82rem;
 }
+/* Stratenlijst van de rondrit: nummers gelijk aan de kaart; een klik toont de straat op de kaart. */
 .route-stops {
-  margin-top: 45px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.7fr);
+  gap: 50px;
+  align-items: start;
+  margin-top: 60px;
+  padding-top: 50px;
+  border-top: 1px solid var(--line);
 }
-.route-stops li {
-  padding: 12px 0;
+.route-stops-intro h2 {
+  font-size: 2.6rem;
+  margin: 10px 0 14px;
+}
+.route-stops-intro > p:not(.eyebrow) {
+  font-size: 0.91rem;
+  color: var(--muted);
+  margin: 0 0 22px;
+}
+.route-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  columns: 3;
+  column-gap: 26px;
+}
+.route-list li {
+  break-inside: avoid;
+}
+.route-list button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 6px 8px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 6px 6px 0 0;
+  background: none;
+  color: var(--navy);
+  font: inherit;
+  font-size: 0.86rem;
+  line-height: 1.3;
+  text-align: left;
+  cursor: pointer;
+}
+.route-list button:hover,
+.route-list button.is-active {
+  background: #f4ead7;
+}
+.route-nr {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--red);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+.route-list button.is-active .route-nr {
+  background: var(--gold);
+  color: var(--navy);
+}
+.route-disclaimer {
+  margin: 18px 0 0;
+  font-size: 0.78rem;
   color: var(--muted);
 }
 .practical-facts {
@@ -1070,6 +1201,13 @@
     gap: 30px;
     grid-template-columns: 1.3fr 1fr;
   }
+  .route-stops {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+  .route-list {
+    columns: 2;
+  }
   .sponsor-grid {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -1243,8 +1381,28 @@
   .privacy-articles p {
     font-size: 0.85rem;
   }
-  .route-map-panel iframe {
-    height: 400px;
+  .route-stops {
+    margin-top: 40px;
+    padding-top: 32px;
+  }
+  .route-stops-intro h2 {
+    font-size: 2.2rem;
+  }
+  .route-list {
+    column-gap: 14px;
+  }
+  .route-list button {
+    gap: 8px;
+    padding: 6px 4px;
+    font-size: 0.8rem;
+  }
+  .route-nr {
+    width: 24px;
+    height: 24px;
+  }
+  .route-legend {
+    padding: 11px 14px;
+    font-size: 0.64rem;
   }
   /* Op de gsm genoeg kaart, maar nog ruimte om naast de kaart te scrollen. */
   .live-map {

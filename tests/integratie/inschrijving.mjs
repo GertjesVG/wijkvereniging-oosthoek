@@ -193,7 +193,7 @@ try {
     assert.equal(open.status, 409);
     assert.match(open.data.message, /Nog niet vrijgegeven/);
     const pub = await call("GET", `/api/evenementen/${EVENT}`);
-    assert.deepEqual(pub.data, { id: EVENT, status: "closed", available: 0, turnstileSiteKey: null });
+    assert.deepEqual(pub.data, { id: EVENT, status: "closed", available: null, turnstileSiteKey: null });
     assert.equal((await register(family())).status, 423);
   });
   stop(server);
@@ -219,12 +219,12 @@ try {
     assert.equal((await call("GET", "/api/evenementen/onbekend")).status, 404);
   });
 
-  await step("evenement staat standaard dicht; openen met 150 cadeautjes", async () => {
+  await step("evenement staat standaard dicht en heeft geen maximum; openen", async () => {
     assert.equal((await register(family())).status, 423);
     await login();
     const before = await summary();
     assert.equal(before.status, "closed");
-    assert.equal(before.capacity, 150);
+    assert.deepEqual([before.capacity, before.available, before.active], [null, null, 0]);
     // Wijzigingen alleen als JSON en vanaf de eigen site.
     const foreign = await call("PATCH", `/api/beheer/evenementen/${EVENT}`, { status: "open" }, { Origin: "https://kwaadaardig.example" });
     assert.equal(foreign.status, 403);
@@ -232,7 +232,8 @@ try {
     assert.equal(plain.status, 403);
     assert.equal((await admin("PATCH", `/evenementen/${EVENT}`, { status: "open" })).data.status, "open");
     const pub = await call("GET", `/api/evenementen/${EVENT}`);
-    assert.deepEqual(pub.data, { id: EVENT, status: "open", available: 150, turnstileSiteKey: siteKey });
+    // Geen maximum: de publieke kant geeft geen aantal vrije plaatsen.
+    assert.deepEqual(pub.data, { id: EVENT, status: "open", available: null, turnstileSiteKey: siteKey });
   });
 
   let firstFamily;
@@ -295,22 +296,28 @@ try {
     assert.equal((await registrations()).length, 13);
   });
 
-  await step("capaciteitsgrens 150 houdt stand bij 40 gelijktijdige inschrijvingen", async () => {
-    const active = (await summary()).active;
-    const fill = 150 - active - 10;
-    for (let done = 0; done < fill; ) {
-      const size = Math.min(8, fill - done);
-      assert.equal((await register(family({ kids: size }))).status, 201);
-      done += size;
-    }
-    assert.equal((await summary()).available, 10);
+  await step("zonder maximum geen grens van 150; een ingesteld maximum houdt stand bij 40 gelijktijdige inschrijvingen", async () => {
+    // Zonder maximum: ook voorbij de vroegere 150 gewoon inschrijven.
+    for (let active = (await summary()).active; active <= 150; active += 8)
+      assert.equal((await register(family({ kids: 8 }))).status, 201);
+    const free = await summary();
+    assert.ok(free.active > 150, String(free.active));
+    assert.deepEqual([free.capacity, free.available], [null, null]);
+    assert.equal((await call("GET", `/api/evenementen/${EVENT}`)).data.available, null);
+    // Maximum instellen in het beheer: een geheel getal, nooit lager dan het werkelijke aantal kinderen.
+    assert.equal((await admin("PATCH", `/evenementen/${EVENT}`, { capacity: free.active - 1 })).status, 409);
+    assert.equal((await admin("PATCH", `/evenementen/${EVENT}`, { capacity: "veel" })).status, 400);
+    const max = free.active + 10;
+    const set = await admin("PATCH", `/evenementen/${EVENT}`, { capacity: max });
+    assert.deepEqual([set.data.capacity, set.data.active, set.data.available], [max, free.active, 10]);
+    assert.equal((await call("GET", `/api/evenementen/${EVENT}`)).data.available, 10);
     const burst = await Promise.all(Array.from({ length: 40 }, () => register(family({ kids: 1 }))));
     const created = burst.filter((r) => r.status === 201).length;
     const full = burst.filter((r) => r.status === 409 && r.data.error === "VOLZET").length;
     assert.equal(created, 10, burst.map((r) => r.status).join());
     assert.equal(full, 30);
     const after = await summary();
-    assert.equal(after.active, 150);
+    assert.equal(after.active, max);
     assert.equal(after.available, 0);
     assert.equal((await call("GET", `/api/evenementen/${EVENT}`)).data.status, "full");
     const list = await registrations();
@@ -329,8 +336,9 @@ try {
     assert.equal((await register(family({ kids: 2 }))).status, 201);
     const reactivate = await admin("PATCH", `/inschrijvingen/${target.id}`, { status: "active" });
     assert.equal(reactivate.data.error, "VOLZET");
-    assert.equal((await admin("PATCH", `/evenementen/${EVENT}`, { capacity: 140 })).status, 409);
-    assert.equal((await admin("PATCH", `/evenementen/${EVENT}`, { capacity: 155 })).data.capacity, 155);
+    const max = (await summary()).capacity;
+    assert.equal((await admin("PATCH", `/evenementen/${EVENT}`, { capacity: max - 10 })).status, 409);
+    assert.equal((await admin("PATCH", `/evenementen/${EVENT}`, { capacity: max + 5 })).data.capacity, max + 5);
     const reactivated = await admin("PATCH", `/inschrijvingen/${target.id}`, { status: "active" });
     assert.equal(reactivated.data.status, "active");
     // Een apart geannuleerd kind blijft geannuleerd als de hele inschrijving later geannuleerd en heractiveerd wordt.
@@ -349,6 +357,14 @@ try {
     assert.equal((await admin("POST", `/inschrijvingen/${first.id}/deelnemers`, { name: "Vic", age: 4 })).data.error, "DUBBEL");
     assert.equal((await admin("PATCH", "/inschrijvingen/999999", { note: "x" })).status, 404);
     assert.equal((await admin("GET", "/evenementen/onbekend/inschrijvingen")).status, 404);
+    // Maximum weer wissen: geen grens meer, ook publiek niet; het werkelijke aantal kinderen blijft kloppen.
+    const activeNow = (await summary()).active;
+    const cleared = await admin("PATCH", `/evenementen/${EVENT}`, { capacity: null });
+    assert.deepEqual([cleared.data.capacity, cleared.data.available, cleared.data.active], [null, null, activeNow]);
+    const pub = await call("GET", `/api/evenementen/${EVENT}`);
+    assert.deepEqual(pub.data, { id: EVENT, status: "open", available: null, turnstileSiteKey: siteKey });
+    assert.equal((await register(family({ kids: 8 }))).status, 201);
+    assert.equal((await summary()).active, activeNow + 8);
   });
 
   await step("CSV-export voor Excel: BOM, puntkomma's, formules onschadelijk", async () => {
@@ -633,7 +649,7 @@ try {
     assert.equal(after[0].id, echtId);
     assert.deepEqual(after[0].participants.map((p) => p.name), ["Lou"]);
     const s = await summary();
-    assert.deepEqual([s.registrations, s.active, s.available, s.cancelled, s.mail.pending], [1, 1, 149, 0, 1]);
+    assert.deepEqual([s.registrations, s.active, s.available, s.cancelled, s.mail.pending], [1, 1, null, 0, 1]);
     assert.deepEqual(s.ages, [{ age: 3, count: 1 }]);
     const jobs = (await mailApi("wachtrij", { max: 50 })).data.jobs;
     assert.deepEqual(jobs.map((j) => j.id), ["SINT26-0002:1"]);

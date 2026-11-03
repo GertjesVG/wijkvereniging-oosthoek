@@ -276,7 +276,8 @@ function OpenPanel({
 }: {
   status: PublicEventStatus;
   config: RegistrationEvent;
-  available: number;
+  // null = geen maximum ingesteld.
+  available: number | null;
   submit: RegistrationFormProps["submit"];
   renderTurnstile: TurnstileRenderer;
   onDone: (result: RegistrationResponse) => void;
@@ -287,7 +288,7 @@ function OpenPanel({
   const { participant, area, rules } = config;
   const maxChildren = Math.max(
     1,
-    Math.min(participant.maxPerRegistration, available),
+    Math.min(participant.maxPerRegistration, available ?? participant.maxPerRegistration),
   );
   const nextKey = useRef(1);
   const formRef = useRef<HTMLFormElement>(null);
@@ -481,15 +482,12 @@ function OpenPanel({
 
   return (
     <PanelShell>
-      <StatusNote tone="blue">
-        {available > 0
-          ? `Nog ${giftCount(available)} beschikbaar`
-          : "De laatste plaatsen zijn bijna weg"}
-      </StatusNote>
+      {/* Bewust geen aantal vrije plaatsen: er is geen vaste grens; een maximum uit het beheer bewaakt de server. */}
+      <StatusNote tone="blue">De inschrijving is open</StatusNote>
       <p className="registration-lead">
-        Een ouder of voogd schrijft de {participant.plural} in. Elk ingeschreven{" "}
-        {participant.singular} krijgt één cadeautje. Na het verzenden krijg je
-        een bevestigingsmail met je inschrijvingsnummer.
+        Een ouder of voogd schrijft de {participant.plural} in. Per{" "}
+        {participant.singular} is er maximaal één cadeautje. Na het verzenden
+        krijg je een bevestigingsmail met je inschrijvingsnummer.
       </p>
       <form
         className="registration-form"

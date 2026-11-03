@@ -44,6 +44,7 @@ test("zonder actieve sessie: geen kaart en geen positie, wel het vertrek", async
   await expect(page.getByText("De live GPS is nu niet actief.")).toBeVisible();
   await expect(page.getByText("Vertrek om 10.30 uur aan Wijkhuis Oosthoek.")).toBeVisible();
   await expect(page.locator(".leaflet-container")).toHaveCount(0);
+  await expect(page.locator(".route-list button")).toHaveCount(24);
   await page.goto("/#/praktisch");
   await expect(page.getByText("Vertrek om 10.30 uur aan Wijkhuis Oosthoek.")).toBeVisible();
   await page.goto("/#/");
@@ -57,6 +58,7 @@ test("live op de gsm: Sint op de kaart met tijdstip, verversen, niet actueel, St
   await expect(page.getByRole("region", { name: "Kaart met de livepositie van de huifkar" })).toBeVisible();
   await expect(page.locator(".sint-marker")).toBeVisible();
   await expect(page.locator(".sint-marker.is-stale")).toHaveCount(0);
+  await expect(page.locator(".route-number")).toHaveCount(24);
   const caption = page.locator(".map-caption");
   await expect(caption).toContainText(/Live: laatste positie om \d\d:\d\d/);
   await expect(caption).toContainText("20 s geleden");
@@ -84,6 +86,27 @@ test("live op de gsm: Sint op de kaart met tijdstip, verversen, niet actueel, St
   await page.clock.fastForward(34_000);
   await expect(page.locator(".leaflet-container")).toHaveCount(0);
   await expect(page.getByText("De live GPS is nu niet actief.")).toBeVisible();
+});
+
+test("routekaart zelf geopend: bij Stop blijft de route, de huifkar verdwijnt", async ({ page }) => {
+  await page.clock.install();
+  const server = await fakeGps(page, off);
+  await page.goto("/#/route");
+  await page.getByRole("button", { name: "Bekijk de route op de kaart" }).click();
+  await expect(page.getByRole("region", { name: "Kaart met de route van de huifkar" })).toBeVisible();
+  await expect(page.locator(".sint-marker")).toHaveCount(0);
+  // Het beheer start de GPS: bij de volgende verversing (120 s plus spreiding) staat de huifkar op dezelfde kaart.
+  server.body = live();
+  await page.clock.fastForward(124_000);
+  await expect(page.locator(".sint-marker")).toBeVisible();
+  await expect(page.getByRole("region", { name: "Kaart met de livepositie van de huifkar" })).toBeVisible();
+  // Stop: geen positie meer, de route blijft.
+  server.body = off;
+  await page.clock.fastForward(34_000);
+  await expect(page.locator(".sint-marker")).toHaveCount(0);
+  await expect(page.locator(".route-number")).toHaveCount(24);
+  await expect(page.getByText("De live GPS is nu niet actief.")).toBeVisible();
+  expect(await noOverflow(page)).toBe(true);
 });
 
 test("zonder antwoord van de server verdwijnt de positie vanzelf, en op het stopuur alles", async ({ page }) => {

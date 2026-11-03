@@ -112,21 +112,23 @@ function EventPanel({
   const toggle = useAction();
   const cap = useAction();
   const erase = useAction();
-  const [capacity, setCapacity] = useState(String(event.capacity));
+  // Leeg veld = geen maximum.
+  const capacityText = (value: number | null) => (value === null ? "" : String(value));
+  const [capacity, setCapacity] = useState(capacityText(event.capacity));
   const [confirming, setConfirming] = useState(false);
   const [typed, setTyped] = useState("");
 
   useEffect(() => {
-    setCapacity(String(event.capacity));
+    setCapacity(capacityText(event.capacity));
   }, [event.capacity, event.id]);
   useEffect(() => {
     setConfirming(false);
     setTyped("");
   }, [event.id]);
 
-  const capacityNumber = Number(capacity);
+  const capacityNumber = capacity.trim() === "" ? null : Number(capacity);
   const capacityValid =
-    capacity.trim() !== "" && Number.isInteger(capacityNumber) && capacityNumber >= 0;
+    capacityNumber === null || (Number.isInteger(capacityNumber) && capacityNumber >= 0);
 
   async function setStatus() {
     const updated = await toggle.run(() =>
@@ -190,9 +192,13 @@ function EventPanel({
       <ErrorNote>{toggle.error}</ErrorNote>
 
       <dl className="stats">
-        <Stat label="Capaciteit" value={event.capacity} />
         <Stat label="Kinderen ingeschreven" value={event.active} />
-        <Stat label="Vrije plaatsen" value={event.available} />
+        <Stat
+          label="Maximum"
+          value={event.capacity ?? "geen"}
+          hint={event.capacity === null ? "geen grens ingesteld" : undefined}
+        />
+        {event.available !== null && <Stat label="Vrije plaatsen" value={event.available} />}
         <Stat label="Inschrijvingen" value={event.registrations} />
         <Stat label="Afgehaald" value={event.pickedUp} hint={`van ${event.active}`} />
         <Stat label="Adres nakijken" value={event.addressReview} hint="actieve inschrijvingen" />
@@ -206,11 +212,12 @@ function EventPanel({
       <div className="controls">
         <form className="inline-form" onSubmit={saveCapacity}>
           <label className="field">
-            <span>Capaciteit</span>
+            <span>Maximum aantal kinderen (leeg = geen maximum)</span>
             <input
               type="number"
               inputMode="numeric"
               min={0}
+              placeholder="geen maximum"
               value={capacity}
               onChange={(e) => setCapacity(e.target.value)}
               disabled={cap.busy}
@@ -222,7 +229,7 @@ function EventPanel({
             className="btn btn-small"
             disabled={cap.busy || !capacityValid || capacityNumber === event.capacity}
           >
-            Capaciteit opslaan
+            Maximum opslaan
           </button>
         </form>
         <a className="btn btn-small" href={exportUrl(event.id)} download>
@@ -557,7 +564,7 @@ function History({ events }: { events: AdminEventSummary[] }) {
               <th scope="col">Editie</th>
               <th scope="col">Inschrijvingen</th>
               <th scope="col">Kinderen</th>
-              <th scope="col">Capaciteit</th>
+              <th scope="col">Maximum</th>
               <th scope="col">Afgehaald</th>
               <th scope="col">Geannuleerd</th>
               <th scope="col">Persoonsgegevens</th>
@@ -571,7 +578,13 @@ function History({ events }: { events: AdminEventSummary[] }) {
                 <td>{e.registrations}</td>
                 <td>{e.active}</td>
                 <td>
-                  {e.capacity} <small className="muted">({percent(e.active, e.capacity)} bezet)</small>
+                  {e.capacity === null ? (
+                    "geen"
+                  ) : (
+                    <>
+                      {e.capacity} <small className="muted">({percent(e.active, e.capacity)} bezet)</small>
+                    </>
+                  )}
                 </td>
                 <td>
                   {e.pickedUp} <small className="muted">({percent(e.pickedUp, e.active)})</small>

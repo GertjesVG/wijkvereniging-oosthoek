@@ -158,24 +158,32 @@ test("downloads zijn bytegelijk aan de originele documenten", () => {
     );
 });
 
-test("officieel wedstrijdreglement: zeven onderdelen letterlijk, met het anker van het inschrijfformulier", () => {
+test("officieel wedstrijdreglement: verkorte tekst in vijf onderdelen letterlijk, met het anker van het inschrijfformulier", () => {
   assert.equal(reglement.title, "Wedstrijdreglement – Sinterklaas Oosthoek 2026");
   assert.equal(reglement.organiser, "VZW Wijkvereniging Oosthoek");
-  assert.equal(reglement.eventDate, "Zaterdag 28 november 2026");
-  assert.equal(reglement.articles.length, 7);
-  reglement.articles.forEach((a, i) =>
-    assert.ok(a.title.startsWith(`${i + 1}. `), a.title),
-  );
+  assert.equal(reglement.eventDate, "zaterdag 28 november 2026");
+  assert.deepEqual(reglement.articles.map((a) => a.title), [
+    "1. Deelname",
+    "2. Inschrijving",
+    "3. Kleurwedstrijd en cadeautjes",
+    "4. Controle en eerlijkheid",
+    "5. Privacy en akkoord",
+  ]);
   const text = reglement.articles.flatMap((a) => a.body.flat()).join("\n");
+  // Leeftijdsgrens, co-ouderschap, één keer per kind, voorraad en adrescontrole: zoals het formulier en de server werken.
   for (const must of [
-    "0 tot en met 12 jaar op 28 november 2026",
-    "minstens één ouder of wettelijke voogd daadwerkelijk in Wijk Oosthoek woont",
-    "gescheiden ouders of co-ouderschap",
-    "Elk kind mag slechts één keer worden ingeschreven.",
-    "één cadeautje per deelnemend kind",
-    "Zonder deze bevestiging kan de inschrijving niet worden voltooid.",
+    "kinderen van 0 tot en met 12 jaar op 28 november 2026, van wie minstens één ouder of wettelijke voogd in Wijk Oosthoek woont.",
+    "Dit geldt ook bij gescheiden ouders of co-ouderschap. Het kind hoeft niet op dat adres gedomicilieerd te zijn.",
+    "Elk kind mag slechts één keer deelnemen.",
+    "Er geldt maximaal één cadeautje per deelnemend kind, afhankelijk van de beschikbare voorraad.",
+    "De vereniging mag bij twijfel een adres of dubbele inschrijving controleren.",
+    "Zonder akkoord is inschrijven niet mogelijk.",
   ])
     assert.ok(text.includes(must), must);
+  assert.equal(reglement.signature, "VZW Wijkvereniging Oosthoek – Beerse");
+  // Eén reglement: alleen deze component toont het, op de kleurwedstrijdpagina.
+  const pages = readFileSync(new URL("../src/Pages.tsx", import.meta.url), "utf8");
+  assert.equal(pages.split("<Reglement />").length, 2);
   // Het formulier linkt naar "#/kleurwedstrijd?reglement"; App.tsx scrolt naar het element met dat id.
   assert.equal(sinterklaasRegistration.rules.href, "#/kleurwedstrijd?reglement");
   const components = readFileSync(
@@ -187,4 +195,58 @@ test("officieel wedstrijdreglement: zeven onderdelen letterlijk, met het anker v
     !components.includes("event.rules"),
     "het oude korte regelblok is vervangen",
   );
+});
+
+test("route 2026: de 24 bevestigde straten in volgorde, vertrek zonder adres, kaart per straat", () => {
+  // Letterlijk de definitieve volgorde van de vereniging (Gert, 3 november 2026).
+  const confirmed = [
+    "Gorenstraat", "Veldstraat", "Huffelenstraat", "Paddesteenstraat", "Zandstraat", "Veerpontstraat",
+    "Leemstraat", "Rozenstraat", "Daliastraat", "Tulpenstraat", "Boterbloemstraat", "Asterstraat",
+    "Leliestraat", "Korenbloemstraat", "Violierstraat", "Steenovensstraat", "Beukenlaan", "Kattespoelstraat",
+    "Frans Lauwersstraat", "Jan Vaertenstraat", "Dr. Paul Janssenstraat", "Opstal", "Scheperstraat", "Oosteneinde",
+  ];
+  assert.deepEqual(event.route.stops, confirmed);
+  assert.equal(event.date, "2026-11-28");
+  assert.equal(event.departure, "Vertrek om 10.30 uur aan Wijkhuis Oosthoek.");
+  assert.equal(event.route.transport, "Huifkar met witte paarden");
+  assert.equal(
+    event.route.turnNote,
+    "In straten waar de huifkar moeilijk kan draaien, vragen we bewoners om aan het begin van de straat te komen.",
+  );
+  // Tot Gert de getekende rijweg nakeek, blijft de kaart "indicatief".
+  assert.equal(event.route.mapChecked, false);
+  // Alle straten van de rondrit liggen in wijk Oosthoek volgens de gemeentelijst (Steenovensstraat deels).
+  const area = sinterklaasRegistration.area;
+  for (const street of confirmed)
+    assert.ok(area.streets.includes(street) || street in area.partialStreets, street);
+
+  const map = JSON.parse(readFileSync(new URL("../src/content/route-kaart.json", import.meta.url), "utf8"));
+  assert.match(map.bron, /OpenStreetMap/);
+  assert.deepEqual(map.straten.map((s) => s.naam), confirmed);
+  // Binnen Beerse-Oosthoek: geen verschoven of verwisselde coördinaten.
+  const inArea = ([lat, lon]) => lat > 51.31 && lat < 51.345 && lon > 4.85 && lon < 4.895;
+  for (const s of map.straten) {
+    assert.ok(s.lijnen.length > 0 && s.lijnen.every((l) => l.length >= 2 && l.every(inArea)), s.naam);
+    assert.ok(inArea(s.label), s.naam);
+  }
+  for (const v of map.verbindingen) {
+    assert.ok(Number.isInteger(v.na) && v.na >= 1 && v.na < confirmed.length);
+    assert.ok(v.via.length > 0 && v.via.every((name) => !confirmed.includes(name)), "alleen wegen buiten de route");
+    assert.ok(v.lijnen.every((l) => l.length >= 2 && l.every(inArea)));
+  }
+  // Eén plek voor de stratenlijst: geen tweede kopie in de andere pagina's of de startpagina.
+  for (const file of ["../src/Pages.tsx", "../src/Home.tsx", "../src/components.tsx"]) {
+    const source = readFileSync(new URL(file, import.meta.url), "utf8");
+    assert.ok(!source.includes("Paddesteenstraat"), file);
+  }
+});
+
+test("publieke site: geen vaste grens van 150 en geen aantal vrije plaatsen, wel maximaal één cadeautje per kind", () => {
+  for (const file of ["../src/Pages.tsx", "../src/Home.tsx", "../src/inschrijving/RegistrationForm.tsx"]) {
+    const source = readFileSync(new URL(file, import.meta.url), "utf8");
+    assert.doesNotMatch(source, /150 cadeau|plaatsen vrij|Nog \$\{giftCount|laatste plaatsen|onbeperkt/i, file);
+  }
+  const form = readFileSync(new URL("../src/inschrijving/RegistrationForm.tsx", import.meta.url), "utf8");
+  assert.ok(form.includes("is er maximaal één cadeautje"));
+  assert.equal(sinterklaasRegistration.defaultCapacity, null);
 });
