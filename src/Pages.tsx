@@ -329,13 +329,13 @@ function PracticalPage() {
           <h2 id="practical-registration-title">
             Een verrassing voor de kleintjes
           </h2>
-          <StatusNote>{event.registration.message}</StatusNote>
           <p>
-            Je kunt op dit moment nog geen cadeautje reserveren. Op de
-            cadeauactiepagina lees je hoe je straks meedoet.
+            Schrijf je kinderen gratis online in op de cadeauactiepagina. Er
+            zijn 150 cadeautjes, één per kind. Daar zie je ook of er nog
+            plaatsen vrij zijn.
           </p>
           <ButtonLink href="#/cadeauactie" variant="outline">
-            Bekijk de cadeauactie
+            Naar de inschrijving
           </ButtonLink>
         </section>
         <section aria-labelledby="practical-route-title">
