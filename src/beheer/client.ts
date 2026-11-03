@@ -4,6 +4,7 @@ import type {
   ApiError,
   ApiErrorCode,
 } from "../inschrijving/api";
+import type { AdminGps } from "../gps/api";
 
 export class AdminError extends Error {
   status: number;
@@ -127,6 +128,10 @@ export const api = {
   // Definitief verwijderen; de server eist het inschrijvingsnummer als bevestiging.
   deleteRegistration: (id: number, reference: string) =>
     request<{ id: number; reference: string }>("DELETE", `/api/beheer/inschrijvingen/${id}`, { confirm: reference }),
+  // Live GPS: status, Start (of het stopuur aanpassen tijdens een sessie) en Stop.
+  gps: () => request<AdminGps>("GET", "/api/beheer/gps"),
+  gpsStart: (hours: number) => request<AdminGps>("POST", "/api/beheer/gps", { action: "start", hours }),
+  gpsStop: () => request<AdminGps>("POST", "/api/beheer/gps", { action: "stop" }),
 };
 
 export const exportUrl = (eventId: string) =>

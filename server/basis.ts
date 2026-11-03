@@ -8,6 +8,8 @@ export type Env = {
   ADMIN_PASSWORD?: string;
   // Gedeeld geheim met het Apps Script (scripteigenschap met dezelfde naam), minstens 32 tekens.
   MAIL_API_TOKEN?: string;
+  // Wachtwoord van de GPS-telefoon (OwnTracks, Basic-authenticatie), minstens 32 tekens. Zie GPS.md.
+  GPS_DEVICE_TOKEN?: string;
   // Alleen voor tests: schaalt de wachttijd tussen mailpogingen (standaard 1).
   MAIL_BACKOFF_FACTOR?: string;
 };

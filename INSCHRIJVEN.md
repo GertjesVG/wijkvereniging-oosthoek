@@ -38,9 +38,10 @@ Eén gratis inschrijfsysteem voor alle evenementen van VZW Wijkvereniging Oostho
 
 ## Bewaartermijn
 
-- Namen, e-mailadressen en adressen: wissen uiterlijk op `deleteBy` (Sinterklaas 2026: **31 januari 2027, voorstel, nog niet goedgekeurd door de vereniging**). Aantallen, leeftijden en afhaalcijfers blijven voor de historiek.
-- Tot het akkoord staat `autoErase: false`: wissen gebeurt met de knop "Persoonsgegevens wissen" in het beheer, en het beheer waarschuwt zodra de wisdatum bereikt is.
-- Na akkoord: `autoErase: true` zetten (en eventueel `deleteBy` aanpassen). Dan sluit en wist de server het evenement vanzelf vanaf de wisdatum, bij de eerstvolgende ophaalronde van het Apps Script (elke 5 minuten) of bij het openen van het beheer.
+- Namen, e-mailadressen en adressen: wissen uiterlijk op `deleteBy` (Sinterklaas 2026: **31 januari 2027, goedgekeurd door de vereniging op 3 november 2026**). Aantallen, leeftijden, afhaalcijfers, capaciteit en inschrijvingsnummers blijven voor de historiek; de database en de andere evenementen blijven ongemoeid.
+- `autoErase: true` (Sinterklaas 2026, in de code sinds 3 november 2026; actief zodra die versie gepubliceerd is, aparte GO): vanaf de wisdatum sluit en wist de server het evenement vanzelf, bij de eerstvolgende ophaalronde van het Apps Script (elke 5 minuten) of bij het openen van het beheer. Laat de tijdtrigger van het Apps Script daarom lopen tot na 31 januari 2027, of open die dag zelf het beheer. Daarna kan het evenement niet meer open. De integratietest (`npm run test:inschrijving`, fasen D en G) toetst dit met fictieve gegevens, ook dat een tweede evenement intact blijft.
+- Met `autoErase: false` wist alleen de knop "Persoonsgegevens wissen" in het beheer; het beheer waarschuwt zodra de wisdatum bereikt is.
+- Buiten de database, met de hand: gedownloade CSV-exports verwijderen, en de Gmail-kopieën (zie "Na het evenement" hieronder). De herstelfunctie van D1 (Time Travel) kan de database nog 7 dagen terugzetten naar een moment vóór het wissen; daarna zijn de gegevens ook daar weg.
 
 ## Lokaal ontwikkelen en testen
 

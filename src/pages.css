@@ -386,6 +386,94 @@
   height: 480px;
   border: 0;
 }
+/* Livekaart (src/gps/LiveMap.tsx). Leaflet gebruikt hoge z-index-waarden: isolation houdt ze binnen de kaart,
+   zodat ze nooit over het menu komen. */
+.live-map-wrap {
+  position: relative;
+}
+.live-map {
+  height: 480px;
+  background: #dfe7e9;
+  color: #1c2b33;
+  isolation: isolate;
+  z-index: 0;
+}
+.live-map-center {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 13px;
+  border: 0;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--red);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  box-shadow: 0 2px 8px #0d2b3e40;
+  cursor: pointer;
+}
+.sint-pin {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border: 3px solid #fff;
+  border-radius: 50% 50% 50% 0;
+  background: var(--red);
+  box-shadow: 0 3px 10px #00000070;
+  transform: rotate(-45deg);
+}
+.sint-pin span {
+  transform: rotate(45deg);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+.sint-marker.is-stale .sint-pin {
+  background: #858b90;
+}
+.live-dot {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #5fd38d;
+  animation: live-pulse 2s infinite;
+}
+/* Ook een span: niet meerekken met de gsm-regel voor .map-caption span. */
+.map-caption .live-dot {
+  margin-left: 0;
+  width: 9px;
+  padding: 0;
+}
+.live-dot.is-stale {
+  background: #e0a43a;
+  animation: none;
+}
+@keyframes live-pulse {
+  0% {
+    box-shadow: 0 0 0 0 #5fd38d99;
+  }
+  70%,
+  100% {
+    box-shadow: 0 0 0 8px #5fd38d00;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .live-dot {
+    animation: none;
+  }
+}
+.live-offline {
+  margin: 12px 0 0;
+  color: var(--red);
+  font-size: 0.8rem;
+}
 .route-aside > p:not(.eyebrow) {
   font-size: 0.91rem;
   color: var(--muted);
@@ -1157,6 +1245,12 @@
   }
   .route-map-panel iframe {
     height: 400px;
+  }
+  /* Op de gsm genoeg kaart, maar nog ruimte om naast de kaart te scrollen. */
+  .live-map {
+    height: 62vh;
+    min-height: 320px;
+    max-height: 460px;
   }
 }
 @media (max-width: 460px) {

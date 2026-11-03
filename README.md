@@ -39,9 +39,9 @@ De lettertypen en illustraties worden lokaal geladen. De gegenereerde hoofdillus
 
 ## Nog aan te sluiten
 
-1. Inschrijvingen en bevestigingsmails: gebouwd en lokaal getest, nog niet actief. Werking, beveiliging, tests en de activeringsstappen staan in [INSCHRIJVEN.md](INSCHRIJVEN.md). Tot de activering blijft het formulier dicht.
-2. Officiële vertrektijden, route en haltes. Die ontbreken in de bronnen. De klikbare OpenStreetMap is alleen een omgevingskaart van Beerse, geen route.
-3. GPS-dienst met actuele tijdstempel en correcte toestand bij ontbrekende/verouderde gegevens. Er is nu geen live GPS of nagebootste beweging.
+1. Inschrijvingen en bevestigingsmails: actief sinds 3 november 2026. Werking, beveiliging en tests staan in [INSCHRIJVEN.md](INSCHRIJVEN.md).
+2. Route en haltes. Het vertrek staat vast ("Vertrek om 10.30 uur aan Wijkhuis Oosthoek."); route en haltes volgen later. De klikbare OpenStreetMap is alleen een omgevingskaart van Beerse, geen route.
+3. Live GPS van de huifkar: gebouwd en lokaal getest (OwnTracks op de Pixel, start en stop in het beheer), nog niet gepubliceerd. Instellen, gebruik op 28 november, belasting en de stappen om in gebruik te nemen staan in [GPS.md](GPS.md).
 
 ## Publicatie: Cloudflare Pages
 

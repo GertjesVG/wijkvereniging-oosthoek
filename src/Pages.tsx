@@ -1,4 +1,4 @@
-import { useState, type ComponentType } from "react";
+import { lazy, Suspense, useState, type ComponentType } from "react";
 import {
   ArrowUpRight,
   CalendarDays,
@@ -12,6 +12,7 @@ import {
   MapPinned,
   Phone,
   Printer,
+  Radio,
   Search,
   ShieldCheck,
   Sparkles,
@@ -24,7 +25,11 @@ import { sponsorLogos } from "./content/sponsor-logos";
 import { sinterklaasRegistration } from "./inschrijving/evenementen";
 import { RegistrationPanel } from "./inschrijving/RegistrationPanel";
 import { ShareCode } from "./ShareCode";
+import { ageLabel, timeOf, useLiveGps, type LiveGpsView } from "./gps/useLiveGps";
 import "./pages.css";
+
+// Leaflet en de kaarttegels alleen laden als er echt een livepositie te tonen is.
+const LiveMap = lazy(() => import("./gps/LiveMap"));
 
 const phoneHref = (phone: string) => `tel:${phone.replace(/[^\d+]/g, "")}`;
 
@@ -168,8 +173,49 @@ function ColouringPage() {
   );
 }
 
+// Tekst bij de livekaart, per toestand van de GPS (zie src/gps/useLiveGps.ts).
+function liveNote(view: LiveGpsView) {
+  if (view.kind === "waiting")
+    return "De live GPS is gestart. De positie van de huifkar verschijnt hier zo dadelijk.";
+  if (view.kind === "lost")
+    return "De verbinding met de huifkar is weggevallen. Zodra ze terug is, verschijnt de huifkar weer op de kaart.";
+  if (view.kind === "live")
+    return view.stale
+      ? "De verbinding met de huifkar is even weggevallen. De positie op de kaart is niet meer actueel."
+      : "De huifkar is onderweg! De kaart ververst vanzelf ongeveer elke minuut.";
+  return event.gps.offMessage;
+}
+
+function LiveCaption({ view }: { view: LiveGpsView }) {
+  if (view.kind === "live")
+    return (
+      <>
+        <span className={`live-dot${view.stale ? " is-stale" : ""}`} aria-hidden="true" />
+        {view.stale ? "Niet actueel" : "Live"}: laatste positie om {timeOf(view.fixAt)}
+        <span>{ageLabel(view.ageSeconds)}</span>
+      </>
+    );
+  if (view.kind === "lost")
+    return (
+      <>
+        <span className="live-dot is-stale" aria-hidden="true" />
+        Verbinding weg sinds {timeOf(view.fixAt)}
+        <span>Geen actuele positie</span>
+      </>
+    );
+  return (
+    <>
+      <span className="live-dot" aria-hidden="true" />
+      Live GPS gestart
+      <span>Wachten op de eerste positie</span>
+    </>
+  );
+}
+
 function RoutePage() {
   const [mapLoaded, setMapLoaded] = useState(false);
+  const { view, failed } = useLiveGps();
+  const active = view.kind !== "off";
   return (
     <>
       <PageHeading
@@ -180,6 +226,36 @@ function RoutePage() {
         de route en de livepositie.
       </PageHeading>
       <div className="route-overview">
+        {active ? (
+          <section className="route-map-panel" aria-label="Livekaart van de huifkar">
+            {view.kind === "live" ? (
+              <Suspense fallback={<div className="live-map" />}>
+                <LiveMap lat={view.lat} lon={view.lon} accuracy={view.accuracy} stale={view.stale} />
+              </Suspense>
+            ) : (
+              <div className="map-awaiting">
+                <span className="map-ornament" aria-hidden="true">
+                  <Radio size={76} strokeWidth={1} />
+                  <i>✦</i>
+                </span>
+                <p className="eyebrow">LIVE GPS</p>
+                <h2>
+                  {view.kind === "waiting" ? "De Sint vertrekt" : "Even geduld"}
+                  <br />
+                  {view.kind === "waiting" ? "zo dadelijk." : "met de huifkar."}
+                </h2>
+                <p>
+                  {view.kind === "waiting"
+                    ? "De eerste positie verschijnt hier vanzelf."
+                    : "Zodra de verbinding terug is, verschijnt de huifkar hier weer."}
+                </p>
+              </div>
+            )}
+            <div className="map-caption" aria-live="polite">
+              <LiveCaption view={view} />
+            </div>
+          </section>
+        ) : (
         <section
           className="route-map-panel"
           aria-label="Omgevingskaart van Beerse"
@@ -231,6 +307,7 @@ function RoutePage() {
             <span>Nog geen rondgang of livepositie</span>
           </div>
         </section>
+        )}
         <aside className="route-aside">
           <p className="eyebrow">VOLG DE SINT</p>
           <h2>
@@ -238,7 +315,13 @@ function RoutePage() {
             <br />
             kijkt ernaar uit.
           </h2>
-          <StatusNote tone="blue">{event.gps.message}</StatusNote>
+          <StatusNote tone="blue">{liveNote(view)}</StatusNote>
+          {failed && active && (
+            <p className="live-offline" role="status">
+              Deze pagina kan de positie nu niet verversen. Controleer je
+              internetverbinding.
+            </p>
+          )}
           <div className="route-date">
             <CalendarDays size={23} aria-hidden="true" />
             <div>
@@ -248,8 +331,8 @@ function RoutePage() {
           </div>
           <dl className="compact-facts">
             <div>
-              <dt>Vertrekuur</dt>
-              <dd>Nog niet bekendgemaakt</dd>
+              <dt>Vertrek</dt>
+              <dd>{event.departure}</dd>
             </div>
             <div>
               <dt>Haltes & aankomsttijden</dt>
@@ -300,7 +383,7 @@ function PracticalPage() {
           <CalendarDays size={28} aria-hidden="true" />
           <span className="eyebrow">DATUM</span>
           <h2>{dateLabel}</h2>
-          <p>De precieze uren worden nog bekendgemaakt.</p>
+          <p>{event.departure}</p>
         </article>
         <article>
           <MapPin size={28} aria-hidden="true" />
@@ -342,7 +425,7 @@ function PracticalPage() {
         <section aria-labelledby="practical-route-title">
           <p className="eyebrow">ROUTE & LIVE VOLGEN</p>
           <h2 id="practical-route-title">Waar komt de huifkar langs?</h2>
-          <StatusNote tone="blue">{event.gps.message}</StatusNote>
+          <StatusNote tone="blue">{event.gps.dayMessage}</StatusNote>
           <p>
             De officiële rondgang volgt nog. Op de routepagina vind je de route
             en het live volgen zodra die beschikbaar zijn.

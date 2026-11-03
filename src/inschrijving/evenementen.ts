@@ -110,9 +110,10 @@ export const registrationEvents: Record<string, RegistrationEvent> = {
         ],
       },
     },
-    // Voorstel (nog niet goedgekeurd): na het afhalen nog ruim acht weken voor vragen en correcties.
+    // Goedgekeurd door de vereniging (Gert, 3 november 2026): uiterste wisdatum voor namen, adressen en e-mail.
+    // Vanaf die dag sluit en wist de server automatisch; aantallen, leeftijden en afhaalcijfers blijven (server/wissen.ts).
     deleteBy: "2027-01-31",
-    autoErase: false,
+    autoErase: true,
     pendingDecisions: [],
   },
 };

@@ -86,7 +86,7 @@ test("praktische informatie en sponsorkaarten blijven leesbaar op mobiel en desk
   await page.goto("/#/praktisch");
   await expect(page.locator(".practical-facts article")).toHaveCount(3);
   for (const name of [
-    "Bekijk de cadeauactie",
+    "Naar de inschrijving",
     "Bekijk de routepagina",
     "Neem contact op",
   ])

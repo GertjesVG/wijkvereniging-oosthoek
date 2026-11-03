@@ -12,5 +12,5 @@
     "noEmit": true,
     "types": ["@cloudflare/workers-types", "vite/client"]
   },
-  "include": ["functions", "server", "src/inschrijving/api.ts", "src/inschrijving/evenementen.ts", "src/content/event.ts"]
+  "include": ["functions", "server", "src/inschrijving/api.ts", "src/inschrijving/evenementen.ts", "src/content/event.ts", "src/gps/api.ts"]
 }
