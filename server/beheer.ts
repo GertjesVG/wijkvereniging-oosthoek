@@ -285,7 +285,7 @@ async function registrationById(db: D1Database, id: number) {
   return row ? toRegistration(row, participants.results as ParticipantRow[]) : null;
 }
 
-type Editable = RegistrationRow & { address_key: string | null; erased: string | null };
+type Editable = RegistrationRow & { seq: number; address_key: string | null; erased: string | null };
 
 async function editable(db: D1Database, id: number) {
   return db
@@ -509,6 +509,25 @@ async function resendConfirmation(db: D1Database, id: number) {
   return json(await registrationById(db, id));
 }
 
+// Verwijdert één inschrijving definitief, met kinderen en mailopdracht; de beheerder bevestigt met het nummer.
+// Het volgnummer wordt nooit opnieuw uitgegeven (events.next_seq). Na het wissen van de persoonsgegevens niet meer:
+// dan telt de rij alleen nog voor de historiek.
+async function deleteRegistration(request: Request, db: D1Database, id: number) {
+  const current = await editable(db, id);
+  if (!current) return fail(404, "NIET_GEVONDEN", "Onbekende inschrijving.");
+  if (current.erased) return fail(409, "VERBODEN", "De gegevens van dit evenement zijn gewist; de rij telt alleen nog voor de historiek.");
+  const body = (await readJson(request)) ?? {};
+  if (body.confirm !== current.reference)
+    return fail(400, "VALIDATIE", `Typ het inschrijvingsnummer ${current.reference} om te bevestigen.`);
+  await db.batch([
+    db.prepare("UPDATE events SET next_seq = MAX(next_seq, ?2 + 1), updated_at = ?3 WHERE id = ?1").bind(current.event_id, current.seq, nowIso()),
+    db.prepare("DELETE FROM mail_outbox WHERE registration_id = ?1").bind(id),
+    db.prepare("DELETE FROM participants WHERE registration_id = ?1").bind(id),
+    db.prepare("DELETE FROM registrations WHERE id = ?1").bind(id),
+  ]);
+  return json({ id, reference: current.reference });
+}
+
 // ---------- Export en wissen ----------
 
 // Excel (Belgische instellingen): UTF-8 met BOM en puntkomma's. Formules worden onschadelijk gemaakt.
@@ -623,6 +642,7 @@ export async function handleAdmin(request: Request, env: Env, path: string[]) {
   const id = Number(key);
   if (Number.isInteger(id) && id > 0 && path.length <= 3) {
     if (section === "inschrijvingen" && !action && method === "PATCH") return updateRegistration(request, db, id);
+    if (section === "inschrijvingen" && !action && method === "DELETE") return deleteRegistration(request, db, id);
     if (section === "inschrijvingen" && action === "deelnemers" && method === "POST") return addParticipant(request, db, id);
     if (section === "inschrijvingen" && action === "mail" && method === "POST") return resendConfirmation(db, id);
     if (section === "deelnemers" && !action && method === "PATCH") return updateParticipant(request, db, id);

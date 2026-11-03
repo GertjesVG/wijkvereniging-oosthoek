@@ -595,6 +595,63 @@ try {
     assert.match(csv[0], /"Adres van andere ouder \(co-ouderschap\)";"Reglementversie";"Reglement aanvaard op"$/);
     assert.ok(csv.some((l) => l.startsWith(`"${mum.data.reference}"`) && l.includes(`"ja";"${rulesVersion}";"`)), csv.join("\n"));
   });
+  stop(server);
+
+  // Fase F: nieuwe database; een inschrijving definitief verwijderen (proefgegevens), zonder hergebruik van nummers.
+  const dirF = path.join(work, "f");
+  prepare(dirF);
+  server = await start(dirF, serverVars(1));
+  await step("verwijderen: alleen ingelogd en met het juiste nummer; kinderen, mail en cijfers mee weg; nummer nooit opnieuw", async () => {
+    await login();
+    await admin("PATCH", `/evenementen/${EVENT}`, { status: "open" });
+    const proef = await register(family({ names: ["Piepje", "Testje"], street: "Gerststraat", houseNumber: "3" }));
+    assert.equal(proef.status, 201, proef.text);
+    assert.equal(proef.data.reference, "SINT26-0001");
+    const echt = await register(family({ names: ["Lou"] }));
+    assert.equal(echt.data.reference, "SINT26-0002");
+    const list = await registrations();
+    const proefId = list.find((r) => r.reference === "SINT26-0001").id;
+    const echtId = list.find((r) => r.reference === "SINT26-0002").id;
+    assert.deepEqual([(await summary()).registrations, (await summary()).active, (await summary()).mail.pending], [2, 3, 2]);
+    // Zonder sessie, zonder bevestiging, met een verkeerd nummer of een onbekend id: niets verwijderd.
+    const saved = cookie;
+    cookie = "";
+    assert.equal((await admin("DELETE", `/inschrijvingen/${proefId}`, { confirm: "SINT26-0001" })).status, 401);
+    cookie = saved;
+    assert.equal((await admin("DELETE", `/inschrijvingen/${proefId}`, {})).status, 400);
+    assert.equal((await admin("DELETE", `/inschrijvingen/${proefId}`, { confirm: "SINT26-0002" })).status, 400);
+    assert.equal((await admin("DELETE", `/inschrijvingen/999`, { confirm: "SINT26-0999" })).status, 404);
+    const foreign = await call("DELETE", `/api/beheer/inschrijvingen/${proefId}`, { confirm: "SINT26-0001" }, { Origin: "https://kwaadaardig.example" });
+    assert.equal(foreign.status, 403);
+    assert.equal((await registrations()).length, 2);
+    // Echt verwijderen: rij, kinderen en mailopdracht weg; het andere gezin blijft ongemoeid; cijfers meteen juist.
+    const gone = await admin("DELETE", `/inschrijvingen/${proefId}`, { confirm: "SINT26-0001" });
+    assert.equal(gone.status, 200, gone.text);
+    assert.equal(gone.data.reference, "SINT26-0001");
+    const after = await registrations();
+    assert.deepEqual(after.map((r) => r.reference), ["SINT26-0002"]);
+    assert.equal(after[0].id, echtId);
+    assert.deepEqual(after[0].participants.map((p) => p.name), ["Lou"]);
+    const s = await summary();
+    assert.deepEqual([s.registrations, s.active, s.available, s.cancelled, s.mail.pending], [1, 1, 149, 0, 1]);
+    assert.deepEqual(s.ages, [{ age: 3, count: 1 }]);
+    const jobs = (await mailApi("wachtrij", { max: 50 })).data.jobs;
+    assert.deepEqual(jobs.map((j) => j.id), ["SINT26-0002:1"]);
+    await mailApi("resultaat", { results: jobs.map((j) => ({ outboxId: j.outboxId, generation: j.generation, ok: true })) });
+    // Nieuwe inschrijvingen krijgen nooit een eerder uitgegeven nummer, ook niet na het wissen van de hoogste.
+    assert.equal((await register(family({ names: ["Mia"] }))).data.reference, "SINT26-0003");
+    const laatste = (await registrations()).find((r) => r.reference === "SINT26-0003");
+    assert.equal((await admin("DELETE", `/inschrijvingen/${laatste.id}`, { confirm: "SINT26-0003" })).status, 200);
+    assert.equal((await register(family({ names: ["Nel"] }))).data.reference, "SINT26-0004");
+    assert.deepEqual((await registrations()).map((r) => r.reference).sort(), ["SINT26-0002", "SINT26-0004"]);
+    // Geannuleerd mag ook weg; na het wissen van de persoonsgegevens niet meer (historiek).
+    await admin("PATCH", `/inschrijvingen/${echtId}`, { status: "cancelled" });
+    assert.equal((await admin("DELETE", `/inschrijvingen/${echtId}`, { confirm: "SINT26-0002" })).status, 200);
+    await admin("PATCH", `/evenementen/${EVENT}`, { status: "closed" });
+    await admin("POST", `/evenementen/${EVENT}/wissen`, { confirm: "WISSEN" });
+    const rest = (await registrations())[0];
+    assert.equal((await admin("DELETE", `/inschrijvingen/${rest.id}`, { confirm: rest.reference })).status, 409);
+  });
 } catch (error) {
   failed = true;
   console.error(`niet ok - ${error?.stack ?? error}`);

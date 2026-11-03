@@ -180,7 +180,8 @@ export async function register(request: Request, env: Env) {
         `INSERT INTO registrations (event_id, submission_id, seq, reference, parent_name, email, street, house_number,
            address_key, suspected_duplicate, address_review, co_parent, rules_version, rules_accepted_at, created_at, updated_at)
          SELECT ?1, ?2, n, ?3 || printf('%04d', n), ?4, ?5, ?6, ?7, ?8, ?9, ?11, ?12, ?13, CASE WHEN ?13 IS NULL THEN NULL ELSE ?10 END, ?10, ?10
-         FROM (SELECT COALESCE(MAX(seq), 0) + 1 AS n FROM registrations WHERE event_id = ?1)`,
+         FROM (SELECT MAX((SELECT COALESCE(MAX(seq), 0) + 1 FROM registrations WHERE event_id = ?1),
+                          (SELECT next_seq FROM events WHERE id = ?1)) AS n)`,
       )
       .bind(config.id, sub, config.referencePrefix, data.parentName, data.email, data.street, data.houseNumber,
         data.addressKey, suspicious?.hit ? 1 : 0, now, data.addressReview ? 1 : 0, data.coParent ? 1 : 0, data.rulesVersion),

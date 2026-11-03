@@ -418,6 +418,11 @@ function Registrations({
     setItems((list) => list && list.map((r) => (r.id === updated.id ? updated : r)));
     onMutated();
   }
+  function remove(id: number) {
+    setItems((list) => list && list.filter((r) => r.id !== id));
+    setExpanded((current) => (current === id ? null : current));
+    onMutated();
+  }
 
   return (
     <section className="panel" aria-labelledby="regs-title">
@@ -514,6 +519,7 @@ function Registrations({
                   expanded={expanded === r.id}
                   onToggle={() => setExpanded((id) => (id === r.id ? null : r.id))}
                   onUpdate={update}
+                  onDelete={remove}
                 />
               ))}
             </ul>

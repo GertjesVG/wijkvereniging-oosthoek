@@ -1,10 +1,69 @@
 import { useState, type FormEvent } from "react";
-import { ChevronDown, Copy, Mail, MapPin, Users } from "lucide-react";
+import { ChevronDown, Copy, Mail, MapPin, Trash2, Users } from "lucide-react";
 import type { AdminParticipant, AdminRegistration } from "../inschrijving/api";
 import { api } from "./client";
 import { ErrorNote, formatDateTime, MailBadge, useAction } from "./ui";
 
 type Update = (updated: AdminRegistration) => void;
+type Remove = (id: number) => void;
+
+// Definitief verwijderen (bv. een proefinschrijving): bevestigen door het inschrijvingsnummer te typen.
+function DeleteRegistration({ registration: reg, onDelete }: { registration: AdminRegistration; onDelete: Remove }) {
+  const { busy, error, run } = useAction();
+  const [confirming, setConfirming] = useState(false);
+  const [typed, setTyped] = useState("");
+  const active = reg.participants.filter((p) => p.status === "active").length;
+
+  async function remove(e: FormEvent) {
+    e.preventDefault();
+    if (typed.trim() !== reg.reference) return;
+    const done = await run(() => api.deleteRegistration(reg.id, reg.reference));
+    if (done) onDelete(reg.id);
+  }
+
+  return (
+    <section className="erase" aria-label="Inschrijving verwijderen">
+      {confirming ? (
+        <form className="erase-confirm" onSubmit={remove}>
+          <p>
+            Inschrijving <strong>{reg.reference}</strong> van {reg.parentName} wordt definitief verwijderd, samen met{" "}
+            {reg.participants.length === 1 ? "het kind" : `de ${reg.participants.length} kinderen`} en de bevestigingsmail
+            in de wachtrij. {active > 0 && `${active === 1 ? "Eén cadeautje komt" : `${active} cadeautjes komen`} weer vrij. `}
+            De inschrijving verdwijnt ook uit de historiek; het nummer {reg.reference} wordt nooit opnieuw uitgegeven. Een
+            mail die het script al opgehaald heeft, kan nog vertrekken. Dit kan niet ongedaan gemaakt worden. Wil je de
+            inschrijving alleen ongeldig maken, gebruik dan "Inschrijving annuleren".
+          </p>
+          <label className="field">
+            <span>Typ {reg.reference} om te bevestigen</span>
+            <input value={typed} onChange={(e) => setTyped(e.target.value)} autoComplete="off" disabled={busy} />
+          </label>
+          <div className="actions">
+            <button type="submit" className="btn btn-danger btn-small" disabled={busy || typed.trim() !== reg.reference}>
+              Definitief verwijderen
+            </button>
+            <button
+              type="button"
+              className="btn btn-small btn-quiet"
+              disabled={busy}
+              onClick={() => {
+                setConfirming(false);
+                setTyped("");
+              }}
+            >
+              Annuleren
+            </button>
+          </div>
+        </form>
+      ) : (
+        <button type="button" className="btn btn-small btn-quiet" onClick={() => setConfirming(true)}>
+          <Trash2 size={15} aria-hidden="true" />
+          Inschrijving verwijderen
+        </button>
+      )}
+      <ErrorNote>{error}</ErrorNote>
+    </section>
+  );
+}
 
 function ParticipantRow({
   participant,
@@ -100,9 +159,11 @@ function ParticipantRow({
 export function RegistrationDetails({
   registration: reg,
   onUpdate,
+  onDelete,
 }: {
   registration: AdminRegistration;
   onUpdate: Update;
+  onDelete: Remove;
 }) {
   const edit = useAction();
   const status = useAction();
@@ -296,6 +357,8 @@ export function RegistrationDetails({
         </button>
         <ErrorNote>{mail.error}</ErrorNote>
       </section>
+
+      <DeleteRegistration registration={reg} onDelete={onDelete} />
     </div>
   );
 }
@@ -305,11 +368,13 @@ export function RegistrationItem({
   expanded,
   onToggle,
   onUpdate,
+  onDelete,
 }: {
   registration: AdminRegistration;
   expanded: boolean;
   onToggle: () => void;
   onUpdate: Update;
+  onDelete: Remove;
 }) {
   const active = reg.participants.filter((p) => p.status === "active");
   const pickedUp = active.filter((p) => p.pickedUpAt !== null).length;
@@ -361,7 +426,7 @@ export function RegistrationItem({
       </button>
       {expanded && (
         <div id={panelId}>
-          <RegistrationDetails registration={reg} onUpdate={onUpdate} />
+          <RegistrationDetails registration={reg} onUpdate={onUpdate} onDelete={onDelete} />
         </div>
       )}
     </li>

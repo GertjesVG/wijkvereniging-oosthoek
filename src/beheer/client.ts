@@ -29,7 +29,7 @@ export function setUnauthorizedHandler(handler: (() => void) | null) {
 }
 
 async function request<T>(
-  method: "GET" | "POST" | "PATCH",
+  method: "GET" | "POST" | "PATCH" | "DELETE",
   path: string,
   body?: unknown,
   options: { login?: boolean } = {},
@@ -124,6 +124,9 @@ export const api = {
   ) => request<AdminRegistration>("PATCH", `/api/beheer/deelnemers/${id}`, patch),
   resendMail: (id: number) =>
     request<AdminRegistration>("POST", `/api/beheer/inschrijvingen/${id}/mail`),
+  // Definitief verwijderen; de server eist het inschrijvingsnummer als bevestiging.
+  deleteRegistration: (id: number, reference: string) =>
+    request<{ id: number; reference: string }>("DELETE", `/api/beheer/inschrijvingen/${id}`, { confirm: reference }),
 };
 
 export const exportUrl = (eventId: string) =>
