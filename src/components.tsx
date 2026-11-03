@@ -8,6 +8,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { event, dateParts, dateLabel } from "./content/event";
+import { reglement } from "./content/reglement";
 export const pageLinks = [
   ["home", "Home"],
   ["cadeauactie", "Cadeauactie"],
@@ -115,16 +116,53 @@ export function FeatureCard({
     </a>
   );
 }
-export function Rules() {
+// Reglementtekst met **vet** naar React-knopen; alleen <strong>, verder geen opmaak.
+function ReglementText({ text }: { text: string }) {
   return (
-    <section className="rules-panel" aria-labelledby="rules-title">
-      <p className="eyebrow">UIT DE OFFICIËLE FLYER</p>
-      <h2 id="rules-title">Zo blijft het leuk voor iedereen</h2>
-      {event.rules.map((rule, i) => (
-        <p className={i === 1 ? "rule-emphasis" : ""} key={rule}>
-          {rule}
-        </p>
+    <>
+      {text
+        .split("**")
+        .map((part, i) => (i % 2 === 1 ? <strong key={i}>{part}</strong> : part))}
+    </>
+  );
+}
+// Het officiële wedstrijdreglement op de kleurwedstrijdpagina. Het inschrijfformulier linkt naar
+// "#/kleurwedstrijd?reglement"; App.tsx scrolt dan naar dit id.
+export function Reglement() {
+  return (
+    <section
+      className="rules-panel reglement"
+      id="reglement"
+      aria-labelledby="reglement-title"
+    >
+      <p className="eyebrow">OFFICIEEL WEDSTRIJDREGLEMENT</p>
+      <h2 id="reglement-title">{reglement.title}</h2>
+      <p className="reglement-meta">
+        <strong>Organisator:</strong> {reglement.organiser}
+        <br />
+        <strong>Evenement:</strong> {reglement.eventDate}
+      </p>
+      {reglement.articles.map((article) => (
+        <article key={article.title}>
+          <h3>{article.title}</h3>
+          {article.body.map((part, i) =>
+            Array.isArray(part) ? (
+              <ul key={i}>
+                {part.map((item) => (
+                  <li key={item}>
+                    <ReglementText text={item} />
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p key={i}>
+                <ReglementText text={part} />
+              </p>
+            ),
+          )}
+        </article>
       ))}
+      <p className="reglement-signature">{reglement.signature}</p>
     </section>
   );
 }

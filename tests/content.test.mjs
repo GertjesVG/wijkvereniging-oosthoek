@@ -4,6 +4,8 @@ import { readFileSync, existsSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { verifiedPublicUrl } from "../src/content/public-website.ts";
 import { event } from "../src/content/event.ts";
+import { reglement } from "../src/content/reglement.ts";
+import { sinterklaasRegistration } from "../src/inschrijving/evenementen.ts";
 const sponsors = JSON.parse(
   readFileSync(
     new URL("../src/content/sponsors.json", import.meta.url),
@@ -124,4 +126,35 @@ test("downloads zijn bytegelijk aan de originele documenten", () => {
       hash(readFileSync(new URL("../../../" + original, import.meta.url))),
       copy,
     );
+});
+
+test("officieel wedstrijdreglement: zeven onderdelen letterlijk, met het anker van het inschrijfformulier", () => {
+  assert.equal(reglement.title, "Wedstrijdreglement – Sinterklaas Oosthoek 2026");
+  assert.equal(reglement.organiser, "VZW Wijkvereniging Oosthoek");
+  assert.equal(reglement.eventDate, "Zaterdag 28 november 2026");
+  assert.equal(reglement.articles.length, 7);
+  reglement.articles.forEach((a, i) =>
+    assert.ok(a.title.startsWith(`${i + 1}. `), a.title),
+  );
+  const text = reglement.articles.flatMap((a) => a.body.flat()).join("\n");
+  for (const must of [
+    "0 tot en met 12 jaar op 28 november 2026",
+    "minstens één ouder of wettelijke voogd daadwerkelijk in Wijk Oosthoek woont",
+    "gescheiden ouders of co-ouderschap",
+    "Elk kind mag slechts één keer worden ingeschreven.",
+    "één cadeautje per deelnemend kind",
+    "Zonder deze bevestiging kan de inschrijving niet worden voltooid.",
+  ])
+    assert.ok(text.includes(must), must);
+  // Het formulier linkt naar "#/kleurwedstrijd?reglement"; App.tsx scrolt naar het element met dat id.
+  assert.equal(sinterklaasRegistration.rules.href, "#/kleurwedstrijd?reglement");
+  const components = readFileSync(
+    new URL("../src/components.tsx", import.meta.url),
+    "utf8",
+  );
+  assert.ok(components.includes('id="reglement"'));
+  assert.ok(
+    !components.includes("event.rules"),
+    "het oude korte regelblok is vervangen",
+  );
 });

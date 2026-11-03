@@ -38,12 +38,7 @@ export const event = {
       "https://www.openstreetmap.org/export/embed.html?bbox=4.822%2C51.302%2C4.887%2C51.336&layer=mapnik" as
         string | null,
   },
-  rules: [
-    "Kleur je mooiste Sinterklaastekening en doe mee!",
-    "EEN KLEURPLAAT PER KIND  -  MAXIMAAL EEN CADEAUTJE PER KIND",
-    "Meerdere tekeningen van hetzelfde kind leveren geen extra cadeautje op.",
-    "Zo blijft het eerlijk en leuk voor alle kinderen!",
-  ],
+  // Het wedstrijdreglement staat in content/reglement.ts.
   copy: {
     eyebrow: "MAGISCHE DAG IN DE WIJK",
     heroTitle: "Sinterklaas komt naar Oosthoek!",

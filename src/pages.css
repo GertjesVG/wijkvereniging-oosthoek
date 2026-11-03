@@ -190,11 +190,35 @@
 .rules-panel .eyebrow {
   font-size: 0.65rem;
 }
-.rules-panel .rule-emphasis {
+.reglement {
+  scroll-margin-top: 24px;
+}
+.reglement h3 {
+  font-size: 1.35rem;
+  margin: 26px 0 8px;
+  color: var(--navy);
+}
+.reglement p,
+.reglement li {
+  max-width: 72ch;
+}
+.reglement ul {
+  margin: 7px 0;
+  padding-left: 22px;
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+.reglement li {
+  margin: 4px 0;
+}
+.reglement .reglement-meta {
+  margin-bottom: 6px;
+  color: var(--navy);
+}
+.reglement .reglement-signature {
+  margin-top: 26px;
   font-weight: 700;
-  color: var(--red);
-  letter-spacing: 0.02em;
-  font-size: 0.83rem;
+  color: var(--navy);
 }
 .colouring-layout {
   align-items: center;
@@ -923,8 +947,8 @@
   .rules-panel h2 {
     font-size: 1.9rem;
   }
-  .rules-panel .rule-emphasis {
-    font-size: 0.75rem;
+  .reglement h3 {
+    font-size: 1.2rem;
   }
   .colouring-preview {
     max-width: 360px;

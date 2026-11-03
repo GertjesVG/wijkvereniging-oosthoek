@@ -17,7 +17,7 @@ import {
   Sparkles,
   X,
 } from "lucide-react";
-import { ButtonLink, PageHeading, Rules, StatusNote } from "./components";
+import { ButtonLink, PageHeading, Reglement, StatusNote } from "./components";
 import { asset, dateLabel, event } from "./content/event";
 import sponsors from "./content/sponsors.json";
 import { sinterklaasRegistration } from "./inschrijving/evenementen";
@@ -162,7 +162,7 @@ function ColouringPage() {
           </div>
         </section>
       </div>
-      <Rules />
+      <Reglement />
     </>
   );
 }

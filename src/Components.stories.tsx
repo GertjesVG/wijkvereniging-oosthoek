@@ -4,7 +4,7 @@ import {
   ButtonLink,
   StatusNote,
   DateTag,
-  Rules,
+  Reglement,
   PageHeading,
 } from "./components";
 const meta = {
@@ -78,7 +78,7 @@ export const Datumkaart = {
     </div>
   ),
 };
-export const Wedstrijdregels = { render: () => <Rules /> };
+export const Wedstrijdreglement = { render: () => <Reglement /> };
 export const Paginakop = {
   render: () => (
     <PageHeading eyebrow="EEN MAGISCHE DAG" title="Sinterklaas in Oosthoek.">

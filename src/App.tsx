@@ -71,8 +71,12 @@ export default function App() {
     // "#/pagina?anker" opent de pagina bij dat onderdeel (bv. het reglement vanuit het inschrijfformulier).
     const anchor = window.location.hash.split("?")[1];
     const target = anchor ? document.getElementById(anchor) : null;
-    if (target) target.scrollIntoView();
-    else window.scrollTo({ top: 0, behavior: "instant" });
+    if (target) {
+      target.scrollIntoView();
+      // Webfonts die na de eerste opbouw laden, verschuiven de inhoud erboven (gemeten: tot ±36 px);
+      // daarna het onderdeel nog één keer uitlijnen.
+      document.fonts?.ready.then(() => target.scrollIntoView());
+    } else window.scrollTo({ top: 0, behavior: "instant" });
   }, [page]);
   useEffect(() => {
     if (!menuOpen) return;
