@@ -3,7 +3,7 @@
 // staat in tests/integratie/inschrijving.mjs (npm run test:inschrijving).
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, statSync } from "node:fs";
 import { randomBytes, randomUUID } from "node:crypto";
 import vm from "node:vm";
 import { registrationEvents, sinterklaasRegistration } from "../src/inschrijving/evenementen.ts";
@@ -18,18 +18,30 @@ const doc = (name) => readFileSync(new URL(`../../../Documentatie/${name}`, impo
 // Turnstile-testantwoord uit de Cloudflare-documentatie; werkt alleen met de testsleutels.
 const dummyAnswer = ["XXXX", "DUMMY", "TOKEN", "XXXX"].join(".");
 
-test("feestelijke mail is exact het aangeleverde sjabloon en de tekstversie", () => {
+test("feestelijke mail volgt het aangeleverde sjabloon en de tekstversie, met de gegevens als tekst", () => {
   const template = confirmationTemplates["sinterklaas-2026"];
-  assert.equal(template.html.trim(), doc("Oosthoek_Sinterklaas_Email_Template.html").replace(/\r\n/g, "\n").trim());
+  // Aangeleverd sjabloon, op 3 november 2026 bewust aangepast: gegevens wit op een rood lint op het perkament (Gmail in
+  // donkere modus) en lichtere JPG-beelden. Titel, alt-teksten en vaste teksten blijven die van het sjabloon.
+  const original = doc("Oosthoek_Sinterklaas_Email_Template.html");
+  const alts = (html) => [...html.matchAll(/alt="([^"]+)"/g)].map((m) => m[1]);
+  const title = (html) => html.match(/<title>.*<\/title>/)[0];
+  assert.deepEqual(alts(template.html), alts(original));
+  assert.equal(title(template.html), title(original));
+  for (const label of ["🎟️ Inschrijvingsnummer", "👧 Ingeschreven kind(eren)", "📅 Datum", "zaterdag 28 november 2026"])
+    assert.ok(original.includes(label) && template.html.includes(label), label);
+  assert.ok(!/<img[^>]*\{\{/.test(template.html), "geen ingevulde gegevens in een beeld");
   const text = doc("Oosthoek_Sinterklaas_Email_Tekstversie.txt").replace(/\r\n/g, "\n").replace(/^Onderwerp:.*\n\n/, "");
   assert.equal(template.text.trim(), text.trim());
   for (const part of [template.html, template.text, template.subject]) {
     const fields = part.match(/\{\{[^}]*\}\}/g) ?? [];
     assert.ok(fields.every((f) => f === "{{inschrijvingsnummer}}" || f === "{{kind_namen}}"), fields.join());
   }
-  // Elke afbeelding komt van de eigen website en staat in public/email/.
-  for (const [, file] of template.html.matchAll(/src="https:\/\/wijkvereniging-oosthoek\.pages\.dev\/sinterklaas\/email\/([^"]+)"/g))
-    assert.ok(readFileSync(new URL(`../public/email/${file}`, import.meta.url)).length > 1000, file);
+  // Elke afbeelding (ook het perkament als achtergrond) komt van de eigen website en staat in public/email/;
+  // boven- en onderbeeld samen onder 400 KB, zodat de mail op een gsm vlot laadt.
+  const size = (file) => statSync(new URL(`../public/email/${file}`, import.meta.url)).size;
+  for (const [, file] of template.html.matchAll(/https:\/\/wijkvereniging-oosthoek\.pages\.dev\/sinterklaas\/email\/([^"')]+)/g))
+    assert.ok(size(file) > 1000, file);
+  assert.ok(size("email-boven.jpg") + size("email-onder.jpg") < 400_000);
   assert.equal([...template.html.matchAll(/<img /g)].length, 4);
   assert.equal([...template.html.matchAll(/alt="[^"]+"/g)].length, 4);
 });

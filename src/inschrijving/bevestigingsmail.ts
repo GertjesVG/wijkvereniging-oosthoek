@@ -1,7 +1,8 @@
 // Bevestigingsmails per evenement, gedeeld door de server (mailwachtrij) en het beheer (voorbeeld).
 // Elk sjabloon heeft precies twee velden: {{inschrijvingsnummer}} en {{kind_namen}}; de rest is vaste, goedgekeurde tekst.
 // Nieuw evenement met online inschrijving = ook hier een sjabloon met dezelfde sleutel als in evenementen.ts.
-// Sinterklaas 2026: oorspronkelijke feestelijke stijl uit Documentatie/Oosthoek_Sinterklaas_Email_Template.html.
+// Sinterklaas 2026: oorspronkelijke feestelijke stijl uit Documentatie/Oosthoek_Sinterklaas_Email_Template.html; op
+// 3 november 2026 de gegevens op het perkament gezet (leesbaar in Gmail donker) en de beelden als lichtere JPG.
 // De beelden staan in public/email/ en zijn pas bereikbaar na publicatie op Cloudflare; de gegevens zelf zijn HTML-tekst.
 
 export type ConfirmationTemplate = {
@@ -20,23 +21,29 @@ export type ConfirmationValues = { reference: string; childNames: string[] };
 const sinterklaasHtml = `<!DOCTYPE html>
 <html lang="nl-BE">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light only"><meta name="supported-color-schemes" content="light only">
 <title>Bevestiging inschrijving — Sinterklaas Oosthoek 2026</title></head>
 <body style="margin:0;padding:0;background-color:#fff8ed;color:#092443;font-family:Arial,Helvetica,sans-serif;">
 <div style="display:none;max-height:0;overflow:hidden;font-size:1px;color:#fff8ed;opacity:0;">Piet heeft jullie inschrijving goed ontvangen. Hier zijn de bevestigingsgegevens.</div>
 <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#fff8ed;border-collapse:collapse;"><tr><td align="center" style="padding:12px 6px 24px;">
 <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="640" style="max-width:640px;width:100%;background:#fff0d4;border-collapse:collapse;">
-<tr><td><img alt="Sinterklaas en zijn Pieten — Hoera, jouw inschrijving is goed aangekomen! Piet heeft jullie inschrijving in het grote boek geschreven; de Sint kijkt uit naar jullie tekeningen." src="https://wijkvereniging-oosthoek.pages.dev/sinterklaas/email/email-boven.png" width="640" style="display:block;width:100%;max-width:640px;height:auto;border:0;"></td></tr>
-<tr><td style="background-color:#fff3dc;padding:0 7% 1px;">
-  <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="width:100%;border:1px dashed #b4243f;border-radius:12px;background-color:#fff9ed;border-collapse:separate;">
-    <tr><td style="padding:9px 12px 5px;font-size:14px;font-weight:700;vertical-align:top;width:44%;">🎟️ Inschrijvingsnummer</td><td style="padding:9px 12px 5px;font-size:16px;font-weight:700;background-color:#ffebae;overflow-wrap:anywhere;">{{inschrijvingsnummer}}</td></tr>
-    <tr><td style="padding:9px 12px 5px;font-size:14px;font-weight:700;vertical-align:top;">👧 Ingeschreven kind(eren)</td><td style="padding:9px 12px 5px;font-size:16px;font-weight:700;background-color:#ffebae;overflow-wrap:anywhere;">{{kind_namen}}</td></tr>
-    <tr><td style="padding:9px 12px 12px;font-size:14px;font-weight:700;vertical-align:top;">📅 Datum</td><td style="padding:9px 12px 12px;font-size:15px;font-weight:700;background-color:#ffebae;">zaterdag 28 november 2026</td></tr>
+<tr><td><img alt="Sinterklaas en zijn Pieten — Hoera, jouw inschrijving is goed aangekomen! Piet heeft jullie inschrijving in het grote boek geschreven; de Sint kijkt uit naar jullie tekeningen." src="https://wijkvereniging-oosthoek.pages.dev/sinterklaas/email/email-boven.jpg" width="640" style="display:block;width:100%;max-width:640px;height:auto;border:0;"></td></tr>
+<!-- Gegevens op het perkament. Het perkament is een achtergrondbeeld: de Gmail-app in donkere modus kleurt achtergrondkleuren
+     donker en donkere tekst licht, maar laat beelden ongemoeid. Daarom staan de gegevens in wit op een rood lint (donker blijft
+     donker, wit blijft wit) en is het perkament eromheen een beeld, geen kleur. -->
+<tr><td background="https://wijkvereniging-oosthoek.pages.dev/sinterklaas/email/email-perkament.jpg" bgcolor="#faf4e9" style="background-color:#faf4e9;background-image:url('https://wijkvereniging-oosthoek.pages.dev/sinterklaas/email/email-perkament.jpg');background-repeat:repeat;padding:4px 8% 16px;">
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" bgcolor="#a3172b" style="width:100%;background-color:#a3172b;border:2px dashed #f6c76b;border-radius:14px;border-collapse:separate;">
+    <tr><td style="padding:12px 18px 0;font-size:13px;line-height:18px;font-weight:700;color:#ffd98a;">🎟️ Inschrijvingsnummer</td></tr>
+    <tr><td style="padding:2px 18px 10px;font-size:21px;line-height:27px;font-weight:700;color:#ffffff;letter-spacing:1px;">{{inschrijvingsnummer}}</td></tr>
+    <tr><td style="padding:0 18px;font-size:13px;line-height:18px;font-weight:700;color:#ffd98a;">👧 Ingeschreven kind(eren)</td></tr>
+    <tr><td style="padding:2px 18px 10px;font-size:21px;line-height:27px;font-weight:700;color:#ffffff;overflow-wrap:anywhere;">{{kind_namen}}</td></tr>
+    <tr><td style="padding:0 18px;font-size:13px;line-height:18px;font-weight:700;color:#ffd98a;">📅 Datum</td></tr>
+    <tr><td style="padding:2px 18px 14px;font-size:18px;line-height:24px;font-weight:700;color:#ffffff;">zaterdag 28 november 2026</td></tr>
   </table>
 </td></tr>
-<tr><td style="background-color:#fff3dc;height:5px;font-size:0;line-height:0;">&nbsp;</td></tr>
 <tr><td><a href="https://wijkvereniging-oosthoek.pages.dev/sinterklaas/" target="_blank" style="text-decoration:none;"><img alt="Meer informatie, kleurplaat en sponsors: https://wijkvereniging-oosthoek.pages.dev/sinterklaas/" src="https://wijkvereniging-oosthoek.pages.dev/sinterklaas/email/email-website.png" width="640" style="display:block;width:100%;max-width:640px;height:auto;border:0;"></a></td></tr>
 <tr><td><a href="mailto:vzwoosthoek@gmail.com" style="text-decoration:none;"><img alt="Vragen? Mail ons: vzwoosthoek@gmail.com" src="https://wijkvereniging-oosthoek.pages.dev/sinterklaas/email/email-contact.png" width="640" style="display:block;width:100%;max-width:640px;height:auto;border:0;"></a></td></tr>
-<tr><td><img alt="Vrolijke groetjes van Zwarte Piets Hulpjes, namens Sinterklaas en VZW Wijkvereniging Oosthoek." src="https://wijkvereniging-oosthoek.pages.dev/sinterklaas/email/email-onder.png" width="640" style="display:block;width:100%;max-width:640px;height:auto;border:0;"></td></tr>
+<tr><td><img alt="Vrolijke groetjes van Zwarte Piets Hulpjes, namens Sinterklaas en VZW Wijkvereniging Oosthoek." src="https://wijkvereniging-oosthoek.pages.dev/sinterklaas/email/email-onder.jpg" width="640" style="display:block;width:100%;max-width:640px;height:auto;border:0;"></td></tr>
 </table>
 </td></tr></table></body></html>
 `;
