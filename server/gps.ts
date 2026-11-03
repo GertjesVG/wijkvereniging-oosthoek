@@ -5,9 +5,10 @@
 import type { AdminGps, PublicGps } from "../src/gps/api.ts";
 import { errorMessage, fail, json, nowIso, readJson, sameText, sha256Hex, type Env } from "./basis.ts";
 
-// Huifkar op wandeltempo: de telefoon meldt zich elke 30 s, bezoekers verversen elke 30 s (alleen als de pagina
-// zichtbaar is). Buiten een sessie kijkt een open routepagina elke 2 minuten of de GPS al gestart is.
-export const REFRESH_LIVE_SECONDS = 30;
+// Huifkar op wandeltempo: de telefoon meldt zich elke 30 s, bezoekers verversen elke minuut (alleen als de pagina
+// zichtbaar is): de kar rijdt intussen hooguit ±80 m, en het halveert de aanvragen van bezoekers op het gratis plan.
+// Buiten een sessie kijkt een open routepagina elke 2 minuten of de GPS al gestart is.
+export const REFRESH_LIVE_SECONDS = 60;
 export const REFRESH_OFF_SECONDS = 120;
 export const STALE_AFTER_SECONDS = 120;
 export const LOST_AFTER_SECONDS = 600;

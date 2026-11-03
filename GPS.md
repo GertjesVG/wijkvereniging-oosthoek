@@ -64,7 +64,7 @@ Twee handelingen: OwnTracks op Move, dan Start in het beheer.
 | --- | --- |
 | Uit (vóór Start, na Stop, na het stopuur) | de gewone omgevingskaart en "De live GPS is nu niet actief." Geen enkele positie. |
 | Gestart, nog geen positie | "Live GPS gestart, wachten op de eerste positie" |
-| Live | Sint-speld op de kaart, "Live: laatste positie om 11:44 · 20 s geleden"; ververst elke 30 s |
+| Live | Sint-speld op de kaart, "Live: laatste positie om 11:44 · 20 s geleden"; ververst elke minuut |
 | Positie ouder dan 2 minuten | grijze speld, "Niet actueel" en "De verbinding met de huifkar is even weggevallen." |
 | Positie ouder dan 10 minuten | geen speld meer, "Verbinding weg sinds 11:44" |
 | Pagina zelf kan niet verversen | melding "Deze pagina kan de positie nu niet verversen."; na 10 minuten geen positie meer |
@@ -96,14 +96,15 @@ enkele tienduizenden gelezen en enkele honderden geschreven rijen.
 | --- | --- |
 | Pixel (Move, elke 30 s) | 120 per uur |
 | Beheer open en zichtbaar | 360 per uur |
-| Routepagina open en zichtbaar, tijdens de rit | 120 per uur per bezoeker |
+| Routepagina open en zichtbaar, tijdens de rit | 60 per uur per bezoeker |
 | Routepagina open, buiten de rit | 30 per uur per bezoeker |
 | Startpagina | 1 per bezoek |
 
 Een tabblad op de achtergrond of een vergrendelde gsm vraagt niets. Voorbeeld: 100 bezoekers die de routepagina drie uur
-lang open houden ≈ 36.000 aanvragen. Wat andere toepassingen op hetzelfde Cloudflare-account die dag gebruiken, telt mee:
-nakijken in het dashboard (Workers & Pages → overzicht). Te krap? `REFRESH_LIVE_SECONDS` in `server/gps.ts` op 60 zetten
-halveert het verkeer van bezoekers.
+lang open houden ≈ 18.000 aanvragen. Wat andere toepassingen op hetzelfde Cloudflare-account die dag gebruiken, telt mee:
+nakijken in het dashboard (Workers & Pages → overzicht). Bezoekers verversen elke minuut (`REFRESH_LIVE_SECONDS` in
+`server/gps.ts`, 3 november 2026 van 30 naar 60 s gezet): de huifkar rijdt intussen hooguit ±80 m. Gevolg: op een pagina
+die al open staat, verdwijnt de positie na Stop binnen ongeveer een minuut; een pagina die daarna opent, toont meteen niets.
 
 ## In gebruik nemen (elke stap pas na GO van Gert)
 

@@ -181,7 +181,7 @@ function liveNote(view: LiveGpsView) {
   if (view.kind === "live")
     return view.stale
       ? "De verbinding met de huifkar is even weggevallen. De positie op de kaart is niet meer actueel."
-      : "De huifkar is onderweg! De kaart ververst vanzelf ongeveer elke 30 seconden.";
+      : "De huifkar is onderweg! De kaart ververst vanzelf ongeveer elke minuut.";
   return event.gps.offMessage;
 }
 

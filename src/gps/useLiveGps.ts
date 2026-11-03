@@ -44,7 +44,7 @@ async function load(): Promise<PublicGps | null> {
 }
 
 // poll = false: één keer kijken (startpagina). Anders verversen zolang de pagina zichtbaar is, met het interval dat
-// de server meegeeft (tijdens de rondrit 30 s) plus een paar willekeurige seconden, zodat niet iedereen tegelijk vraagt.
+// de server meegeeft (tijdens de rondrit 60 s) plus een paar willekeurige seconden, zodat niet iedereen tegelijk vraagt.
 export function useLiveGps({ poll = true }: { poll?: boolean } = {}) {
   const [received, setReceived] = useState<Received | null>(null);
   const [failed, setFailed] = useState(false);

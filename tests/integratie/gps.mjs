@@ -229,7 +229,7 @@ try {
     assert.deepEqual([pub.lat, pub.lon, pub.accuracy], [51.31912, 4.85401, 6]);
     assert.equal(pub.fixAt, new Date(first * 1000).toISOString());
     assert.ok(pub.fixAgeSeconds <= 2, String(pub.fixAgeSeconds));
-    assert.equal(pub.refreshSeconds, 30);
+    assert.equal(pub.refreshSeconds, 60);
     assert.ok(pub.endsInSeconds > 0 && pub.endsInSeconds <= HOUR_S);
     for (const key of ["battery", "charging", "seen"]) assert.ok(!JSON.stringify(pub).includes(key), key);
     // De huifkar rijdt verder: nieuwe positie.
