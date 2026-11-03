@@ -76,6 +76,8 @@ Al gedaan: het Cloudflare Pages-project `wijkvereniging-oosthoek` (Git-koppeling
    7. Opruimen zonder de historiek te vervuilen: kinderen en mailrij van de proef verwijderen en de inschrijving zelf als lege, geannuleerde rij met gewiste gegevens laten staan (`npx wrangler d1 execute oosthoek-inschrijvingen --remote --command "…"`). Niet volledig verwijderen: dan krijgt de eerste echte inschrijving hetzelfde nummer, en dat nummer staat al als "verstuurd" in het Apps Script, zodat die ouder geen mail zou krijgen. Echte inschrijvingen beginnen daarom bij het volgende nummer.
    Pas dan (aparte GO) de echte inschrijving aankondigen.
 
+**Co-ouderschap en reglement (migratie 0004, apart publiceren na GO):** eerst `npx wrangler d1 migrations apply oosthoek-inschrijvingen --remote` (verwacht: alleen 0004 nieuw), pas daarna de code pushen. Omgekeerd faalt elke inschrijving zolang de nieuwe kolommen ontbreken. Bij een nieuwe tekst van het reglement ook `rules.version` in `src/inschrijving/evenementen.ts` verhogen: wie het formulier nog met de oude versie open had, moet dan herladen.
+
 **Na het evenement, uiterlijk op de wisdatum:** inschrijving dicht, in het beheer "persoonsgegevens wissen" (of automatisch, zie Bewaartermijn), en in Gmail van vzwoosthoek@gmail.com de verstuurde bevestigingen verwijderen (map Verzonden, zoeken op `subject:"Bevestiging inschrijving — Sinterklaas Oosthoek 2026"`, daarna de prullenbak legen). Die kopieën bevatten voornamen en e-mailadressen; de antwoorden onder het label 2026 - Sinterklaas ook.
 
 ### Apps Script bijwerken (bestaand project, geen nieuw)

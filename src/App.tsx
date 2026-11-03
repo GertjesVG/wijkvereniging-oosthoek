@@ -68,7 +68,11 @@ export default function App() {
       main.current?.focus({ preventScroll: true });
       previousPage.current = page;
     }
-    window.scrollTo({ top: 0, behavior: "instant" });
+    // "#/pagina?anker" opent de pagina bij dat onderdeel (bv. het reglement vanuit het inschrijfformulier).
+    const anchor = window.location.hash.split("?")[1];
+    const target = anchor ? document.getElementById(anchor) : null;
+    if (target) target.scrollIntoView();
+    else window.scrollTo({ top: 0, behavior: "instant" });
   }, [page]);
   useEffect(() => {
     if (!menuOpen) return;

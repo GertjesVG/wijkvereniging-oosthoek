@@ -143,15 +143,17 @@ async function login() {
 let n = 0;
 // Voornamen bestaan alleen uit letters: 1 → "b", 27 → "bb".
 const letters = (k) => (k >= 26 ? letters(Math.floor(k / 26)) : "") + String.fromCharCode(97 + (k % 26));
-function family({ kids = 1, email, street, houseNumber, names, parent } = {}) {
+const rulesVersion = /rules: \{ version: "([^"]+)"/.exec(readFileSync(path.join(repo, "src/inschrijving/evenementen.ts"), "utf8"))[1];
+function family({ kids = 1, email, street, houseNumber, names, parent, coParent = false } = {}) {
   n++;
   return {
     eventId: EVENT,
     submissionId: randomUUID(),
     parent: { name: parent ?? `Testouder ${n}`, email: email ?? `gezin${n}@example.org` },
-    address: { street: street ?? "Zandstraat", houseNumber: houseNumber ?? String(n) },
+    address: { street: street ?? "Zandstraat", houseNumber: houseNumber ?? String(n), coParent },
     participants: (names ?? Array.from({ length: kids }, (_, i) => `Kind${letters(n)}-${"abcdefgh"[i]}`)).map((name, i) => ({ name, age: 3 + (i % 9) })),
-    confirmations: { area: true, privacy: true },
+    confirmations: { rules: true, privacy: true },
+    rulesVersion,
     turnstileToken: dummyAnswer,
   };
 }
@@ -550,6 +552,48 @@ try {
     const open = await admin("PATCH", `/evenementen/${EVENT}`, { status: "open" });
     assert.equal(open.status, 409);
     assert.match(open.data.message, /gewist/);
+  });
+  stop(server);
+
+  // Fase E: nieuwe database; co-ouderschap en verplichte aanvaarding van het reglement.
+  const dirE = path.join(work, "e");
+  prepare(dirE);
+  server = await start(dirE, serverVars(1));
+  await step("co-ouderschap en reglement: adres van de andere ouder telt, akkoord verplicht en bewaard", async () => {
+    await login();
+    await admin("PATCH", `/evenementen/${EVENT}`, { status: "open" });
+    // Zonder akkoord of met een verouderde versie van het reglement: niets opgeslagen.
+    const before = (await registrations()).length;
+    const noRules = await register({ ...family({ names: ["Hugo"] }), confirmations: { rules: false, privacy: true } });
+    assert.equal(noRules.status, 400);
+    assert.ok(noRules.data.fields["confirmations.rules"]);
+    const oldRules = await register({ ...family({ names: ["Hugo"] }), rulesVersion: "2020-01-01" });
+    assert.equal(oldRules.status, 400);
+    assert.ok(oldRules.data.fields.rulesVersion);
+    assert.equal((await registrations()).length, before);
+    // Papa woont in de wijk, mama elders: mama schrijft in met het adres van papa. Geen nakijken, mail gewoon weg.
+    const mum = await register(family({ names: ["Ines"], email: "mama.elders@example.org", street: "Leemstraat", houseNumber: "8", coParent: true }));
+    assert.equal(mum.status, 201, mum.text);
+    assert.equal(mum.data.addressReview, false);
+    assert.deepEqual(mum.data.address, { street: "Leemstraat", houseNumber: "8", coParent: true });
+    const row = (await registrations()).find((r) => r.reference === mum.data.reference);
+    assert.equal(row.coParent, true);
+    assert.equal(row.rulesAccepted.version, rulesVersion);
+    assert.ok(Math.abs(Date.parse(row.rulesAccepted.at) - Date.parse(row.createdAt)) < 1000, row.rulesAccepted.at);
+    // Papa schrijft hetzelfde kind daarna ook in: geweigerd, één cadeautje per kind.
+    const dad = await register(family({ names: ["ines"], email: "papa.wijk@example.org", street: "leemstraat", houseNumber: "8" }));
+    assert.equal(dad.status, 409);
+    assert.equal(dad.data.error, "DUBBEL");
+    // Andere ouder op een adres buiten de lijst: aanvaard, maar "Adres nakijken" en dus nog geen mail.
+    const unsure = await register(family({ names: ["Jade"], street: "Kongostraat", houseNumber: "3", coParent: true }));
+    assert.equal(unsure.status, 201, unsure.text);
+    assert.equal(unsure.data.addressReview, true);
+    const jobs = (await mailApi("wachtrij", { max: 50 })).data.jobs;
+    assert.deepEqual(jobs.map((j) => j.id.split(":")[0]), [mum.data.reference]);
+    await mailApi("resultaat", { results: jobs.map((j) => ({ outboxId: j.outboxId, generation: j.generation, ok: true })) });
+    const csv = (await admin("GET", `/evenementen/${EVENT}/export`)).text.trim().split("\r\n");
+    assert.match(csv[0], /"Adres van andere ouder \(co-ouderschap\)";"Reglementversie";"Reglement aanvaard op"$/);
+    assert.ok(csv.some((l) => l.startsWith(`"${mum.data.reference}"`) && l.includes(`"ja";"${rulesVersion}";"`)), csv.join("\n"));
   });
 } catch (error) {
   failed = true;

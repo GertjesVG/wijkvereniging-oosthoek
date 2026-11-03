@@ -24,7 +24,11 @@ export type RegistrationEvent = {
     age: { min: number; max: number } | null;
     maxPerRegistration: number;
   };
+  // Reglement dat de ouder bij het inschrijven aanvaardt; de server bewaart version en het tijdstip bij elke
+  // inschrijving. Nieuwe tekst = nieuwe version: wie het formulier nog met de oude versie open had, moet herladen.
+  rules: { version: string; href: string } | null;
   // null = geen adres nodig. Adressen buiten de lijst worden nooit geweigerd, maar gemarkeerd om na te kijken.
+  // Het adres is dat van een ouder of voogd die in de wijk woont: bij co-ouderschap mag dat de andere ouder zijn.
   area: {
     name: string;
     // Straten die volledig in de wijk liggen.
@@ -59,6 +63,8 @@ export const registrationEvents: Record<string, RegistrationEvent> = {
       age: { min: 0, max: 12 },
       maxPerRegistration: 8,
     },
+    // Wedstrijdreglement op de kleurwedstrijdpagina (src/content/reglement.ts).
+    rules: { version: "2026-11-03", href: "#/kleurwedstrijd?reglement" },
     // Bron: gemeente Beerse, https://www.beerse.be/wijkraad → "Wijken Beerse 2017 per straat.xlsx" (blad 1,
     // 30 rijen "wijk Oosthoek" = 27 volledige straten + 2 straten met huisnummergrenzen), aangevuld met de wijkkaart
     // "Wijken Beerse 2017.pdf". Kopieën in Documentatie\ van het project, gedownload op 1 november 2026.

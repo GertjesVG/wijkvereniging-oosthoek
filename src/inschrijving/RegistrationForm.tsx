@@ -200,7 +200,11 @@ function ConfirmationPanel({
           </div>
           {result.address && (
             <div>
-              <dt>Adres</dt>
+              <dt>
+                {result.address.coParent
+                  ? `Adres in ${config.area?.name ?? "de wijk"} (andere ouder of voogd)`
+                  : "Adres"}
+              </dt>
               <dd>
                 {result.address.street} {result.address.houseNumber}
               </dd>
@@ -226,7 +230,7 @@ function ConfirmationPanel({
         </dl>
         {result.addressReview && (
           <p className="registration-review">
-            Je adres staat niet in de gemeentelijke stratenlijst van{" "}
+            Het adres staat niet in de gemeentelijke stratenlijst van{" "}
             {config.area?.name ?? "de wijk"}, of het huisnummer ligt op de grens.
             Je inschrijving is wel ontvangen; de vereniging kijkt het adres nog na
             en neemt contact op als er iets niet klopt.
@@ -280,7 +284,7 @@ function OpenPanel({
   onAvailable: (n: number) => void;
 }) {
   const uid = useId();
-  const { participant, area } = config;
+  const { participant, area, rules } = config;
   const maxChildren = Math.max(
     1,
     Math.min(participant.maxPerRegistration, available),
@@ -293,10 +297,12 @@ function OpenPanel({
   const [email, setEmail] = useState("");
   const [street, setStreet] = useState("");
   const [houseNumber, setHouseNumber] = useState("");
+  // true = het adres is dat van de andere ouder of voogd (co-ouderschap); de inschrijver woont elders.
+  const [coParent, setCoParent] = useState(false);
   const [children, setChildren] = useState<Child[]>([
     { key: 0, name: "", age: "" },
   ]);
-  const [areaOk, setAreaOk] = useState(false);
+  const [rulesOk, setRulesOk] = useState(false);
   const [privacyOk, setPrivacyOk] = useState(false);
   const [website, setWebsite] = useState("");
   const [token, setToken] = useState<string | null>(null);
@@ -334,9 +340,9 @@ function OpenPanel({
     else if (!emailPattern.test(email.trim()))
       e["parent.email"] = "Dit e-mailadres lijkt niet te kloppen.";
     if (area) {
-      if (!street.trim()) e["address.street"] = "Kies of vul je straat in.";
+      if (!street.trim()) e["address.street"] = "Kies of vul de straat in.";
       if (!houseNumber.trim())
-        e["address.houseNumber"] = "Vul je huisnummer in.";
+        e["address.houseNumber"] = "Vul het huisnummer in.";
     }
     children.forEach((c, i) => {
       if (!c.name.trim())
@@ -344,8 +350,8 @@ function OpenPanel({
       if (participant.age && c.age === "")
         e[`participants.${i}.age`] = `Kies de leeftijd van het ${participant.singular}.`;
     });
-    if (!areaOk)
-      e["confirmations.area"] = `Bevestig dat je ${participant.plural} in ${area?.name ?? "de wijk"} wonen.`;
+    if (rules && !rulesOk)
+      e["confirmations.rules"] = "Bevestig deze verklaring om in te schrijven.";
     if (!privacyOk)
       e["confirmations.privacy"] =
         "Bevestig dat je de privacyverklaring hebt gelezen.";
@@ -378,13 +384,14 @@ function OpenPanel({
       submissionId,
       parent: { name: parentName.trim(), email: email.trim() },
       address: area
-        ? { street: street.trim(), houseNumber: houseNumber.trim() }
+        ? { street: street.trim(), houseNumber: houseNumber.trim(), coParent }
         : null,
       participants: children.map((c) => ({
         name: c.name.trim(),
         age: participant.age ? Number(c.age) : null,
       })),
-      confirmations: { area: areaOk, privacy: privacyOk },
+      confirmations: { rules: rulesOk, privacy: privacyOk },
+      rulesVersion: rules?.version ?? null,
       turnstileToken: token,
       website,
     };
@@ -440,7 +447,7 @@ function OpenPanel({
     "parent.email",
     "address.street",
     "address.houseNumber",
-    "confirmations.area",
+    "confirmations.rules",
     "confirmations.privacy",
   ]);
   children.forEach((_, i) => {
@@ -522,6 +529,36 @@ function OpenPanel({
         {area && (
           <fieldset className="form-group">
             <legend>Adres in {area.name}</legend>
+            {/* Minstens één ouder of voogd woont in de wijk; het kind hoeft er niet gedomicilieerd te zijn. Geen extra
+                gegevens van de andere ouder: alleen dit adres, met dezelfde controle als altijd. */}
+            <fieldset className="choice-group">
+              <legend>Wie woont in {area.name}?</legend>
+              <div className="check-field">
+                <label>
+                  <input
+                    type="radio"
+                    name={id("resident")}
+                    checked={!coParent}
+                    onChange={() => setCoParent(false)}
+                  />
+                  <span>Ik, de ouder of voogd die inschrijft</span>
+                </label>
+              </div>
+              <div className="check-field">
+                <label>
+                  <input
+                    type="radio"
+                    name={id("resident")}
+                    checked={coParent}
+                    onChange={() => setCoParent(true)}
+                  />
+                  <span>
+                    De andere ouder of voogd van het kind, bijvoorbeeld bij
+                    co-ouderschap of gescheiden ouders
+                  </span>
+                </label>
+              </div>
+            </fieldset>
             <div className="field-row">
               <div className="field">
                 <label htmlFor={id("address.street")}>Straat</label>
@@ -556,7 +593,9 @@ function OpenPanel({
               </div>
             </div>
             <p className="field-hint" id={id("address-hint")}>
-              Kies je straat uit de lijst van de gemeente Beerse. Staat ze er niet
+              {coParent &&
+                `Vul het adres in ${area.name} van de andere ouder of voogd in. Het kind hoeft daar niet ingeschreven te zijn. `}
+              Kies de straat uit de lijst van de gemeente Beerse. Staat ze er niet
               bij, vul ze dan gewoon in: we kijken het adres na.
             </p>
           </fieldset>
@@ -659,26 +698,34 @@ function OpenPanel({
         </div>
         <fieldset className="form-group checks">
           <legend className="visually-hidden">Bevestigingen</legend>
-          <div className="check-field">
-            <label>
-              <input
-                type="checkbox"
-                checked={areaOk}
-                onChange={(e) => setAreaOk(e.target.checked)}
-                aria-invalid={errors["confirmations.area"] ? true : undefined}
-                aria-describedby={
-                  errors["confirmations.area"] ? errId("confirmations.area") : undefined
-                }
+          {rules && (
+            <div className="check-field">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={rulesOk}
+                  onChange={(e) => setRulesOk(e.target.checked)}
+                  aria-invalid={errors["confirmations.rules"] ? true : undefined}
+                  aria-describedby={
+                    errors["confirmations.rules"] ? errId("confirmations.rules") : undefined
+                  }
+                />
+                {/* Letterlijke tekst van de vereniging; het reglement opent in een nieuw tabblad, zodat het formulier blijft staan. */}
+                <span>
+                  Ik verklaar dat ik ouder of wettelijke voogd ben, dat de
+                  verstrekte gegevens correct zijn en dat ik het{" "}
+                  <a href={rules.href} target="_blank" rel="noopener">
+                    wedstrijdreglement
+                  </a>{" "}
+                  heb gelezen en aanvaard.
+                </span>
+              </label>
+              <FieldError
+                id={errId("confirmations.rules")}
+                message={errors["confirmations.rules"]}
               />
-              <span>
-                Mijn {participant.plural} wonen in {area?.name ?? "de wijk"}
-              </span>
-            </label>
-            <FieldError
-              id={errId("confirmations.area")}
-              message={errors["confirmations.area"]}
-            />
-          </div>
+            </div>
+          )}
           <div className="check-field">
             <label>
               <input
@@ -693,7 +740,11 @@ function OpenPanel({
                 }
               />
               <span>
-                Ik heb de <a href="#/privacy">privacyverklaring</a> gelezen
+                Ik heb de{" "}
+                <a href="#/privacy" target="_blank" rel="noopener">
+                  privacyverklaring
+                </a>{" "}
+                gelezen
               </span>
             </label>
             <FieldError

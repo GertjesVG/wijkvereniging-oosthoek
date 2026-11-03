@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { ChevronDown, Copy, Mail, MapPin } from "lucide-react";
+import { ChevronDown, Copy, Mail, MapPin, Users } from "lucide-react";
 import type { AdminParticipant, AdminRegistration } from "../inschrijving/api";
 import { api } from "./client";
 import { ErrorNote, formatDateTime, MailBadge, useAction } from "./ui";
@@ -187,6 +187,13 @@ export function RegistrationDetails({
             <ErrorNote>{review.error}</ErrorNote>
           </div>
         )}
+        {(reg.coParent || reg.rulesAccepted) && (
+          <p className="muted">
+            {reg.coParent && "Het adres is dat van de andere ouder of voogd in de wijk (co-ouderschap). "}
+            {reg.rulesAccepted &&
+              `Reglement (versie ${reg.rulesAccepted.version}) aanvaard op ${formatDateTime(reg.rulesAccepted.at)}.`}
+          </p>
+        )}
         <form className="grid-form" onSubmit={saveDetails}>
           <label className="field">
             <span>Naam ouder</span>
@@ -335,6 +342,11 @@ export function RegistrationItem({
             {reg.addressReview && (
               <span className="badge badge-warn">
                 <MapPin size={12} aria-hidden="true" /> Adres nakijken
+              </span>
+            )}
+            {reg.coParent && (
+              <span className="badge badge-muted">
+                <Users size={12} aria-hidden="true" /> Co-ouderschap
               </span>
             )}
             {active.length > 0 && (

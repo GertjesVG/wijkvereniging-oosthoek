@@ -164,7 +164,23 @@
   line-height: 1.45;
   cursor: pointer;
 }
-.check-field input[type="checkbox"] {
+.choice-group {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+  display: grid;
+  gap: 10px;
+}
+.choice-group > legend {
+  padding: 0;
+  margin-bottom: 8px;
+  font-size: 0.83rem;
+  font-weight: 600;
+  color: #3f4a52;
+}
+.check-field input[type="checkbox"],
+.check-field input[type="radio"] {
   width: 22px;
   height: 22px;
   margin: 0;

@@ -201,7 +201,8 @@ async function updateEvent(request: Request, db: D1Database, eventId: string) {
 // ---------- Inschrijvingen ----------
 
 const REGISTRATION_SQL = `SELECT r.id, r.event_id, r.reference, r.status, r.parent_name, r.email, r.street, r.house_number,
-  r.note, r.suspected_duplicate, r.address_review, r.created_at, o.status AS mail_status, o.attempts, o.last_error, o.sent_at
+  r.co_parent, r.rules_version, r.rules_accepted_at, r.note, r.suspected_duplicate, r.address_review, r.created_at,
+  o.status AS mail_status, o.attempts, o.last_error, o.sent_at
   FROM registrations r LEFT JOIN mail_outbox o ON o.registration_id = r.id`;
 
 type RegistrationRow = {
@@ -213,6 +214,9 @@ type RegistrationRow = {
   email: string;
   street: string | null;
   house_number: string | null;
+  co_parent: number;
+  rules_version: string | null;
+  rules_accepted_at: string | null;
   note: string | null;
   suspected_duplicate: number;
   address_review: number;
@@ -247,6 +251,9 @@ function toRegistration(row: RegistrationRow, participants: ParticipantRow[]): A
     email: row.email,
     street: row.street,
     houseNumber: row.house_number,
+    coParent: row.co_parent === 1,
+    rulesAccepted:
+      row.rules_version && row.rules_accepted_at ? { version: row.rules_version, at: row.rules_accepted_at } : null,
     note: row.note,
     suspectedDuplicate: row.suspected_duplicate === 1,
     addressReview: addressReviewOf(row),
@@ -515,7 +522,8 @@ async function exportCsv(db: D1Database, config: RegistrationEvent) {
   const { results } = await db
     .prepare(
       `SELECT r.reference, r.status AS registration_status, r.parent_name, r.email, r.street, r.house_number, r.address_review,
-         p.name, p.age, p.status, p.picked_up_at, o.status AS mail_status, r.suspected_duplicate, r.note, r.created_at
+         p.name, p.age, p.status, p.picked_up_at, o.status AS mail_status, r.suspected_duplicate, r.note, r.created_at,
+         r.co_parent, r.rules_version, r.rules_accepted_at
        FROM participants p JOIN registrations r ON r.id = p.registration_id LEFT JOIN mail_outbox o ON o.registration_id = r.id
        WHERE r.event_id = ?1 ORDER BY r.seq, p.id`,
     )
@@ -537,6 +545,9 @@ async function exportCsv(db: D1Database, config: RegistrationEvent) {
     "Mogelijk dubbel",
     "Notitie",
     "Ingeschreven op",
+    "Adres van andere ouder (co-ouderschap)",
+    "Reglementversie",
+    "Reglement aanvaard op",
   ];
   const rows = results.map((r) =>
     [
@@ -555,6 +566,9 @@ async function exportCsv(db: D1Database, config: RegistrationEvent) {
       r.suspected_duplicate ? "ja" : "nee",
       r.note,
       r.created_at,
+      r.co_parent ? "ja" : "nee",
+      r.rules_version,
+      r.rules_accepted_at,
     ]
       .map(csvCell)
       .join(";"),

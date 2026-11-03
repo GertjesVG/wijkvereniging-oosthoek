@@ -11,6 +11,10 @@ export type CleanRegistration = {
   addressKey: string | null;
   // Adres niet zeker in de wijk: wordt aanvaard, maar in het beheer nagekeken.
   addressReview: boolean;
+  // Het adres is dat van de andere ouder of voogd (co-ouderschap); de inschrijver woont elders.
+  coParent: boolean;
+  // Aanvaarde versie van het reglement; null = evenement zonder reglement.
+  rulesVersion: string | null;
   participants: { name: string; age: number | null; childKey: string }[];
   // Turnstile-antwoord uit het formulier.
   challenge: string;
@@ -63,9 +67,12 @@ export function validateRegistration(
   let street: string | null = null;
   let number: string | null = null;
   let review = false;
+  let coParent = false;
   if (config.area) {
+    // Het adres van de ouder of voogd die in de wijk woont, ook als dat de andere ouder is: zelfde controle.
     street = text(address.street);
     number = text(address.houseNumber);
+    coParent = address.coParent === true;
     checkText(fields, "address.street", street, 2, 100, "de straat");
     if (!houseNumber.test(number)) fields["address.houseNumber"] = "Vul een geldig huisnummer in.";
     if (!fields["address.street"] && !fields["address.houseNumber"]) {
@@ -73,8 +80,13 @@ export function validateRegistration(
       street = place.street;
       review = place.review !== null;
     }
-    if (confirmations.area !== true)
-      fields["confirmations.area"] = `Bevestig dat je in ${config.area.name} woont.`;
+  }
+  if (config.rules) {
+    if (confirmations.rules !== true)
+      fields["confirmations.rules"] =
+        "Bevestig dat je ouder of voogd bent, dat de gegevens kloppen en dat je het wedstrijdreglement aanvaardt.";
+    if (body.rulesVersion !== config.rules.version)
+      fields.rulesVersion = "Het wedstrijdreglement is intussen aangepast. Laad de pagina opnieuw en lees het nieuwe reglement.";
   }
   if (confirmations.privacy !== true)
     fields["confirmations.privacy"] = "Bevestig dat je de privacyverklaring gelezen hebt.";
@@ -117,6 +129,8 @@ export function validateRegistration(
       houseNumber: number,
       addressKey: address_,
       addressReview: review,
+      coParent,
+      rulesVersion: config.rules?.version ?? null,
       participants,
       challenge: proof,
     },

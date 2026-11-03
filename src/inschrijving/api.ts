@@ -13,9 +13,13 @@ export type RegistrationRequest = {
   // Willekeurige UUID per formulier: dezelfde inzending twee keer verzenden geeft dezelfde inschrijving.
   submissionId: string;
   parent: { name: string; email: string };
-  address: { street: string; houseNumber: string } | null;
+  // coParent = dit is het adres van de andere ouder of voogd (co-ouderschap, gescheiden ouders); de inschrijver woont elders.
+  address: { street: string; houseNumber: string; coParent: boolean } | null;
   participants: { name: string; age: number | null }[];
-  confirmations: { area: boolean; privacy: boolean };
+  // rules = verklaring ouder/voogd, juiste gegevens en wedstrijdreglement aanvaard.
+  confirmations: { rules: boolean; privacy: boolean };
+  // Versie van het reglement dat het formulier toonde (evenementen.ts).
+  rulesVersion: string | null;
   turnstileToken: string;
   // Verborgen lokveld voor bots; moet leeg blijven.
   website?: string;
@@ -25,7 +29,7 @@ export type RegistrationResponse = {
   reference: string;
   parentName: string;
   email: string;
-  address: { street: string; houseNumber: string } | null;
+  address: { street: string; houseNumber: string; coParent: boolean } | null;
   // Adres staat niet zeker in de wijk: de inschrijving is ontvangen, de vereniging kijkt het adres na.
   addressReview: boolean;
   participants: { name: string; age: number | null }[];
@@ -97,6 +101,10 @@ export type AdminRegistration = {
   email: string;
   street: string | null;
   houseNumber: string | null;
+  // Het adres in de wijk is dat van de andere ouder of voogd (co-ouderschap).
+  coParent: boolean;
+  // Aanvaarde versie van het reglement en tijdstip (servertijd); null bij inschrijvingen van vóór het reglement.
+  rulesAccepted: { version: string; at: string } | null;
   note: string | null;
   suspectedDuplicate: boolean;
   // Adres nakijken: gemarkeerd bij de inschrijving of na een correctie; reason = waarom (null als de reden niet meer geldt).

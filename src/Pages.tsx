@@ -137,11 +137,20 @@ function ColouringPage() {
           <ul className="checklist">
             <li>
               <Check size={17} aria-hidden="true" />
-              De originele kleurplaat als PDF
+              Bij de flyer zit al één kleurplaat
             </li>
             <li>
               <Check size={17} aria-hidden="true" />
-              Thuis printen, kleuren en meenemen
+              Meer kinderen in het gezin? Download en print hier een extra
+              kleurplaat per kind
+            </li>
+            <li>
+              <Check size={17} aria-hidden="true" />
+              Elk kind dient één eigen ingekleurde tekening in
+            </li>
+            <li>
+              <Check size={17} aria-hidden="true" />
+              Maximaal één cadeautje per deelnemend kind
             </li>
           </ul>
           <div className="small-editorial-note">
@@ -627,15 +636,18 @@ function PrivacyPage() {
             <h2>Inschrijven voor de cadeauactie</h2>
             <p>
               Een ouder of verantwoordelijke schrijft de kinderen in. We vragen
-              je naam en e-mailadres, je straat en huisnummer (de actie is voor
-              kinderen uit {registration.area?.name ?? "de wijk"}) en per kind
-              alleen de voornaam en de leeftijd. Je krijgt een
-              inschrijvingsnummer.
+              je naam en e-mailadres, de straat en het huisnummer in{" "}
+              {registration.area?.name ?? "de wijk"} (de actie is voor kinderen
+              van wie minstens één ouder of voogd daar woont; bij co-ouderschap
+              kan dat het adres van de andere ouder zijn, zonder verdere
+              gegevens over die ouder) en per kind alleen de voornaam en de
+              leeftijd. We bewaren ook welke versie van het wedstrijdreglement
+              je aanvaardde en wanneer. Je krijgt een inschrijvingsnummer.
             </p>
             <p>
               We gebruiken die gegevens alleen om het juiste aantal cadeautjes
               voor te bereiden, één cadeautje per kind te geven, je een
-              bevestiging te sturen en je vragen te beantwoorden. Of je adres in{" "}
+              bevestiging te sturen en je vragen te beantwoorden. Of het adres in{" "}
               {registration.area?.name ?? "de wijk"} ligt, kijken we na met de
               wijkindeling van de gemeente Beerse. Inschrijven is
               vrijwillig; zonder deze gegevens kunnen we geen cadeautje

@@ -88,12 +88,13 @@ function form(overrides = {}) {
     eventId: "sinterklaas-2026",
     submissionId: randomUUID(),
     parent: { name: "Testouder Fictief", email: "ouder@example.org" },
-    address: { street: "Teststraat", houseNumber: "12A" },
+    address: { street: "Teststraat", houseNumber: "12A", coParent: false },
     participants: [
       { name: "Noor", age: 6 },
       { name: "Milan", age: 9 },
     ],
-    confirmations: { area: true, privacy: true },
+    confirmations: { rules: true, privacy: true },
+    rulesVersion: sinterklaasRegistration.rules.version,
     turnstileToken: dummyAnswer,
     ...overrides,
   };
@@ -162,13 +163,46 @@ test("validatie weigert ongeldige of te veel gegevens", () => {
   const nine = Array.from({ length: 9 }, (_, i) => ({ name: `Kind${"ABCDEFGHI"[i]}`, age: 5 }));
   assert.deepEqual(fieldsOf(form({ participants: nine })), ["participants"]);
   assert.deepEqual(fieldsOf(form({ participants: [{ name: "Noor", age: 5 }, { name: " noor ", age: 7 }] })), ["participants.1.name"]);
-  assert.deepEqual(fieldsOf(form({ confirmations: { area: true, privacy: false } })), ["confirmations.privacy"]);
-  assert.deepEqual(fieldsOf(form({ confirmations: { area: false, privacy: true } })), ["confirmations.area"]);
+  assert.deepEqual(fieldsOf(form({ confirmations: { rules: true, privacy: false } })), ["confirmations.privacy"]);
   assert.deepEqual(fieldsOf(form({ website: "http://spam.example" })), ["website"]);
   assert.deepEqual(fieldsOf(form({ submissionId: "1" })), ["submissionId"]);
   assert.deepEqual(fieldsOf(form({ turnstileToken: "" })), ["turnstileToken"]);
   assert.deepEqual(fieldsOf(form({ address: { street: "Teststraat", houseNumber: "abc" } })), ["address.houseNumber"]);
   assert.deepEqual(fieldsOf(form({ participants: [{ name: "http://evil.be", age: 5 }] })), ["participants.0.name"]);
+});
+
+test("reglement: verklaring verplicht en de versie van het getoonde reglement wordt bewaard", () => {
+  const fieldsOf = (body) => Object.keys(validateRegistration(sinterklaasRegistration, body).fields ?? {});
+  assert.deepEqual(fieldsOf(form({ confirmations: { rules: false, privacy: true } })), ["confirmations.rules"]);
+  assert.deepEqual(fieldsOf(form({ confirmations: { rules: "ja", privacy: true } })), ["confirmations.rules"]);
+  assert.deepEqual(fieldsOf(form({ confirmations: { privacy: true } })), ["confirmations.rules"]);
+  // Pagina geladen vóór een nieuwe versie van het reglement: opnieuw laden en het nieuwe reglement aanvaarden.
+  assert.deepEqual(fieldsOf(form({ rulesVersion: "2020-01-01" })), ["rulesVersion"]);
+  assert.deepEqual(fieldsOf(form({ rulesVersion: undefined })), ["rulesVersion"]);
+  assert.match(validateRegistration(sinterklaasRegistration, form({ rulesVersion: "x" })).fields.rulesVersion, /opnieuw/);
+  const ok = validateRegistration(sinterklaasRegistration, form());
+  assert.equal(ok.value.rulesVersion, sinterklaasRegistration.rules.version);
+});
+
+test("co-ouderschap: het adres van de andere ouder of voogd in de wijk telt, zonder extra persoonsgegevens", () => {
+  const check = (address) => validateRegistration(sinterklaasRegistration, form({ address }));
+  // Andere ouder woont in de wijk: gewoon aanvaard, geen nakijken.
+  const other = check({ street: "Zandstraat", houseNumber: "4", coParent: true });
+  assert.equal(other.ok, true);
+  assert.equal(other.value.coParent, true);
+  assert.equal(other.value.addressReview, false);
+  assert.equal(other.value.addressKey, "zandstraat|4");
+  // Zelfde kind via de andere ouder op hetzelfde adres = dezelfde sleutel, dus geen tweede cadeautje.
+  const self = check({ street: "zandstraat", houseNumber: "4", coParent: false });
+  assert.equal(self.value.coParent, false);
+  assert.deepEqual(other.value.participants.map((p) => p.childKey), self.value.participants.map((p) => p.childKey));
+  // Twijfel over het adres: nooit geweigerd, wel nakijken (bestaande status).
+  const unsure = check({ street: "Kongostraat", houseNumber: "1", coParent: true });
+  assert.equal(unsure.ok, true);
+  assert.equal(unsure.value.addressReview, true);
+  // Alleen true telt; geen naam of adres van de inschrijver zelf nodig.
+  assert.equal(check({ street: "Zandstraat", houseNumber: "4", coParent: "ja" }).value.coParent, false);
+  assert.equal(check({ street: "Zandstraat", houseNumber: "4" }).value.coParent, false);
 });
 
 test("voornamen: alleen letters, spatie, - en ', dus geen links of code in de mail", () => {
@@ -196,6 +230,8 @@ test("internetaansluiting: IPv4-adres apart, IPv6 per /64-blok", () => {
 test("Sinterklaas 2026: beslissingen van de vereniging en de gemeentelijke stratenlijst", () => {
   const config = sinterklaasRegistration;
   assert.deepEqual(config.participant.age, { min: 0, max: 12 });
+  assert.match(config.rules.version, /^\d{4}-\d{2}-\d{2}$/);
+  assert.equal(config.rules.href, "#/kleurwedstrijd?reglement");
   assert.equal(config.date, "2026-11-28");
   assert.equal(config.defaultCapacity, 150);
   assert.deepEqual(config.pendingDecisions, []);
