@@ -437,9 +437,8 @@ function PracticalPage() {
             Een verrassing voor de kleintjes
           </h2>
           <p>
-            Schrijf je kinderen gratis online in op de cadeauactiepagina. Er
-            zijn 150 cadeautjes, één per kind. Daar zie je ook of er nog
-            plaatsen vrij zijn.
+            Schrijf je kinderen gratis online in op de cadeauactiepagina. Per
+            kind is er maximaal één cadeautje.
           </p>
           <ButtonLink href="#/cadeauactie" variant="outline">
             Naar de inschrijving
@@ -863,7 +862,24 @@ function PrivacyPage() {
               ze laadt: na je klik op de kaartknop, of vanzelf terwijl de live
               GPS loopt. De live GPS toont alleen de huifkar tijdens de rondrit,
               nooit jouw locatie. Cloudflare en Google kunnen gegevens ook buiten
-              de Europese Unie verwerken. Er zijn geen advertentie- of
+              de Europese Unie verwerken; welke waarborgen ze daarbij gebruiken,
+              lees je in het privacybeleid van{" "}
+              <a
+                href="https://www.cloudflare.com/privacypolicy/"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Cloudflare
+              </a>{" "}
+              en{" "}
+              <a
+                href="https://policies.google.com/privacy/frameworks?hl=nl"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Google
+              </a>
+              . Er zijn geen advertentie- of
               analysetrackers, en geen cookies of browseropslag om bezoekers te
               volgen. Voor deze beveiliging en technische werking steunen we op
               ons gerechtvaardigd belang bij een veilige, werkende website
@@ -874,11 +890,13 @@ function PrivacyPage() {
             <span className="section-number">04</span>
             <h2>Bewaartermijn</h2>
             <p>
-              Uiterlijk op {deleteByLabel} verwijderen we alle persoonsgegevens
-              van Sinterklaas {event.year}: de inschrijvingen in de database
-              automatisch, en ook de bijbehorende mails in de mailbox van de
-              vereniging. Daarna blijven alleen anonieme cijfers over, zoals
-              aantallen en leeftijden, om volgende edities voor te bereiden.
+              Op {deleteByLabel} wist de website de persoonsgegevens van
+              Sinterklaas {event.year} automatisch uit de database. Mails in de
+              mailbox van de vereniging en eventuele lijsten die vrijwilligers
+              downloadden, verwijderen we uiterlijk die dag zelf. De technische
+              reservekopie van de database verdwijnt daarna vanzelf binnen enkele
+              weken. Alleen anonieme cijfers blijven, zoals aantallen en
+              leeftijden, om volgende edities voor te bereiden.
             </p>
           </section>
           <section>

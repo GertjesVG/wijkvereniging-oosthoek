@@ -140,7 +140,7 @@ export function Reglement() {
       <p className="reglement-meta">
         <strong>Organisator:</strong> {reglement.organiser}
         <br />
-        <strong>Evenement:</strong> {reglement.eventDate}
+        <strong>Datum:</strong> {reglement.eventDate}
       </p>
       {reglement.articles.map((article) => (
         <article key={article.title}>

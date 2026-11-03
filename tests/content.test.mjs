@@ -158,24 +158,32 @@ test("downloads zijn bytegelijk aan de originele documenten", () => {
     );
 });
 
-test("officieel wedstrijdreglement: zeven onderdelen letterlijk, met het anker van het inschrijfformulier", () => {
+test("officieel wedstrijdreglement: verkorte tekst in vijf onderdelen letterlijk, met het anker van het inschrijfformulier", () => {
   assert.equal(reglement.title, "Wedstrijdreglement – Sinterklaas Oosthoek 2026");
   assert.equal(reglement.organiser, "VZW Wijkvereniging Oosthoek");
-  assert.equal(reglement.eventDate, "Zaterdag 28 november 2026");
-  assert.equal(reglement.articles.length, 7);
-  reglement.articles.forEach((a, i) =>
-    assert.ok(a.title.startsWith(`${i + 1}. `), a.title),
-  );
+  assert.equal(reglement.eventDate, "zaterdag 28 november 2026");
+  assert.deepEqual(reglement.articles.map((a) => a.title), [
+    "1. Deelname",
+    "2. Inschrijving",
+    "3. Kleurwedstrijd en cadeautjes",
+    "4. Controle en eerlijkheid",
+    "5. Privacy en akkoord",
+  ]);
   const text = reglement.articles.flatMap((a) => a.body.flat()).join("\n");
+  // Leeftijdsgrens, co-ouderschap, één keer per kind, voorraad en adrescontrole: zoals het formulier en de server werken.
   for (const must of [
-    "0 tot en met 12 jaar op 28 november 2026",
-    "minstens één ouder of wettelijke voogd daadwerkelijk in Wijk Oosthoek woont",
-    "gescheiden ouders of co-ouderschap",
-    "Elk kind mag slechts één keer worden ingeschreven.",
-    "één cadeautje per deelnemend kind",
-    "Zonder deze bevestiging kan de inschrijving niet worden voltooid.",
+    "kinderen van 0 tot en met 12 jaar op 28 november 2026, van wie minstens één ouder of wettelijke voogd in Wijk Oosthoek woont.",
+    "Dit geldt ook bij gescheiden ouders of co-ouderschap. Het kind hoeft niet op dat adres gedomicilieerd te zijn.",
+    "Elk kind mag slechts één keer deelnemen.",
+    "Er geldt maximaal één cadeautje per deelnemend kind, afhankelijk van de beschikbare voorraad.",
+    "De vereniging mag bij twijfel een adres of dubbele inschrijving controleren.",
+    "Zonder akkoord is inschrijven niet mogelijk.",
   ])
     assert.ok(text.includes(must), must);
+  assert.equal(reglement.signature, "VZW Wijkvereniging Oosthoek – Beerse");
+  // Eén reglement: alleen deze component toont het, op de kleurwedstrijdpagina.
+  const pages = readFileSync(new URL("../src/Pages.tsx", import.meta.url), "utf8");
+  assert.equal(pages.split("<Reglement />").length, 2);
   // Het formulier linkt naar "#/kleurwedstrijd?reglement"; App.tsx scrolt naar het element met dat id.
   assert.equal(sinterklaasRegistration.rules.href, "#/kleurwedstrijd?reglement");
   const components = readFileSync(
@@ -231,4 +239,14 @@ test("route 2026: de 24 bevestigde straten in volgorde, vertrek zonder adres, ka
     const source = readFileSync(new URL(file, import.meta.url), "utf8");
     assert.ok(!source.includes("Paddesteenstraat"), file);
   }
+});
+
+test("publieke site: geen vaste grens van 150 en geen aantal vrije plaatsen, wel maximaal één cadeautje per kind", () => {
+  for (const file of ["../src/Pages.tsx", "../src/Home.tsx", "../src/inschrijving/RegistrationForm.tsx"]) {
+    const source = readFileSync(new URL(file, import.meta.url), "utf8");
+    assert.doesNotMatch(source, /150 cadeau|plaatsen vrij|Nog \$\{giftCount|laatste plaatsen|onbeperkt/i, file);
+  }
+  const form = readFileSync(new URL("../src/inschrijving/RegistrationForm.tsx", import.meta.url), "utf8");
+  assert.ok(form.includes("is er maximaal één cadeautje"));
+  assert.equal(sinterklaasRegistration.defaultCapacity, null);
 });

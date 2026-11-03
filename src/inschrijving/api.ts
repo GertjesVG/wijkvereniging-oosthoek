@@ -2,8 +2,10 @@
 
 export type PublicEventStatus = {
   id: string;
+  // "full" alleen als er in het beheer een maximum is ingesteld en dat bereikt is.
   status: "open" | "closed" | "full";
-  available: number;
+  // Vrije plaatsen onder het ingestelde maximum; null = geen maximum (het formulier toont dan geen aantal).
+  available: number | null;
   // null = Turnstile nog niet ingesteld; dan blijft het formulier dicht.
   turnstileSiteKey: string | null;
 };
@@ -64,9 +66,11 @@ export type AdminEventSummary = {
   title: string;
   date: string;
   status: "open" | "closed";
-  capacity: number;
+  // Ingesteld maximum aantal kinderen; null = geen maximum. available is dan ook null.
+  capacity: number | null;
+  // Werkelijk aantal actief ingeschreven kinderen.
   active: number;
-  available: number;
+  available: number | null;
   registrations: number;
   pickedUp: number;
   mail: Record<MailStatus, number>;

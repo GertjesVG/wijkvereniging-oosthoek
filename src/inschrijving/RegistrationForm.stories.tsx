@@ -37,7 +37,8 @@ const fakeSubmit = (request: RegistrationRequest) =>
 const status = (patch: Partial<PublicEventStatus>): PublicEventStatus => ({
   id: "sinterklaas-2026",
   status: "open",
-  available: 37,
+  // Geen maximum ingesteld, zoals op de site.
+  available: null,
   turnstileSiteKey: "1x00000000000000000000AA",
   ...patch,
 });

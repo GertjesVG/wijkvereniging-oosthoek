@@ -109,6 +109,19 @@ export function sameText(a: string, b: string) {
   return diff === 0;
 }
 
+// Optioneel maximum (migratie 0007). Bewaakt in dezelfde D1-batch (= één transactie) als de wijziging: zonder ingesteld
+// maximum altijd in orde, anders hoogstens `capacity` actieve kinderen. Anders faalt de CHECK "volzet" en draait D1 alles terug.
+export const CAPACITY_GUARD_SQL = `INSERT OR REPLACE INTO guard_capacity (id, ok) VALUES (1,
+  (SELECT e.capacity_limited = 0
+     OR (SELECT COUNT(*) FROM participants p WHERE p.event_id = e.id AND p.status = 'active') <= e.capacity
+   FROM events e WHERE e.id = ?1))`;
+
+export const capacityGuard = (db: D1Database, eventId: string) => db.prepare(CAPACITY_GUARD_SQL).bind(eventId);
+
+// Vrije plaatsen bij een ingesteld maximum; null = geen maximum (dan bestaat er geen getal om te tonen).
+export const freePlaces = (limited: number, capacity: number, active: number) =>
+  limited === 1 ? Math.max(0, capacity - active) : null;
+
 export function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : String(error);
 }

@@ -85,7 +85,8 @@ export const api = {
   events: () => request<AdminEventSummary[]>("GET", "/api/beheer/evenementen"),
   patchEvent: (
     id: string,
-    patch: { status?: "open" | "closed"; capacity?: number },
+    // capacity: null = geen maximum.
+    patch: { status?: "open" | "closed"; capacity?: number | null },
   ) => request<AdminEventSummary>("PATCH", `/api/beheer/evenementen/${enc(id)}`, patch),
   registrations: (id: string) =>
     request<AdminRegistration[]>(

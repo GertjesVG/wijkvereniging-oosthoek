@@ -230,10 +230,13 @@ test("internetaansluiting: IPv4-adres apart, IPv6 per /64-blok", () => {
 test("Sinterklaas 2026: beslissingen van de vereniging en de gemeentelijke stratenlijst", () => {
   const config = sinterklaasRegistration;
   assert.deepEqual(config.participant.age, { min: 0, max: 12 });
-  assert.match(config.rules.version, /^\d{4}-\d{2}-\d{2}$/);
+  // Datum van de tekst, met "-2", "-3" … voor een nieuwe tekst op dezelfde dag; nu de verkorte tekst van 3 november.
+  assert.match(config.rules.version, /^\d{4}-\d{2}-\d{2}(-\d+)?$/);
+  assert.equal(config.rules.version, "2026-11-03-2");
   assert.equal(config.rules.href, "#/kleurwedstrijd?reglement");
   assert.equal(config.date, "2026-11-28");
-  assert.equal(config.defaultCapacity, 150);
+  // Geen vaste grens meer (de 150 was een schatting); een maximum stel je in het beheer in.
+  assert.equal(config.defaultCapacity, null);
   assert.deepEqual(config.pendingDecisions, []);
   // 30 rijen "wijk Oosthoek" in de gemeentelijke lijst: 27 volledige straten en 2 straten met huisnummergrenzen.
   assert.equal(config.area.streets.length, 27);

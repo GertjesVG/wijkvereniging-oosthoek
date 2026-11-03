@@ -1,7 +1,7 @@
 // Evenementen met online inschrijving, gedeeld door website, beheer en server (functions/).
 // Nieuw evenement = nieuw blok hieronder, plus een bevestigingsmail met dezelfde sleutel in bevestigingsmail.ts.
 // Oude evenementen laten staan: de historiek in het beheer toont alleen evenementen uit deze lijst.
-// Capaciteit en open/dicht staan in de database en wijzig je in het beheerdashboard;
+// Het maximum aantal deelnemers en open/dicht staan in de database en wijzig je in het beheerdashboard;
 // het evenement staat na de eerste beheeraanroep automatisch "dicht" in de database.
 
 // Huisnummers van..tot zoals de gemeentelijke lijst ze schrijft; parity = alleen even of oneven nummers.
@@ -15,7 +15,8 @@ export type RegistrationEvent = {
   date: string;
   // Voor het volgnummer: SINT26-0001, SINT26-0002, ...
   referencePrefix: string;
-  defaultCapacity: number;
+  // Maximum bij het aanmaken van de databaserij; null = geen maximum. Daarna geldt alleen wat in het beheer staat.
+  defaultCapacity: number | null;
   participant: {
     singular: string;
     plural: string;
@@ -54,7 +55,8 @@ export const registrationEvents: Record<string, RegistrationEvent> = {
     title: "Sinterklaas in Oosthoek 2026",
     date: "2026-11-28",
     referencePrefix: "SINT26-",
-    defaultCapacity: 150,
+    // Geen vaste grens (Gert, 3 november 2026: de 150 was een schatting). Een maximum kan later in het beheer.
+    defaultCapacity: null,
     participant: {
       singular: "kind",
       plural: "kinderen",
@@ -63,8 +65,9 @@ export const registrationEvents: Record<string, RegistrationEvent> = {
       age: { min: 0, max: 12 },
       maxPerRegistration: 8,
     },
-    // Wedstrijdreglement op de kleurwedstrijdpagina (src/content/reglement.ts).
-    rules: { version: "2026-11-03", href: "#/kleurwedstrijd?reglement" },
+    // Wedstrijdreglement op de kleurwedstrijdpagina (src/content/reglement.ts). "2026-11-03" = de eerste, lange tekst;
+    // "2026-11-03-2" = de verkorte tekst van dezelfde dag. Eerdere inschrijvingen houden hun eigen versie en tijdstip.
+    rules: { version: "2026-11-03-2", href: "#/kleurwedstrijd?reglement" },
     // Bron: gemeente Beerse, https://www.beerse.be/wijkraad → "Wijken Beerse 2017 per straat.xlsx" (blad 1,
     // 30 rijen "wijk Oosthoek" = 27 volledige straten + 2 straten met huisnummergrenzen), aangevuld met de wijkkaart
     // "Wijken Beerse 2017.pdf". Kopieën in Documentatie\ van het project, gedownload op 1 november 2026.
