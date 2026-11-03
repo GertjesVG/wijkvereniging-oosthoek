@@ -28,7 +28,7 @@ import { ShareCode } from "./ShareCode";
 import { ageLabel, timeOf, useLiveGps, type LiveGpsView } from "./gps/useLiveGps";
 import "./pages.css";
 
-// Leaflet en de kaarttegels alleen laden als er echt een livepositie te tonen is.
+// Leaflet, de routekaart en de kaarttegels pas laden na een klik of als er een livepositie te tonen is.
 const LiveMap = lazy(() => import("./gps/LiveMap"));
 
 const phoneHref = (phone: string) => `tel:${phone.replace(/[^\d+]/g, "")}`;
@@ -213,101 +213,95 @@ function LiveCaption({ view }: { view: LiveGpsView }) {
 }
 
 function RoutePage() {
-  const [mapLoaded, setMapLoaded] = useState(false);
+  // Kaart pas na een klik (privacy: dan pas verbinding met OpenStreetMap), of vanzelf zolang er een livepositie is.
+  const [mapOpen, setMapOpen] = useState(false);
+  const [focus, setFocus] = useState<number | null>(null);
   const { view, failed } = useLiveGps();
   const active = view.kind !== "off";
+  const position =
+    view.kind === "live" ? { lat: view.lat, lon: view.lon, accuracy: view.accuracy, stale: view.stale } : null;
+  const showMap = mapOpen || position !== null;
+  const { stops } = event.route;
+  function showStreet(index: number) {
+    setMapOpen(true);
+    setFocus(index);
+    document.getElementById("routekaart")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  const openMap = (
+    <>
+      <button type="button" className="button button-gold" onClick={() => setMapOpen(true)}>
+        <MapPin size={18} aria-hidden="true" />
+        Bekijk de route op de kaart
+      </button>
+      <small>Laadt de kaart van OpenStreetMap.</small>
+    </>
+  );
   return (
     <>
-      <PageHeading
-        eyebrow="MET DE HUIFKAR DOOR DE WIJK"
-        title="Waar is de Sint?"
-      >
-        De huifkar en de witte paarden komen naar Oosthoek. Hier vind je straks
-        de route en de livepositie.
+      <PageHeading eyebrow="MET DE HUIFKAR DOOR DE WIJK" title="Waar is de Sint?">
+        De huifkar en de witte paarden rijden door {stops.length} straten van
+        Oosthoek. Hier vind je de route en, tijdens de rondrit, de livepositie.
       </PageHeading>
       <div className="route-overview">
-        {active ? (
-          <section className="route-map-panel" aria-label="Livekaart van de huifkar">
-            {view.kind === "live" ? (
-              <Suspense fallback={<div className="live-map" />}>
-                <LiveMap lat={view.lat} lon={view.lon} accuracy={view.accuracy} stale={view.stale} />
-              </Suspense>
-            ) : (
-              <div className="map-awaiting">
-                <span className="map-ornament" aria-hidden="true">
-                  <Radio size={76} strokeWidth={1} />
-                  <i>✦</i>
-                </span>
-                <p className="eyebrow">LIVE GPS</p>
-                <h2>
-                  {view.kind === "waiting" ? "De Sint vertrekt" : "Even geduld"}
-                  <br />
-                  {view.kind === "waiting" ? "zo dadelijk." : "met de huifkar."}
-                </h2>
-                <p>
-                  {view.kind === "waiting"
-                    ? "De eerste positie verschijnt hier vanzelf."
-                    : "Zodra de verbinding terug is, verschijnt de huifkar hier weer."}
-                </p>
-              </div>
-            )}
-            <div className="map-caption" aria-live="polite">
-              <LiveCaption view={view} />
-            </div>
-          </section>
-        ) : (
         <section
+          id="routekaart"
           className="route-map-panel"
-          aria-label="Omgevingskaart van Beerse"
+          aria-label={active ? "Livekaart van de huifkar" : "Kaart van de rondrit"}
         >
-          {mapLoaded && event.route.mapEmbedUrl ? (
-            <iframe
-              title="Interactieve omgevingskaart van Beerse — geen rondgang of livepositie"
-              src={event.route.mapEmbedUrl}
-              referrerPolicy="no-referrer"
-              loading="lazy"
-            />
+          {showMap ? (
+            <Suspense fallback={<div className="live-map" />}>
+              <LiveMap position={position} focus={focus} onFocus={setFocus} />
+            </Suspense>
+          ) : active ? (
+            <div className="map-awaiting">
+              <span className="map-ornament" aria-hidden="true">
+                <Radio size={76} strokeWidth={1} />
+                <i>✦</i>
+              </span>
+              <p className="eyebrow">LIVE GPS</p>
+              <h2>
+                {view.kind === "waiting" ? "De Sint vertrekt" : "Even geduld"}
+                <br />
+                {view.kind === "waiting" ? "zo dadelijk." : "met de huifkar."}
+              </h2>
+              <p>
+                {view.kind === "waiting"
+                  ? "De eerste positie verschijnt hier vanzelf."
+                  : "Zodra de verbinding terug is, verschijnt de huifkar hier weer."}
+              </p>
+              {openMap}
+            </div>
           ) : (
             <div className="map-awaiting">
               <span className="map-ornament" aria-hidden="true">
                 <MapPinned size={76} strokeWidth={1} />
                 <i>✦</i>
               </span>
-              <p className="eyebrow">EEN DAG OM NAAR UIT TE KIJKEN</p>
-              <h2 id="route-map-title">
-                De route wordt nog
+              <p className="eyebrow">DE RONDRIT VAN {event.year}</p>
+              <h2>
+                {stops.length} straten,
                 <br />
-                bekendgemaakt.
+                één feestelijke tocht.
               </h2>
               <p>
-                Zodra de officiële rondgang beschikbaar is, zie je hier waar de
-                huifkar langskomt.
+                Bekijk op de kaart door welke straten de huifkar rijdt. De
+                volgorde staat ook hieronder.
               </p>
-              {event.route.mapEmbedUrl && (
-                <>
-                  <button
-                    type="button"
-                    className="button button-gold"
-                    onClick={() => setMapLoaded(true)}
-                  >
-                    <MapPin size={18} aria-hidden="true" />
-                    Bekijk de omgevingskaart
-                  </button>
-                  <small>
-                    Laadt OpenStreetMap. Dit is een kaart van de omgeving, geen
-                    officiële route.
-                  </small>
-                </>
-              )}
+              {openMap}
             </div>
           )}
-          <div className="map-caption">
-            <MapPin size={16} aria-hidden="true" />
-            Omgevingskaart van Beerse
-            <span>Nog geen rondgang of livepositie</span>
+          <div className="map-caption" aria-live="polite">
+            {active ? (
+              <LiveCaption view={view} />
+            ) : (
+              <>
+                <MapPin size={16} aria-hidden="true" />
+                Route van de rondrit
+                <span>Geen livepositie: de live GPS staat uit</span>
+              </>
+            )}
           </div>
         </section>
-        )}
         <aside className="route-aside">
           <p className="eyebrow">VOLG DE SINT</p>
           <h2>
@@ -335,8 +329,12 @@ function RoutePage() {
               <dd>{event.departure}</dd>
             </div>
             <div>
-              <dt>Haltes & aankomsttijden</dt>
-              <dd>Nog niet bekendgemaakt</dd>
+              <dt>Vervoer</dt>
+              <dd>{event.route.transport}</dd>
+            </div>
+            <div>
+              <dt>Tijden per straat</dt>
+              <dd>Niet bekendgemaakt. Volg de huifkar live tijdens de rondrit.</dd>
             </div>
           </dl>
           <a className="text-link" href="#/praktisch">
@@ -345,17 +343,42 @@ function RoutePage() {
           </a>
         </aside>
       </div>
-      {event.route.stops.length > 0 && (
-        <section className="route-stops">
-          <p className="eyebrow">DE OFFICIËLE RONDGANG</p>
-          <h2>Hier komen we langs</h2>
-          <ol>
-            {event.route.stops.map((stop) => (
-              <li key={stop}>{stop}</li>
+      <section className="route-stops" aria-labelledby="route-stops-title">
+        <div className="route-stops-intro">
+          <p className="eyebrow">DE OFFICIËLE ROUTE</p>
+          <h2 id="route-stops-title">Hier komen we langs</h2>
+          <p>
+            Vanaf het vertrek aan Wijkhuis Oosthoek rijdt de huifkar de straten
+            in deze volgorde. Tik op een straat om ze op de kaart te zien.
+          </p>
+          <StatusNote>{event.route.turnNote}</StatusNote>
+        </div>
+        <div className="route-list-wrap">
+          <ol className="route-list">
+            {stops.map((stop, i) => (
+              <li key={stop}>
+                <button
+                  type="button"
+                  className={focus === i ? "is-active" : undefined}
+                  aria-pressed={focus === i}
+                  onClick={() => showStreet(i)}
+                >
+                  <span className="route-nr" aria-hidden="true">
+                    {i + 1}
+                  </span>
+                  {stop}
+                </button>
+              </li>
             ))}
           </ol>
-        </section>
-      )}
+          {!event.route.mapChecked && (
+            <p className="route-disclaimer">
+              De straten en hun volgorde liggen vast. De kaart is indicatief: de
+              precieze rijweg in en tussen de straten kan afwijken.
+            </p>
+          )}
+        </div>
+      </section>
     </>
   );
 }
@@ -390,8 +413,8 @@ function PracticalPage() {
           <span className="eyebrow">WAAR</span>
           <h2>Oosthoek in Beerse</h2>
           <p>
-            De Sint rijdt met de huifkar en witte paarden door onze wijk. De
-            haltes zijn nog niet bekend.
+            De Sint rijdt met de huifkar en witte paarden door{" "}
+            {event.route.stops.length} straten van onze wijk.
           </p>
         </article>
         <article>
@@ -427,8 +450,8 @@ function PracticalPage() {
           <h2 id="practical-route-title">Waar komt de huifkar langs?</h2>
           <StatusNote tone="blue">{event.gps.dayMessage}</StatusNote>
           <p>
-            De officiële rondgang volgt nog. Op de routepagina vind je de route
-            en het live volgen zodra die beschikbaar zijn.
+            Op de routepagina vind je de straten in volgorde, de kaart en
+            tijdens de rondrit de livepositie van de huifkar.
           </p>
           <ButtonLink href="#/route" variant="outline">
             Bekijk de routepagina
@@ -755,14 +778,15 @@ const deleteByLabel = new Intl.DateTimeFormat("nl-BE", {
 
 function PrivacyPage() {
   const org = event.organisation;
+  const area = registration.area?.name ?? "de wijk";
   return (
     <>
       <PageHeading
         eyebrow="ZORGVULDIG MET JOUW GEGEVENS"
         title="Privacy, helder uitgelegd."
       >
-        Hier lees je welke gegevens we vragen als je kinderen inschrijft voor de
-        cadeauactie, waarvoor we ze gebruiken en wanneer we ze wissen.
+        Kort en duidelijk: welke gegevens we vragen als je kinderen inschrijft
+        voor de cadeauactie, waarvoor, en hoe lang we ze bewaren.
       </PageHeading>
       <div className="privacy-layout">
         <aside className="privacy-summary">
@@ -779,106 +803,107 @@ function PrivacyPage() {
             </li>
             <li>
               <Check size={17} aria-hidden="true" />
+              Nooit voor reclame of aan sponsors
+            </li>
+            <li>
+              <Check size={17} aria-hidden="true" />
               Geen advertentie- of analysetrackers
             </li>
             <li>
               <Check size={17} aria-hidden="true" />
-              Gewist uiterlijk {deleteByLabel}
-            </li>
-            <li>
-              <Check size={17} aria-hidden="true" />
-              Kaart alleen na jouw klik
+              Verwijderd uiterlijk {deleteByLabel}
             </li>
           </ul>
         </aside>
         <div className="privacy-articles">
           <section>
             <span className="section-number">01</span>
-            <h2>Wie zit achter de website?</h2>
+            <h2>Welke gegevens?</h2>
             <p>
-              {org.name}, {org.address}. Ondernemingsnummer {org.enterprise}.
-              Voor vragen over gegevens kun je mailen naar{" "}
-              <a href={`mailto:${org.email}`}>{org.email}</a> of bellen naar{" "}
-              <a href={phoneHref(org.phone)}>{org.phone}</a>.
+              Van de ouder of voogd: naam, e-mailadres en adres in {area}. Per
+              kind: alleen de voornaam en de leeftijd. Verder je
+              inschrijvingsnummer en je akkoord met het wedstrijdreglement
+              (versie en tijdstip). Bij co-ouderschap mag het adres dat van de
+              andere ouder zijn; over die ouder vragen we niets.
             </p>
           </section>
           <section>
             <span className="section-number">02</span>
-            <h2>De website zelf</h2>
+            <h2>Waarvoor?</h2>
             <p>
-              De website staat bij Cloudflare, dat daarbij verbindingsgegevens
-              zoals je IP-adres ontvangt. Er zijn geen advertentie- of
-              analysetrackers. De website gebruikt geen cookies of lokale
-              browseropslag om bezoekers te volgen. Afbeeldingen, lettertypen en
-              downloads komen van de website zelf. De sponsorzoekfunctie werkt
-              alleen op jouw scherm en wordt niet bewaard.
+              Om de inschrijvingen te beheren, de cadeautjes te voorzien, je een
+              bevestigingsmail te sturen en je vragen te beantwoorden. Of het
+              adres in {area} ligt, kijken we na met de wijkindeling van de
+              gemeente Beerse. We gebruiken niets voor commerciële doeleinden en
+              geven niets door aan sponsors of anderen.
+            </p>
+            <p>
+              Dat doen we met je toestemming (artikel 6.1.a AVG). Inschrijven is
+              vrijwillig, maar zonder deze gegevens kunnen we geen cadeautje
+              voorzien. Je toestemming intrekken kan altijd: laat de inschrijving
+              dan annuleren.
             </p>
           </section>
           <section>
             <span className="section-number">03</span>
-            <h2>Inschrijven voor de cadeauactie</h2>
+            <h2>Beveiliging</h2>
             <p>
-              Een ouder of verantwoordelijke schrijft de kinderen in. We vragen
-              je naam en e-mailadres, de straat en het huisnummer in{" "}
-              {registration.area?.name ?? "de wijk"} (de actie is voor kinderen
-              van wie minstens één ouder of voogd daar woont; bij co-ouderschap
-              kan dat het adres van de andere ouder zijn, zonder verdere
-              gegevens over die ouder) en per kind alleen de voornaam en de
-              leeftijd. We bewaren ook welke versie van het wedstrijdreglement
-              je aanvaardde en wanneer. Je krijgt een inschrijvingsnummer.
+              De inschrijvingen staan in een afgeschermde database bij
+              Cloudflare, waar ook de website draait. Alleen bevoegde
+              vrijwilligers van de vereniging zien ze, met een beheerwachtwoord.
+              De bevestigingsmail vertrekt via het Gmail-account van de
+              vereniging bij Google. Bij het verzenden controleert Cloudflare
+              Turnstile of er een mens achter het formulier zit, en tegen misbruik
+              bewaren we hoogstens een dag een onomkeerbaar gemaakte code van je
+              internetverbinding.
             </p>
             <p>
-              We gebruiken die gegevens alleen om het juiste aantal cadeautjes
-              voor te bereiden, één cadeautje per kind te geven, je een
-              bevestiging te sturen en je vragen te beantwoorden. Of het adres in{" "}
-              {registration.area?.name ?? "de wijk"} ligt, kijken we na met de
-              wijkindeling van de gemeente Beerse. Inschrijven is
-              vrijwillig; zonder deze gegevens kunnen we geen cadeautje
-              voorzien.
-            </p>
-            <p>
-              Alleen de vrijwilligers van de vereniging die het
-              beheerwachtwoord kennen, zien de inschrijvingen. De gegevens staan
-              in een afgeschermde database bij Cloudflare. Een spamcontrole van
-              Cloudflare (Turnstile) bekijkt bij het verzenden of er een mens
-              achter het formulier zit. Tegen misbruik bewaren we hooguit een
-              dag een onomkeerbaar gemaakte code van je internetverbinding,
-              zonder je adres zelf. De bevestigingsmail vertrekt via het
-              Gmail-account van de vereniging ({org.email}) bij Google. We
-              verkopen of delen niets met anderen.
-            </p>
-            <p>
-              Uiterlijk op {deleteByLabel} wissen we namen, e-mailadressen en
-              adressen. Daarna houden we per editie alleen aantallen en
-              leeftijden over, zonder namen, om volgende edities voor te
-              bereiden.
+              Bij elk bezoek ontvangt Cloudflare technische verbindingsgegevens,
+              zoals je IP-adres. De kaart van OpenStreetMap ontvangt die pas als
+              ze laadt: na je klik op de kaartknop, of vanzelf terwijl de live
+              GPS loopt. De live GPS toont alleen de huifkar tijdens de rondrit,
+              nooit jouw locatie. Cloudflare en Google kunnen gegevens ook buiten
+              de Europese Unie verwerken. Er zijn geen advertentie- of
+              analysetrackers, en geen cookies of browseropslag om bezoekers te
+              volgen. Voor deze beveiliging en technische werking steunen we op
+              ons gerechtvaardigd belang bij een veilige, werkende website
+              (artikel 6.1.f AVG).
             </p>
           </section>
           <section>
             <span className="section-number">04</span>
-            <h2>Kaart en contactlinks</h2>
+            <h2>Bewaartermijn</h2>
             <p>
-              Een beschikbare omgevingskaart wordt pas geladen nadat je op de
-              kaartknop klikt. Vanaf dat moment maakt je browser verbinding met
-              de kaartaanbieder, die daarbij onder meer je IP-adres ontvangt.
-              Dit is geen live GPS-verbinding.
-            </p>
-            <p>
-              Een e-mail- of telefoonlink opent je eigen mail- of belprogramma.
-              Wat je vervolgens verstuurt, loopt via dat programma. De website
-              verstuurt zelf geen contactformulier.
+              Uiterlijk op {deleteByLabel} verwijderen we alle persoonsgegevens
+              van Sinterklaas {event.year}: de inschrijvingen in de database
+              automatisch, en ook de bijbehorende mails in de mailbox van de
+              vereniging. Daarna blijven alleen anonieme cijfers over, zoals
+              aantallen en leeftijden, om volgende edities voor te bereiden.
             </p>
           </section>
           <section>
             <span className="section-number">05</span>
-            <h2>Een vraag of verzoek?</h2>
+            <h2>Jouw rechten en contact</h2>
             <p>
               Je mag altijd vragen welke gegevens we van je hebben, ze laten
-              verbeteren of de inschrijving laten annuleren en wissen. Mail
-              daarvoor naar <a href={`mailto:${org.email}`}>{org.email}</a> en
-              vermeld je inschrijvingsnummer. Vermeld alleen wat nodig is om je
-              vraag te beantwoorden. Ben je niet tevreden over ons antwoord, dan
-              kun je terecht bij de Gegevensbeschermingsautoriteit.
+              verbeteren of laten verwijderen. Je mag ook bezwaar maken of de
+              verwerking laten beperken. Mail naar{" "}
+              <a href={`mailto:${org.email}`}>{org.email}</a> of bel{" "}
+              <a href={phoneHref(org.phone)}>{org.phone}</a> en vermeld je
+              inschrijvingsnummer.
+            </p>
+            <p>
+              Verantwoordelijk: {org.name}, {org.address}, ondernemingsnummer{" "}
+              {org.enterprise}. Ben je niet tevreden over ons antwoord, dan kun
+              je een klacht indienen bij de{" "}
+              <a
+                href="https://www.gegevensbeschermingsautoriteit.be"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Gegevensbeschermingsautoriteit
+              </a>
+              .
             </p>
           </section>
         </div>

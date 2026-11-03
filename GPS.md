@@ -11,7 +11,7 @@ die positie op de pagina **Route & live GPS** (`/sinterklaas/#/route`), maar **p
 | Start, stop en status | `/api/beheer/gps`, achter de beheerlogin (`server/beheer.ts`) |
 | Logica | `server/gps.ts` |
 | Database | één rij in tabel `gps_live` van de bestaande D1 (`migrations/0006_live_gps.sql`) |
-| Kaart | `src/gps/` en `src/Pages.tsx` (Leaflet + OpenStreetMap-tegels, pas geladen tijdens een actieve sessie) |
+| Kaart | `src/gps/` en `src/Pages.tsx` (Leaflet + OpenStreetMap-tegels met de route; vanzelf geladen zodra er een livepositie is, anders na een klik) |
 | Beheerpaneel | `src/beheer/GpsPanel.tsx`, bovenaan het beheer |
 
 ## Waarom OwnTracks en niet de browser
@@ -62,7 +62,7 @@ Twee handelingen: OwnTracks op Move, dan Start in het beheer.
 
 | Toestand | Routepagina |
 | --- | --- |
-| Uit (vóór Start, na Stop, na het stopuur) | de gewone omgevingskaart en "De live GPS is nu niet actief." Geen enkele positie. |
+| Uit (vóór Start, na Stop, na het stopuur) | de stratenlijst, de routekaart na een klik en "De live GPS is nu niet actief." Geen enkele positie. |
 | Gestart, nog geen positie | "Live GPS gestart, wachten op de eerste positie" |
 | Live | Sint-speld op de kaart, "Live: laatste positie om 11:44 · 20 s geleden"; ververst elke minuut |
 | Positie ouder dan 2 minuten | grijze speld, "Niet actueel" en "De verbinding met de huifkar is even weggevallen." |

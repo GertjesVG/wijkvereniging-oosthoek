@@ -35,11 +35,42 @@ export const event = {
       time: null as string | null,
     },
   ],
+  // Rondrit 2026, bevestigd door de vereniging (Gert, 3 november 2026): dezelfde straatvolgorde als in 2025, vertrek
+  // zie `departure`. Officiële straatnamen voluit (de flyer kort ze af). De nummers op de kaart volgen deze volgorde;
+  // de straatligging staat in route-kaart.json (OpenStreetMap). Geen haltes, afslagen of tijden per straat toevoegen.
   route: {
-    stops: [] as string[],
-    mapEmbedUrl:
-      "https://www.openstreetmap.org/export/embed.html?bbox=4.822%2C51.302%2C4.887%2C51.336&layer=mapnik" as
-        string | null,
+    stops: [
+      "Gorenstraat",
+      "Veldstraat",
+      "Huffelenstraat",
+      "Paddesteenstraat",
+      "Zandstraat",
+      "Veerpontstraat",
+      "Leemstraat",
+      "Rozenstraat",
+      "Daliastraat",
+      "Tulpenstraat",
+      "Boterbloemstraat",
+      "Asterstraat",
+      "Leliestraat",
+      "Korenbloemstraat",
+      "Violierstraat",
+      "Steenovensstraat",
+      "Beukenlaan",
+      "Kattespoelstraat",
+      "Frans Lauwersstraat",
+      "Jan Vaertenstraat",
+      "Dr. Paul Janssenstraat",
+      "Opstal",
+      "Scheperstraat",
+      "Oosteneinde",
+    ],
+    transport: "Huifkar met witte paarden",
+    // false = de kaart toont de straten van de rondrit, maar de precieze rijweg binnen en tussen de straten is nog
+    // niet nagekeken; de kaart heet dan "indicatief". Pas op true zetten nadat Gert de getekende route controleerde.
+    mapChecked: false as boolean,
+    turnNote:
+      "In straten waar de huifkar moeilijk kan draaien, vragen we bewoners om aan het begin van de straat te komen.",
   },
   // Het wedstrijdreglement staat in content/reglement.ts.
   copy: {

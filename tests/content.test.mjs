@@ -188,3 +188,47 @@ test("officieel wedstrijdreglement: zeven onderdelen letterlijk, met het anker v
     "het oude korte regelblok is vervangen",
   );
 });
+
+test("route 2026: de 24 bevestigde straten in volgorde, vertrek zonder adres, kaart per straat", () => {
+  // Letterlijk de definitieve volgorde van de vereniging (Gert, 3 november 2026).
+  const confirmed = [
+    "Gorenstraat", "Veldstraat", "Huffelenstraat", "Paddesteenstraat", "Zandstraat", "Veerpontstraat",
+    "Leemstraat", "Rozenstraat", "Daliastraat", "Tulpenstraat", "Boterbloemstraat", "Asterstraat",
+    "Leliestraat", "Korenbloemstraat", "Violierstraat", "Steenovensstraat", "Beukenlaan", "Kattespoelstraat",
+    "Frans Lauwersstraat", "Jan Vaertenstraat", "Dr. Paul Janssenstraat", "Opstal", "Scheperstraat", "Oosteneinde",
+  ];
+  assert.deepEqual(event.route.stops, confirmed);
+  assert.equal(event.date, "2026-11-28");
+  assert.equal(event.departure, "Vertrek om 10.30 uur aan Wijkhuis Oosthoek.");
+  assert.equal(event.route.transport, "Huifkar met witte paarden");
+  assert.equal(
+    event.route.turnNote,
+    "In straten waar de huifkar moeilijk kan draaien, vragen we bewoners om aan het begin van de straat te komen.",
+  );
+  // Tot Gert de getekende rijweg nakeek, blijft de kaart "indicatief".
+  assert.equal(event.route.mapChecked, false);
+  // Alle straten van de rondrit liggen in wijk Oosthoek volgens de gemeentelijst (Steenovensstraat deels).
+  const area = sinterklaasRegistration.area;
+  for (const street of confirmed)
+    assert.ok(area.streets.includes(street) || street in area.partialStreets, street);
+
+  const map = JSON.parse(readFileSync(new URL("../src/content/route-kaart.json", import.meta.url), "utf8"));
+  assert.match(map.bron, /OpenStreetMap/);
+  assert.deepEqual(map.straten.map((s) => s.naam), confirmed);
+  // Binnen Beerse-Oosthoek: geen verschoven of verwisselde coördinaten.
+  const inArea = ([lat, lon]) => lat > 51.31 && lat < 51.345 && lon > 4.85 && lon < 4.895;
+  for (const s of map.straten) {
+    assert.ok(s.lijnen.length > 0 && s.lijnen.every((l) => l.length >= 2 && l.every(inArea)), s.naam);
+    assert.ok(inArea(s.label), s.naam);
+  }
+  for (const v of map.verbindingen) {
+    assert.ok(Number.isInteger(v.na) && v.na >= 1 && v.na < confirmed.length);
+    assert.ok(v.via.length > 0 && v.via.every((name) => !confirmed.includes(name)), "alleen wegen buiten de route");
+    assert.ok(v.lijnen.every((l) => l.length >= 2 && l.every(inArea)));
+  }
+  // Eén plek voor de stratenlijst: geen tweede kopie in de andere pagina's of de startpagina.
+  for (const file of ["../src/Pages.tsx", "../src/Home.tsx", "../src/components.tsx"]) {
+    const source = readFileSync(new URL(file, import.meta.url), "utf8");
+    assert.ok(!source.includes("Paddesteenstraat"), file);
+  }
+});
