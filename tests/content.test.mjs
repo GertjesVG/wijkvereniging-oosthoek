@@ -197,6 +197,42 @@ test("officieel wedstrijdreglement: verkorte tekst in vijf onderdelen letterlijk
   );
 });
 
+test("privacyverklaring: juiste rechtsgronden en verplichte informatie, geen beloftes die de werking niet waarmaakt", () => {
+  const pages = readFileSync(new URL("../src/Pages.tsx", import.meta.url), "utf8").replace(/\s+/g, " ");
+  const privacy = pages.slice(pages.indexOf("function PrivacyPage()"), pages.indexOf("export function ContentPage"));
+  for (const must of [
+    "artikel 6.1.b AVG",
+    "artikel 6.1.f AVG",
+    "Dan blijft dat zo voor jouw inschrijving",
+    "opgeslagen in de Europese Unie",
+    "Google Ireland Limited",
+    "https://www.dataprivacyframework.gov/list",
+    "adequaatheidsbesluit",
+    "binnen 30 dagen",
+    "ongeveer twee maanden",
+    "tot zes maanden",
+    "bezwaar",
+    "om door te geven",
+    "Gegevensbeschermingsautoriteit",
+  ])
+    assert.ok(privacy.includes(must), must);
+  // Toestemming blijft alleen de grond van inschrijvingen van vóór deze tekst; "anoniem", "onomkeerbaar" en "niets aan
+  // anderen" kloppen niet met de werking.
+  for (const never of ["Dat doen we met je toestemming", "anoniem", "onomkeerbaar", "sponsors of anderen"])
+    assert.ok(!privacy.includes(never), never);
+  assert.equal((privacy.match(/section-number/g) ?? []).length, 5);
+});
+
+test("cadeauactie en kleurwedstrijd: inschrijving is open; niets over jury of winnaars zolang de vereniging dat niet bevestigde", () => {
+  const pages = readFileSync(new URL("../src/Pages.tsx", import.meta.url), "utf8").replace(/\s+/g, " ");
+  assert.ok(!pages.includes("zodra deze opengaat"));
+  assert.ok(pages.includes("via het formulier op deze pagina"));
+  assert.ok(!/jury|winnaar/i.test(pages));
+  const text = reglement.articles.flatMap((a) => a.body.flat()).join("\n");
+  assert.ok(!/jury|winnaar/i.test(text));
+  assert.ok(text.includes("afhankelijk van de beschikbare voorraad"));
+});
+
 test("route 2026: de 24 bevestigde straten in volgorde, vertrek zonder adres, kaart per straat", () => {
   // Letterlijk de definitieve volgorde van de vereniging (Gert, 3 november 2026).
   const confirmed = [

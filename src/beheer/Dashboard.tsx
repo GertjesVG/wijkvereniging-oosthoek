@@ -263,8 +263,8 @@ function EventPanel({
           <form className="erase-confirm" onSubmit={doErase}>
             <p>
               Hiermee worden alle namen, e-mailadressen en adressen van dit evenement definitief
-              gewist. Dit kan niet ongedaan gemaakt worden. Maak eerst de CSV-export als je de
-              gegevens nog nodig hebt.
+              gewist. Dit kan niet ongedaan gemaakt worden. Mails in Gmail en gedownloade CSV-bestanden
+              wist dit niet: die verwijder je zelf (opruimprocedure in INSCHRIJVEN.md).
             </p>
             <label className="field">
               <span>Typ WISSEN om te bevestigen</span>

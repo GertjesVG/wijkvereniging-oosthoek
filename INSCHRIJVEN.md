@@ -40,14 +40,33 @@ Eén gratis inschrijfsysteem voor alle evenementen van VZW Wijkvereniging Oostho
 ## Bewaartermijn
 
 - Namen, e-mailadressen en adressen: wissen uiterlijk op `deleteBy` (Sinterklaas 2026: **31 januari 2027, goedgekeurd door de vereniging op 3 november 2026**). Aantallen, leeftijden, afhaalcijfers, het maximum en inschrijvingsnummers blijven voor de historiek; de database en de andere evenementen blijven ongemoeid.
-- `autoErase: true` (Sinterklaas 2026, in de code sinds 3 november 2026; actief zodra die versie gepubliceerd is, aparte GO): vanaf de wisdatum sluit en wist de server het evenement vanzelf, bij de eerstvolgende ophaalronde van het Apps Script (elke 5 minuten) of bij het openen van het beheer. Laat de tijdtrigger van het Apps Script daarom lopen tot na 31 januari 2027, of open die dag zelf het beheer. Daarna kan het evenement niet meer open. De integratietest (`npm run test:inschrijving`, fasen D en G) toetst dit met fictieve gegevens, ook dat een tweede evenement intact blijft.
+- `autoErase: true` (Sinterklaas 2026, online sinds 3 november 2026): vanaf de wisdatum sluit en wist de server het evenement vanzelf, bij de eerstvolgende ophaalronde van het Apps Script (elke 5 minuten) of bij het openen van het beheer. Laat de tijdtrigger van het Apps Script daarom lopen tot na 31 januari 2027, of open die dag zelf het beheer. Daarna kan het evenement niet meer open. De integratietest (`npm run test:inschrijving`, fasen D en G) toetst dit met fictieve gegevens, ook dat een tweede evenement intact blijft.
 - Met `autoErase: false` wist alleen de knop "Persoonsgegevens wissen" in het beheer; het beheer waarschuwt zodra de wisdatum bereikt is.
-- **Het automatisch wissen raakt alleen de database.** Niet automatisch gewist, dus uiterlijk op de wisdatum met de hand (de privacyverklaring belooft dat):
-  1. Gmail van vzwoosthoek@gmail.com: de verstuurde bevestigingen (map Verzonden), de antwoorden van ouders onder het label 2026 - Sinterklaas en de inbox, daarna de prullenbak legen (zie "Na het evenement" hieronder).
-  2. Gedownloade CSV-exports: op elke pc of gsm waar ze staan (map Downloads, mailbijlagen, USB-sticks, gedeelde mappen), ook in de prullenbak.
-  3. Afdrukken of handgeschreven lijsten met namen: vernietigen.
-- Vanzelf, zonder handeling: de herstelfunctie van D1 (Time Travel, altijd aan) kan de database nog 7 dagen (Workers Free) of 30 dagen (Workers Paid) terugzetten naar een moment vóór het wissen; daarna zijn de gegevens ook daar weg. Het Apps Script bewaart alleen inschrijvingsnummers van verstuurde mails (scripteigenschappen, na een tijd vanzelf vergeten), geen namen of adressen.
-- Wat Google of Cloudflare na het verwijderen nog intern bijhouden, valt buiten deze site en is niet nagekeken; de privacyverklaring belooft daar niets over.
+- De misbruiklogboeken (gehashte code van de internetverbinding) blijven hoogstens een dag staan: elke mailronde en elke keer dat het beheer opent, ruimt de server ze op. De code is versluierd, niet anoniem.
+
+### Opruimen Sinterklaas 2026: uiterlijk 31 januari 2027
+
+Het automatisch wissen raakt alleen de database. De privacyverklaring belooft de rest ook, dus één bestuurslid doet dit, in deze volgorde:
+
+1. **Database.** Open op 31 januari `/beheer/`. Bij het evenement moet staan: "De persoonsgegevens van dit evenement zijn gewist." Staat dat er niet, zet de inschrijving dicht en gebruik "Persoonsgegevens wissen". Zet de database daarna nooit terug met een herstelpunt (Time Travel).
+2. **Gmail van vzwoosthoek@gmail.com.** Zoek `in:anywhere "Sinterklaas Oosthoek 2026"`, daarna `in:anywhere SINT26-`, en open het label 2026 - Sinterklaas. Verwijder telkens alle mails van inschrijvingen en van ouders; kijk ook naar andere mails van ouders met een ander onderwerp. Leeg daarna de prullenbak: Meer → Prullenbak → "Prullenbak nu leegmaken".
+3. **Gedownloade lijsten.** Verwijder elke CSV of Excel op elke pc, gsm, USB-stick en gedeelde map, en in mailbijlagen en chats. Vraag dat ook na bij elke vrijwilliger die een lijst kreeg. Leeg de prullenbak.
+4. **Papier.** Vernietig afdrukken en handgeschreven lijsten met namen.
+5. **Afvinken.** Noteer datum en naam in het verslag van het bestuur, zonder namen van deelnemers.
+
+Daarna verdwijnt de rest vanzelf:
+
+| Wat | Wanneer | Bron |
+| --- | --- | --- |
+| Herstelpunten van de database (D1 Time Travel, altijd aan) | na 7 dagen (Workers Free) of 30 dagen (Workers Paid) | Cloudflare-documentatie |
+| Gmail: verwijderde mail die niet met de hand uit de prullenbak ging | na 30 dagen | Gmail-hulp |
+| Gmail: systemen van Google | doorgaans ongeveer 2 maanden; versleutelde reservekopieën tot 6 maanden | Google, bewaarbeleid |
+| Apps Script: nummers van verstuurde mails, geen namen of adressen | 60 dagen na verzending (`KEEP_DAYS`, zolang de trigger loopt) | `mail/apps-script.js` |
+| Apps Script: uitvoeringslogboek; het script schrijft zelf geen namen of adressen weg | "korte tijd", geen vaste termijn gepubliceerd | Google-documentatie |
+| Pages Functions-logs | niet bewaard, alleen live te bekijken | Cloudflare-documentatie |
+| Eigen netwerklogboeken van Cloudflare | geen termijn gepubliceerd in het privacybeleid: **ONGEVERIFIEERD** | Cloudflare, privacybeleid |
+
+De verantwoording van rechtsgronden, rollen en open punten staat in `Project dossier\AVG-VERANTWOORDING.md` (buiten deze repository).
 
 ## Lokaal ontwikkelen en testen
 
@@ -88,7 +107,7 @@ Al gedaan: het Cloudflare Pages-project `wijkvereniging-oosthoek` (Git-koppeling
 
 **Optioneel maximum (migratie 0007):** zelfde volgorde: eerst `npx wrangler d1 migrations apply oosthoek-inschrijvingen --remote` (alleen 0007; voegt één kolom toe, bestaande inschrijvingen blijven ongemoeid), pas daarna de code pushen. Tot de code online staat, geldt online nog de oude grens van 150; daarna geen grens tot er een in het beheer ingesteld wordt.
 
-**Na het evenement, uiterlijk op de wisdatum:** inschrijving dicht, in het beheer "persoonsgegevens wissen" (of automatisch, zie Bewaartermijn), en in Gmail van vzwoosthoek@gmail.com de verstuurde bevestigingen verwijderen (map Verzonden, zoeken op `subject:"Bevestiging inschrijving — Sinterklaas Oosthoek 2026"`, daarna de prullenbak legen). Die kopieën bevatten voornamen en e-mailadressen; de antwoorden onder het label 2026 - Sinterklaas ook.
+**Na het evenement:** volg "Opruimen Sinterklaas 2026" onder Bewaartermijn.
 
 ### Apps Script bijwerken (bestaand project, geen nieuw)
 

@@ -71,8 +71,8 @@ function GiftPage() {
               <div>
                 <h3>Bekijk de inschrijving</h3>
                 <p>
-                  Een ouder of voogd verzorgt de inschrijving zodra deze
-                  opengaat.
+                  Een ouder of voogd schrijft je gratis in via het formulier op
+                  deze pagina.
                 </p>
               </div>
             </li>
@@ -810,7 +810,7 @@ function PrivacyPage() {
             </li>
             <li>
               <Check size={17} aria-hidden="true" />
-              Verwijderd uiterlijk {deleteByLabel}
+              Wissen uiterlijk {deleteByLabel}, zie onderdeel 04
             </li>
           </ul>
         </aside>
@@ -822,48 +822,83 @@ function PrivacyPage() {
               Van de ouder of voogd: naam, e-mailadres en adres in {area}. Per
               kind: alleen de voornaam en de leeftijd. Verder je
               inschrijvingsnummer en je akkoord met het wedstrijdreglement
-              (versie en tijdstip). Bij co-ouderschap mag het adres dat van de
-              andere ouder zijn; over die ouder vragen we niets.
+              (versie en tijdstip). We noteren ook de status van je inschrijving,
+              zoals adres nagekeken, mail verstuurd en cadeautje afgehaald. Bij
+              co-ouderschap mag het adres dat van de andere ouder zijn; over die
+              ouder vragen we niets.
             </p>
           </section>
           <section>
             <span className="section-number">02</span>
-            <h2>Waarvoor?</h2>
+            <h2>Waarvoor en op welke grond?</h2>
             <p>
               Om de inschrijvingen te beheren, de cadeautjes te voorzien, je een
               bevestigingsmail te sturen en je vragen te beantwoorden. Of het
               adres in {area} ligt, kijken we na met de wijkindeling van de
-              gemeente Beerse. We gebruiken niets voor commerciële doeleinden en
-              geven niets door aan sponsors of anderen.
+              gemeente Beerse; we letten ook op dubbele inschrijvingen. We
+              gebruiken niets voor commerciële doeleinden en geven niets aan
+              sponsors.
             </p>
             <p>
-              Dat doen we met je toestemming (artikel 6.1.a AVG). Inschrijven is
-              vrijwillig, maar zonder deze gegevens kunnen we geen cadeautje
-              voorzien. Je toestemming intrekken kan altijd: laat de inschrijving
-              dan annuleren.
+              Voor je eigen gegevens steunen we op de uitvoering van de deelname
+              die je aanvraagt en volgens het wedstrijdreglement aanvaardt
+              (artikel 6.1.b AVG). Voor de gegevens van je kinderen, de adres- en
+              dubbelcontrole, het bewijs van je akkoord en de beveiliging steunen
+              we op ons gerechtvaardigd belang om deze gratis actie eerlijk en
+              veilig te organiseren voor de kinderen van de wijk (artikel 6.1.f
+              AVG).
+            </p>
+            <p>
+              Inschrijven is vrijwillig, maar zonder deze gegevens kunnen we geen
+              cadeautje voorzien. Je kunt je inschrijving altijd laten annuleren
+              en je gegevens laten wissen. Schreef je in toen hier nog stond dat
+              we dit met je toestemming doen (artikel 6.1.a AVG)? Dan blijft dat
+              zo voor jouw inschrijving, en kun je die toestemming altijd
+              intrekken.
             </p>
           </section>
           <section>
             <span className="section-number">03</span>
-            <h2>Beveiliging</h2>
+            <h2>Dienstverleners en beveiliging</h2>
             <p>
               De inschrijvingen staan in een afgeschermde database bij
-              Cloudflare, waar ook de website draait. Alleen bevoegde
+              Cloudflare, opgeslagen in de Europese Unie. Alleen bevoegde
               vrijwilligers van de vereniging zien ze, met een beheerwachtwoord.
-              De bevestigingsmail vertrekt via het Gmail-account van de
-              vereniging bij Google. Bij het verzenden controleert Cloudflare
-              Turnstile of er een mens achter het formulier zit, en tegen misbruik
-              bewaren we hoogstens een dag een onomkeerbaar gemaakte code van je
-              internetverbinding.
+              Cloudflare host ook de website en werkt daarbij als verwerker. Bij
+              het verzenden controleert Cloudflare Turnstile of er een mens achter
+              het formulier zit, met technische gegevens zoals je IP-adres en
+              browsertype; die controle verbeteren doet Cloudflare onder eigen
+              verantwoordelijkheid. Tegen misbruik bewaren we hoogstens een dag
+              een versluierde code van je internetverbinding.
+            </p>
+            <p>
+              De bevestigingsmail en onze antwoorden lopen via het gratis
+              Gmail-account van de vereniging. Voor Gmail is Google (Google
+              Ireland Limited) volgens zijn eigen privacybeleid zelf
+              verantwoordelijk.
             </p>
             <p>
               Bij elk bezoek ontvangt Cloudflare technische verbindingsgegevens,
               zoals je IP-adres. De kaart van OpenStreetMap ontvangt die pas als
               ze laadt: na je klik op de kaartknop, of vanzelf terwijl de live
               GPS loopt. De live GPS toont alleen de huifkar tijdens de rondrit,
-              nooit jouw locatie. Cloudflare en Google kunnen gegevens ook buiten
-              de Europese Unie verwerken; welke waarborgen ze daarbij gebruiken,
-              lees je in het privacybeleid van{" "}
+              nooit jouw locatie. Er zijn geen advertentie- of analysetrackers, en
+              geen cookies of browseropslag om bezoekers te volgen.
+            </p>
+            <p>
+              Cloudflare en Google kunnen gegevens ook buiten de Europese Unie
+              verwerken, onder meer in de Verenigde Staten. Beide staan als actief
+              op de{" "}
+              <a
+                href="https://www.dataprivacyframework.gov/list"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                officiële lijst
+              </a>{" "}
+              van het EU-VS-gegevensprivacykader (nagekeken op 4 november 2026),
+              waarvoor een adequaatheidsbesluit van de Europese Commissie geldt.
+              Meer lees je in het privacybeleid van{" "}
               <a
                 href="https://www.cloudflare.com/privacypolicy/"
                 target="_blank"
@@ -879,24 +914,28 @@ function PrivacyPage() {
               >
                 Google
               </a>
-              . Er zijn geen advertentie- of
-              analysetrackers, en geen cookies of browseropslag om bezoekers te
-              volgen. Voor deze beveiliging en technische werking steunen we op
-              ons gerechtvaardigd belang bij een veilige, werkende website
-              (artikel 6.1.f AVG).
+              .
             </p>
           </section>
           <section>
             <span className="section-number">04</span>
             <h2>Bewaartermijn</h2>
             <p>
-              Op {deleteByLabel} wist de website de persoonsgegevens van
-              Sinterklaas {event.year} automatisch uit de database. Mails in de
-              mailbox van de vereniging en eventuele lijsten die vrijwilligers
-              downloadden, verwijderen we uiterlijk die dag zelf. De technische
-              reservekopie van de database verdwijnt daarna vanzelf binnen enkele
-              weken. Alleen anonieme cijfers blijven, zoals aantallen en
-              leeftijden, om volgende edities voor te bereiden.
+              Op {deleteByLabel} wist de website de namen, e-mailadressen en
+              adressen van Sinterklaas {event.year} automatisch uit de database.
+              Mails in de mailbox van de vereniging en eventuele lijsten die
+              vrijwilligers downloadden, verwijderen we uiterlijk die dag zelf.
+            </p>
+            <p>
+              Technische kopieën verdwijnen daarna vanzelf: de reservekopie van de
+              database binnen 30 dagen. Bij Google duurt het volledig verwijderen
+              volgens zijn eigen beleid doorgaans ongeveer twee maanden, en
+              versleutelde reservekopieën kunnen tot zes maanden blijven bestaan.
+            </p>
+            <p>
+              Om volgende edities voor te bereiden, bewaren we alleen het
+              inschrijvingsnummer met cijfers zoals leeftijden, aantallen en
+              afgehaalde cadeautjes, zonder naam, e-mailadres of adres.
             </p>
           </section>
           <section>
@@ -904,16 +943,21 @@ function PrivacyPage() {
             <h2>Jouw rechten en contact</h2>
             <p>
               Je mag altijd vragen welke gegevens we van je hebben, ze laten
-              verbeteren of laten verwijderen. Je mag ook bezwaar maken of de
-              verwerking laten beperken. Mail naar{" "}
+              verbeteren of verwijderen, de verwerking laten beperken of je
+              gegevens in een gangbare vorm krijgen om door te geven. Ouders en
+              voogden kunnen dat ook voor hun kinderen. Mail naar{" "}
               <a href={`mailto:${org.email}`}>{org.email}</a> of bel{" "}
               <a href={phoneHref(org.phone)}>{org.phone}</a> en vermeld je
               inschrijvingsnummer.
             </p>
             <p>
+              <strong>Recht van bezwaar:</strong> waar we steunen op ons
+              gerechtvaardigd belang, kun je bezwaar maken om redenen die met je
+              eigen situatie te maken hebben.
+            </p>
+            <p>
               Verantwoordelijk: {org.name}, {org.address}, ondernemingsnummer{" "}
-              {org.enterprise}. Ben je niet tevreden over ons antwoord, dan kun
-              je een klacht indienen bij de{" "}
+              {org.enterprise}. Je kunt ook altijd een klacht indienen bij de{" "}
               <a
                 href="https://www.gegevensbeschermingsautoriteit.be"
                 target="_blank"

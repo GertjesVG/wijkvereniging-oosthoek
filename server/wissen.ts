@@ -41,7 +41,7 @@ export function eraseStatements(db: D1Database, eventId: string, now: string) {
       .bind(eventId, now),
     // In dezelfde batch dicht: een gewist evenement kan nooit open blijven, ook niet bij een gelijktijdige wijziging.
     db.prepare("UPDATE events SET status = 'closed', personal_data_erased_at = ?2, updated_at = ?2 WHERE id = ?1").bind(eventId, now),
-    // Ook de kortlopende misbruiklogboeken (onomkeerbaar gemaakte internetadressen).
+    // Ook de kortlopende misbruiklogboeken (gehashte internetadressen).
     db.prepare("DELETE FROM login_attempts"),
     db.prepare("DELETE FROM submit_log"),
   ];
@@ -50,6 +50,13 @@ export function eraseStatements(db: D1Database, eventId: string, now: string) {
 // Sluit en wist elk evenement waarvan de wisdatum bereikt is en dat automatisch gewist mag worden. Draait bij elke
 // wachtrijronde van het Apps Script (elke 5 minuten) en bij het beheeroverzicht; al gewiste evenementen blijven ongemoeid.
 export async function eraseExpired(db: D1Database) {
+  // De misbruiklogboeken blijven hoogstens een dag staan (belofte in de privacyverklaring), ook als er daarna geen
+  // nieuwe inschrijving of aanmelding meer komt die ze zou opruimen.
+  const dayAgo = nowIso(-24 * 3600_000);
+  await db.batch([
+    db.prepare("DELETE FROM submit_log WHERE created_at < ?1").bind(dayAgo),
+    db.prepare("DELETE FROM login_attempts WHERE attempted_at < ?1").bind(dayAgo),
+  ]);
   const due = dueForAutoErase(Object.values(registrationEvents));
   if (!due.length) return;
   const { results } = await db
