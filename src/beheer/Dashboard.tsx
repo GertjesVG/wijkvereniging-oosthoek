@@ -553,7 +553,7 @@ function History({ events }: { events: AdminEventSummary[] }) {
       <div className="panel-top">
         <div>
           <h2 id="history-title">Historiek per editie</h2>
-          <p className="muted small">Anonieme cijfers: blijven bewaard nadat de persoonsgegevens gewist zijn.</p>
+          <p className="muted small">Cijfers zonder naam, e-mailadres of adres: blijven bewaard nadat de persoonsgegevens gewist zijn.</p>
         </div>
       </div>
       <div className="table-wrap">

@@ -823,9 +823,9 @@ function PrivacyPage() {
               kind: alleen de voornaam en de leeftijd. Verder je
               inschrijvingsnummer en je akkoord met het wedstrijdreglement
               (versie en tijdstip). We noteren ook de status van je inschrijving,
-              zoals adres nagekeken, mail verstuurd en cadeautje afgehaald. Bij
-              co-ouderschap mag het adres dat van de andere ouder zijn; over die
-              ouder vragen we niets.
+              zoals adres nagekeken, mail verstuurd en cadeautje afgehaald, en
+              soms een korte notitie van een beheerder. Bij co-ouderschap mag het
+              adres dat van de andere ouder zijn; over die ouder vragen we niets.
             </p>
           </section>
           <section>
@@ -843,10 +843,10 @@ function PrivacyPage() {
               Voor je eigen gegevens steunen we op de uitvoering van de deelname
               die je aanvraagt en volgens het wedstrijdreglement aanvaardt
               (artikel 6.1.b AVG). Voor de gegevens van je kinderen, de adres- en
-              dubbelcontrole, het bewijs van je akkoord en de beveiliging steunen
-              we op ons gerechtvaardigd belang om deze gratis actie eerlijk en
-              veilig te organiseren voor de kinderen van de wijk (artikel 6.1.f
-              AVG).
+              dubbelcontrole, het bewijs van je akkoord, de technische werking van
+              de website en de beveiliging steunen we op ons gerechtvaardigd belang
+              om deze gratis actie voor de kinderen van de wijk eerlijk en veilig
+              te organiseren, met een website die werkt (artikel 6.1.f AVG).
             </p>
             <p>
               Inschrijven is vrijwillig, maar zonder deze gegevens kunnen we geen

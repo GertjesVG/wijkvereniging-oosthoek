@@ -203,6 +203,9 @@ test("privacyverklaring: juiste rechtsgronden en verplichte informatie, geen bel
   for (const must of [
     "artikel 6.1.b AVG",
     "artikel 6.1.f AVG",
+    // Ook wie alleen de site bezoekt, moet de grond voor de verbindingsgegevens kunnen lezen.
+    "de technische werking van de website",
+    "korte notitie van een beheerder",
     "Dan blijft dat zo voor jouw inschrijving",
     "opgeslagen in de Europese Unie",
     "Alleen bevoegde personen",
@@ -223,6 +226,9 @@ test("privacyverklaring: juiste rechtsgronden en verplichte informatie, geen bel
   for (const never of ["Dat doen we met je toestemming", "anoniem", "onomkeerbaar", "sponsors of anderen", "als verwerker"])
     assert.ok(!privacy.includes(never), never);
   assert.equal((privacy.match(/section-number/g) ?? []).length, 5);
+  // Ook het beheer noemt de bewaarde cijfers niet anoniem: het inschrijvingsnummer blijft erbij staan.
+  const dashboard = readFileSync(new URL("../src/beheer/Dashboard.tsx", import.meta.url), "utf8");
+  assert.ok(!/anonieme/i.test(dashboard), "beheer: anonieme");
 });
 
 test("cadeauactie en kleurwedstrijd: inschrijving is open; niets over jury of winnaars zolang de vereniging dat niet bevestigde", () => {
