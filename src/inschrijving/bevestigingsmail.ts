@@ -41,7 +41,7 @@ const sinterklaasHtml = `<!DOCTYPE html>
     <tr><td style="padding:2px 18px 14px;font-size:18px;line-height:24px;font-weight:700;color:#ffffff;">zaterdag 28 november 2026</td></tr>
   </table>
 </td></tr>
-<tr><td><a href="https://wijkvereniging-oosthoek.pages.dev/sinterklaas/" target="_blank" style="text-decoration:none;"><img alt="Meer informatie, kleurplaat en sponsors: https://wijkvereniging-oosthoek.pages.dev/sinterklaas/" src="https://wijkvereniging-oosthoek.pages.dev/sinterklaas/email/email-website.png" width="640" style="display:block;width:100%;max-width:640px;height:auto;border:0;"></a></td></tr>
+<tr><td><a href="https://wijkvereniging-oosthoek.pages.dev/sinterklaas/#/home" target="_blank" style="text-decoration:none;"><img alt="Meer informatie, kleurplaat en sponsors: https://wijkvereniging-oosthoek.pages.dev/sinterklaas/#/home" src="https://wijkvereniging-oosthoek.pages.dev/sinterklaas/email/email-website.png" width="640" style="display:block;width:100%;max-width:640px;height:auto;border:0;"></a></td></tr>
 <tr><td><a href="mailto:vzwoosthoek@gmail.com" style="text-decoration:none;"><img alt="Vragen? Mail ons: vzwoosthoek@gmail.com" src="https://wijkvereniging-oosthoek.pages.dev/sinterklaas/email/email-contact.png" width="640" style="display:block;width:100%;max-width:640px;height:auto;border:0;"></a></td></tr>
 <tr><td><img alt="Vrolijke groetjes van Zwarte Piets Hulpjes, namens Sinterklaas en VZW Wijkvereniging Oosthoek." src="https://wijkvereniging-oosthoek.pages.dev/sinterklaas/email/email-onder.jpg" width="640" style="display:block;width:100%;max-width:640px;height:auto;border:0;"></td></tr>
 </table>
@@ -57,7 +57,7 @@ Ingeschreven kind(eren): {{kind_namen}}
 Datum: zaterdag 28 november 2026
 
 Meer informatie, de kleurplaat en onze sponsors:
-https://wijkvereniging-oosthoek.pages.dev/sinterklaas/
+https://wijkvereniging-oosthoek.pages.dev/sinterklaas/#/home
 
 Vragen? vzwoosthoek@gmail.com
 

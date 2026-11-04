@@ -4,14 +4,18 @@ import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import {
   activities,
-  activityStatus,
+  activityStatuses,
   dateText,
+  infoPages,
   legacySinterklaasUrl,
   readRoute,
-  sinterklaasStatus,
+  sinterklaasStatuses,
+  smallImage,
   statusLabels,
   todayInBrussels,
+  wijkhuisLocation,
 } from "../src/content/wijk.ts";
+import { renderConfirmation } from "../src/inschrijving/bevestigingsmail.ts";
 
 const read = (file) => readFileSync(new URL(file, import.meta.url));
 const text = (file) => read(file).toString("utf8");
@@ -19,6 +23,7 @@ const hash = (bytes) => createHash("sha256").update(bytes).digest("hex");
 const wijkSources = [
   "../wijk/index.html",
   "../src/content/wijk.ts",
+  "../src/SponsorCards.tsx",
   ...readdirSync(new URL("../src/wijk/", import.meta.url)).map((f) => `../src/wijk/${f}`),
 ];
 const WEBSITE_BEELDEN = "../../../Documentatie/Oosthoek-Activiteitenbeelden/Website/";
@@ -31,11 +36,14 @@ test("hoofdadres: oude Sinterklaasroutes gaan door met zoekdeel en #-route, wijk
     ["", "#/pasen", null],
     ["", "#/garageverkoop", null],
     ["", "#/wijkfeest", null],
+    ["", "#/sponsors", null],
+    ["?bron=test", "#/sponsors", null],
+    ["", "#/lief-en-leed", null],
+    ["", "#/wijkhuis", null],
     ["?fbclid=abc", "", null],
     ["", "#/home", "/sinterklaas/#/home"],
     ["", "#/", "/sinterklaas/#/"],
     ["", "#/route", "/sinterklaas/#/route"],
-    ["", "#/sponsors", "/sinterklaas/#/sponsors"],
     ["", "#/contact", "/sinterklaas/#/contact"],
     ["?a=1", "#/kleurwedstrijd?reglement", "/sinterklaas/?a=1#/kleurwedstrijd?reglement"],
     ["", "#/bestaat-niet", "/sinterklaas/#/bestaat-niet"],
@@ -43,7 +51,7 @@ test("hoofdadres: oude Sinterklaasroutes gaan door met zoekdeel en #-route, wijk
     assert.equal(legacySinterklaasUrl(search, hash), expected, `${search}${hash}`);
 });
 
-test("de ingang op /sinterklaas/ stuurt alleen het kale QR-adres door, zonder lus", () => {
+test("de ingang op /sinterklaas/ stuurt alleen het kale QR-adres en de sponsors door, zonder lus", () => {
   const html = text("../index.html");
   const script = html.match(/<script>([\s\S]*?)<\/script>/)?.[1];
   assert.ok(script, "inline script in index.html");
@@ -58,10 +66,16 @@ test("de ingang op /sinterklaas/ stuurt alleen het kale QR-adres door, zonder lu
   assert.equal(run("/sinterklaas/", "", "#/route"), null);
   assert.equal(run("/sinterklaas/", "?x=1", ""), null);
   assert.equal(run("/sinterklaas/", "?x=1", "#/privacy"), null);
+  // De sponsors staan op één algemene pagina; zoekdeel en anker gaan mee.
+  assert.equal(run("/sinterklaas/", "", "#/sponsors"), "/#/sponsors");
+  assert.equal(run("/sinterklaas/", "?x=1", "#/sponsors?y"), "/?x=1#/sponsors?y");
+  assert.equal(run("/sinterklaas/", "", "#/sponsors-iets"), null);
   // Lokaal (npm run dev, preview) staat de Sinterklaassite op de hoofdmap: daar nooit doorsturen.
   assert.equal(run("/", "", ""), null);
-  // Het doel van de ingang is zelf eindstation.
+  assert.equal(run("/", "", "#/sponsors"), null);
+  // De doelen van de ingang zijn zelf eindstation.
   assert.equal(legacySinterklaasUrl("", ""), null);
+  assert.equal(legacySinterklaasUrl("", "#/sponsors"), null);
   // Het hoofdadres stuurt nooit meer met de server naar Sinterklaas.
   assert.ok(!text("../cloudflare-pages.mjs").includes("/ /sinterklaas/ 302"));
 });
@@ -81,6 +95,52 @@ test("activiteitenbeelden zijn bytegelijke kopieën; Documentatie blijft de bron
     assert.ok(existsSync(new URL(`../public/${activity.image}`, import.meta.url)), activity.image);
     assert.ok(activity.imageAlt.length > 30, activity.slug);
   }
+});
+
+test("wijkinformatie: de nieuwste beelden als eigen WebP, met kleine versie; de bronnen blijven in Documentatie", () => {
+  assert.deepEqual(infoPages.map((p) => [p.slug, p.name]), [
+    ["sponsors", "Onze sponsors"],
+    ["lief-en-leed", "Lief en leed in onze wijk"],
+    ["wijkhuis", "Waar is ons wijkhuis?"],
+  ]);
+  assert.equal(infoPages[0].more, "Ontdek wie onze wijk steunt");
+  assert.equal(infoPages[1].teaser, "Geboorte, overlijden en huwelijksjubileum: Oosthoek leeft mee.");
+  assert.equal(infoPages[1].more, "Ontdek onze attenties");
+  for (const item of [...infoPages, ...activities]) {
+    const webp = (file) => {
+      const bytes = read(`../public/${file}`);
+      assert.equal(bytes.subarray(8, 12).toString("latin1"), "WEBP", file);
+      return bytes.length;
+    };
+    assert.ok(webp(smallImage(item.image)) < webp(item.image) / 2, item.slug);
+    assert.ok(item.imageAlt.length > 30, item.slug);
+  }
+  for (const name of [
+    "Warme handdruk voor de buurt.png",
+    "Geboorte, herinnering en gouden jubileum.png",
+    "Schilderachtig Oosthoek-clubhuis in het groen.png",
+  ])
+    assert.ok(existsSync(new URL(WEBSITE_BEELDEN + name, import.meta.url)), name);
+  // Het Sinterklaasbeeld blijft het bestaande bestand.
+  assert.equal(smallImage("assets/hero.webp"), null);
+});
+
+test("wijkhuis: zonder bevestigde locatie geen adres, kaart of route, en geen knop die dat belooft", () => {
+  assert.equal(wijkhuisLocation, null);
+  assert.equal(infoPages[2].more, "Bekijk ons wijkhuis");
+  assert.doesNotMatch(text("../src/content/event.ts").match(/departure: .*/)[0], /Opstal|straat/);
+});
+
+test("bevestigingsmail: de link gaat rechtstreeks naar de Sinterklaaswebsite; opmaak en beelden blijven", () => {
+  const SITE = "https://wijkvereniging-oosthoek.pages.dev/sinterklaas/";
+  const mail = renderConfirmation("sinterklaas-2026", { reference: "SINT26-0000", childNames: ["Testkind"] });
+  assert.ok(mail.html.includes(`<a href="${SITE}#/home" target="_blank"`));
+  assert.ok(mail.text.includes(`${SITE}#/home\n`));
+  // Geen enkele link meer naar het kale QR-adres; de beelden staan er wel gewoon onder.
+  assert.doesNotMatch(`${mail.html}\n${mail.text}`, new RegExp(`${SITE}(?=["\\s:]|$)`, "m"));
+  for (const image of ["email-boven.jpg", "email-perkament.jpg", "email-website.png", "email-contact.png", "email-onder.jpg"])
+    assert.ok(mail.html.includes(`src="${SITE}email/${image}"`) || mail.html.includes(`${SITE}email/${image}`), image);
+  assert.ok(mail.html.includes("SINT26-0000") && mail.html.includes("Testkind"));
 });
 
 test("logo en wijkillustratie komen ongewijzigd uit het ontwerpvoorbeeld", () => {
@@ -127,27 +187,31 @@ test("status: informatie volgt, inschrijven mogelijk, gesloten en voorbij", () =
   });
   const base = { date: null, status: "info", registrationHref: null, registrationDeadline: null };
   const today = "2027-03-10";
-  assert.equal(activityStatus(base, today), "info");
-  assert.equal(activityStatus({ ...base, status: "closed" }, today), "closed");
+  assert.deepEqual(activityStatuses(base, today), ["info"]);
+  assert.deepEqual(activityStatuses({ ...base, status: "closed" }, today), ["closed"]);
   // Inschrijven kan alleen met een echt inschrijfadres; anders blijft het een informatiemelding.
-  assert.equal(activityStatus({ ...base, status: "open" }, today), "info");
+  assert.deepEqual(activityStatuses({ ...base, status: "open" }, today), ["info"]);
   const open = { ...base, status: "open", registrationHref: "https://example.org/" };
-  assert.equal(activityStatus(open, today), "open");
+  assert.deepEqual(activityStatuses(open, today), ["open"]);
   // De laatste dag telt nog mee; daarna toont de site gesloten.
-  assert.equal(activityStatus({ ...open, registrationDeadline: today }, today), "open");
-  assert.equal(activityStatus({ ...open, registrationDeadline: "2027-03-09" }, today), "closed");
+  assert.deepEqual(activityStatuses({ ...open, registrationDeadline: today }, today), ["open"]);
+  assert.deepEqual(activityStatuses({ ...open, registrationDeadline: "2027-03-09" }, today), ["closed"]);
   // De dag zelf is nog niet voorbij.
-  assert.equal(activityStatus({ ...open, date: today }, today), "open");
-  assert.equal(activityStatus({ ...open, date: "2027-03-09" }, today), "past");
+  assert.deepEqual(activityStatuses({ ...open, date: today }, today), ["open"]);
+  // Voorbij gaat over de datum, gesloten over de inschrijving: de datum alleen sluit niets.
+  assert.deepEqual(activityStatuses({ ...base, date: "2027-03-09" }, today), ["past"]);
+  assert.deepEqual(activityStatuses({ ...open, date: "2027-03-09" }, today), ["past", "open"]);
+  assert.deepEqual(activityStatuses({ ...base, status: "closed", date: "2027-03-09" }, today), ["past", "closed"]);
 });
 
-test("Sinterklaas volgt de echte inschrijfstatus van de server; zonder antwoord geen melding", () => {
-  assert.equal(sinterklaasStatus("2026-11-28", "open", "2026-11-28"), "open");
-  assert.equal(sinterklaasStatus("2026-11-28", "closed", "2026-11-04"), "closed");
-  assert.equal(sinterklaasStatus("2026-11-28", "full", "2026-11-04"), "closed");
-  assert.equal(sinterklaasStatus("2026-11-28", null, "2026-11-04"), null);
-  assert.equal(sinterklaasStatus("2026-11-28", "open", "2026-11-29"), "past");
-  assert.equal(sinterklaasStatus("2026-11-28", null, "2026-11-29"), "past");
+test("Sinterklaas volgt altijd de server: de datum zet er alleen 'Voorbij' bij; zonder antwoord geen inschrijfmelding", () => {
+  assert.deepEqual(sinterklaasStatuses("2026-11-28", "open", "2026-11-28"), ["open"]);
+  assert.deepEqual(sinterklaasStatuses("2026-11-28", "closed", "2026-11-04"), ["closed"]);
+  assert.deepEqual(sinterklaasStatuses("2026-11-28", "full", "2026-11-04"), ["closed"]);
+  assert.deepEqual(sinterklaasStatuses("2026-11-28", null, "2026-11-04"), []);
+  assert.deepEqual(sinterklaasStatuses("2026-11-28", "open", "2026-11-29"), ["past", "open"]);
+  assert.deepEqual(sinterklaasStatuses("2026-11-28", "closed", "2026-11-29"), ["past", "closed"]);
+  assert.deepEqual(sinterklaasStatuses("2026-11-28", null, "2026-11-29"), ["past"]);
 });
 
 test("de dag wisselt in Belgische tijd, niet in UTC", () => {
@@ -161,13 +225,14 @@ test("routes op het hoofdadres", () => {
   assert.deepEqual(readRoute("#/pasen"), { page: "pasen", anchor: null });
 });
 
-test("Oosthoek leeft mee: juiste afspraken, geen bedragen en geen wijkformulier", async () => {
+test("Lief en leed: juiste afspraken, geen bedragen en geen wijkformulier", async () => {
   const { lifeMoments } = await import("../src/content/wijk.ts");
   const all = lifeMoments.map((m) => `${m.title} ${m.text}`).join(" ");
-  assert.deepEqual(lifeMoments.map((m) => m.title), ["Een geboorte", "Een overlijden", "50 jaar getrouwd"]);
+  assert.deepEqual(lifeMoments.map((m) => m.title), ["Geboorte", "Overlijden", "Jubilarissen"]);
   assert.match(lifeMoments[0].text, /attentie/);
   assert.match(lifeMoments[1].text, /via de begrafenisondernemer een bloemstukje of krans/);
+  assert.match(lifeMoments[2].text, /50 jaar huwelijk/);
   assert.match(lifeMoments[2].text, /waardebon voor een etentje en een bloemetje/);
-  assert.match(lifeMoments[2].text, /officiële melding verloopt via de gemeente Beerse/);
+  assert.match(lifeMoments[2].text, /officiële melding blijft via de gemeente Beerse verlopen/);
   assert.doesNotMatch(all, /€|euro|bedrag|bijdrage|premie|formulier/i);
 });

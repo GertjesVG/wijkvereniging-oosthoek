@@ -99,7 +99,8 @@ test("QR via GitHub en Cloudflare: de volledige keten eindigt op de wijkpagina; 
   for (const [start, end] of [
     [`${GITHUB}/#/route`, `${CLOUDFLARE}/sinterklaas/#/route`],
     [`${GITHUB}/sinterklaas/#/privacy`, `${CLOUDFLARE}/sinterklaas/#/privacy`],
-    [`${GITHUB}/sinterklaas/?bron=test#/sponsors`, `${CLOUDFLARE}/sinterklaas/?bron=test#/sponsors`],
+    [`${GITHUB}/sinterklaas/?bron=test#/sponsors`, `${CLOUDFLARE}/?bron=test#/sponsors`],
+    [`${GITHUB}/#/sponsors`, `${CLOUDFLARE}/#/sponsors`],
   ]) {
     await page.goto("about:blank");
     await page.goto(start);
@@ -116,7 +117,6 @@ test("bestaande directe links, hashes, zoekdelen en bestanden blijven werken", a
     ["/sinterklaas/#/kleurwedstrijd", /kleuren van de voorpret/],
     ["/sinterklaas/#/route", /Waar is de Sint/],
     ["/sinterklaas/#/praktisch", /Goed om te weten/],
-    ["/sinterklaas/#/sponsors", /buurt sterker/],
     ["/sinterklaas/#/contact", /horen graag van je/],
     ["/sinterklaas/#/privacy", /Privacy/],
     ["/sinterklaas/?bron=test", /Sinterklaas/],
@@ -144,6 +144,9 @@ test("bestaande directe links, hashes, zoekdelen en bestanden blijven werken", a
     ["/sinterklaas/downloads/kleurplaat.pdf", "application/pdf"],
     ["/sinterklaas/assets/hero.webp", "image/webp"],
     ["/sinterklaas/assets/oosthoek-pasen.webp", "image/webp"],
+    ["/sinterklaas/assets/oosthoek-wijkhuis.webp", "image/webp"],
+    ["/sinterklaas/assets/oosthoek-sponsors-768.webp", "image/webp"],
+    ["/sinterklaas/assets/oosthoek-lief-en-leed.webp", "image/webp"],
     ["/sinterklaas/assets/sponsor-zeepventje.webp", "image/webp"],
     ["/sinterklaas/email/email-boven.jpg", "image/jpeg"],
     ["/sinterklaas/favicon.svg", "image/svg+xml"],
@@ -181,41 +184,76 @@ test("informatiepagina's: eigen beeld, Datum volgt, geen verzonnen inschrijving;
     // Via het menu terug naar een onderdeel van de hoofdpagina.
     const toggle = page.getByRole("button", { name: "Menu openen" });
     if (await toggle.isVisible()) await toggle.click();
-    await page.getByRole("navigation").getByRole("link", { name: "Onze sponsors" }).click();
-    await expect(page.locator("#sponsors")).toBeInViewport();
+    await page.getByRole("navigation").getByRole("link", { name: "Activiteiten" }).click();
+    await expect(page.locator(".events")).toBeInViewport();
     await expect(wijkHeading(page)).toBeAttached();
   }
 });
 
-test("hoofdpagina: activiteiten, Oosthoek leeft mee en contact uit de bevestigde gegevens", async ({ page }) => {
+test("hoofdpagina: zeven aanklikbare tegels, contact uit de bevestigde gegevens; sponsors en lief en leed staan op eigen pagina's", async ({ page }) => {
+  const logos: string[] = [];
+  page.on("request", (req) => {
+    if (req.url().includes("/assets/sponsor-")) logos.push(req.url());
+  });
   await page.goto(`${SITE}/`);
+  await expect(page.getByRole("heading", { level: 2, name: "Ontdek wat er leeft in Oosthoek." })).toBeVisible();
+  await expect(page.getByText("Activiteiten en wijkinformatie", { exact: true })).toBeVisible();
   const cards = page.locator(".event");
-  await expect(cards).toHaveCount(4);
-  for (const name of ["Pasen", "Garageverkoop", "Wijkfeest", "Sinterklaas"])
-    await expect(cards.getByRole("heading", { name, exact: true })).toBeVisible();
-  // Alleen Sinterklaas heeft een bevestigde datum.
+  await expect(cards.getByRole("heading", { level: 3 })).toHaveText([
+    "Pasen",
+    "Garageverkoop",
+    "Wijkfeest",
+    "Sinterklaas",
+    "Onze sponsors",
+    "Lief en leed in onze wijk",
+    "Waar is ons wijkhuis?",
+  ]);
+  // Alleen Sinterklaas heeft een bevestigde datum; de wijkinformatie heeft geen datum en geen status.
   await expect(cards.getByText("Datum volgt", { exact: true })).toHaveCount(3);
   await expect(cards.filter({ hasText: "Sinterklaas" }).getByText("28 november 2026")).toBeVisible();
-  // De beelden: de drie nieuwe plus het bestaande Sinterklaasbeeld, allemaal lokaal.
+  await expect(page.locator(".event-info .pill, .event-info .status")).toHaveCount(0);
+  const tile = (name: string) => cards.filter({ has: page.getByRole("heading", { name, exact: true }) });
+  await expect(tile("Onze sponsors")).toContainText("Ontdek wie onze wijk steunt");
+  await expect(tile("Lief en leed in onze wijk")).toContainText("Geboorte, overlijden en huwelijksjubileum: Oosthoek leeft mee.");
+  await expect(tile("Lief en leed in onze wijk")).toContainText("Ontdek onze attenties");
+  // De beelden: bestaande sfeerbeelden, het bestaande Sinterklaasbeeld en de drie nieuwste, allemaal lokaal.
   const sources = await cards.locator("img").evaluateAll((all) => all.map((i) => (i as HTMLImageElement).getAttribute("src")));
   expect(sources).toEqual([
     "/sinterklaas/assets/oosthoek-pasen.webp",
     "/sinterklaas/assets/oosthoek-garageverkoop.webp",
     "/sinterklaas/assets/oosthoek-wijkfeest.webp",
     "/sinterklaas/assets/hero.webp",
+    "/sinterklaas/assets/oosthoek-sponsors.webp",
+    "/sinterklaas/assets/oosthoek-lief-en-leed.webp",
+    "/sinterklaas/assets/oosthoek-wijkhuis.webp",
   ]);
-  await cards.filter({ hasText: "Pasen" }).getByRole("link").click();
-  await expect(page).toHaveURL(`${SITE}/#/pasen`);
-  await expect(page.locator("h1")).toHaveText("Pasen in Oosthoek");
-  await page.goBack();
+  // Sponsors en de uitgebreide informatie staan niet meer op de hoofdpagina.
+  await expect(page.locator(".sponsor-card, #sponsors, #leeft-mee")).toHaveCount(0);
+  await expect(page.locator("main")).not.toContainText("originele doodsbrief");
+  expect(logos).toEqual([]);
 
-  const life = page.locator("#leeft-mee");
-  await expect(life.getByRole("heading", { level: 3 })).toHaveText(["Een geboorte", "Een overlijden", "50 jaar getrouwd"]);
-  await expect(life.getByText(/originele geboortekaartje of de originele doodsbrief/)).toContainText("Opstal 5, 2340 Beerse");
-  await expect(life.getByText(/originele geboortekaartje/)).toHaveCount(1);
-  await expect(life.getByRole("link", { name: /gemeente/ })).toHaveAttribute("href", "https://www.beerse.be/jubileum");
-  await expect(life).not.toContainText("€");
-  await expect(life.locator("form, input")).toHaveCount(0);
+  // De hele tegel is aanklikbaar: ook een klik op het beeld opent de pagina, en terug kan altijd. De link van de tegel
+  // ligt over het beeld; daarom "force": een echte muisklik op het midden, zonder de controle dat het beeld zelf bovenaan ligt.
+  for (const [name, path, h1] of [
+    ["Pasen", "/#/pasen", "Pasen in Oosthoek"],
+    ["Garageverkoop", "/#/garageverkoop", "Garageverkoop"],
+    ["Wijkfeest", "/#/wijkfeest", "Wijkfeest"],
+    ["Onze sponsors", "/#/sponsors", "Onze sponsors"],
+    ["Lief en leed in onze wijk", "/#/lief-en-leed", "Lief en leed in onze wijk"],
+    ["Waar is ons wijkhuis?", "/#/wijkhuis", "Waar is ons wijkhuis?"],
+  ]) {
+    await tile(name).locator("img").click({ force: true });
+    await expect(page, name).toHaveURL(SITE + path);
+    await expect(page.locator("h1")).toHaveText(h1);
+    await expect(page).toHaveTitle(new RegExp(h1.replace("?", "\\?")));
+    await page.getByRole("link", { name: "Terug naar de hoofdpagina" }).click();
+    await expect(page.locator(".events")).toBeInViewport();
+    await expect(wijkHeading(page)).toBeAttached();
+  }
+  await tile("Sinterklaas").locator("img").click({ force: true });
+  await expect(page).toHaveURL(`${SITE}/sinterklaas/#/home`);
+  await expect(sintHero(page)).toBeVisible();
+  await page.goBack();
 
   const contact = page.locator("#contact");
   await expect(contact.getByRole("link", { name: /vzwoosthoek@gmail\.com/ })).toHaveAttribute("href", "mailto:vzwoosthoek@gmail.com");
@@ -226,45 +264,118 @@ test("hoofdpagina: activiteiten, Oosthoek leeft mee en contact uit de bevestigde
   await expect(page.locator("iframe")).toHaveCount(0);
 });
 
-test("sponsors: de centrale lijst, originele logo's, zoeken en contactgegevens", async ({ page }) => {
-  await page.goto(`${SITE}/#sponsors`);
-  const section = page.locator("#sponsors");
-  const cards = section.locator(".sponsor");
-  await expect(cards).toHaveCount(8);
-  await section.getByRole("button", { name: `Bekijk alle ${sponsors.length} sponsors` }).click();
-  await expect(cards).toHaveCount(33);
+test("lief en leed: drie onderdelen, één gezamenlijke instructie, geen bedrag en geen formulier", async ({ page }) => {
+  await page.goto(`${SITE}/#/lief-en-leed`);
+  const main = page.locator("main");
+  await expect(page.locator("h1")).toHaveText("Lief en leed in onze wijk");
+  await expect(main.locator(".activity-hero img")).toHaveAttribute("src", "/sinterklaas/assets/oosthoek-lief-en-leed.webp");
+  await expect(main.locator(".moment h2")).toHaveText(["Geboorte", "Overlijden", "Jubilarissen"]);
+  await expect(main.locator(".mailbox")).toHaveText("Deponeer het originele geboortekaartje of de originele doodsbrief in de brievenbus op Opstal 5, 2340 Beerse.");
+  await expect(main.getByText(/originele doodsbrief/)).toHaveCount(1);
+  await expect(main.getByRole("link", { name: /gemeente Beerse/ })).toHaveAttribute("href", "https://www.beerse.be/jubileum");
+  await expect(main.locator(".moments-band")).not.toContainText("€");
+  await expect(main.locator("form, input")).toHaveCount(0);
+  await expect(main.locator(".pill, .status")).toHaveCount(0);
+  await page.reload();
+  await expect(page.locator("h1")).toHaveText("Lief en leed in onze wijk");
+});
+
+test("wijkhuis: het nieuwe beeld en wat vaststaat; zonder bevestiging geen adres, kaartpin of route", async ({ page }) => {
+  const seen = watchRequests(page);
+  await page.goto(`${SITE}/#/wijkhuis`);
+  const main = page.locator("main");
+  await expect(page.locator("h1")).toHaveText("Waar is ons wijkhuis?");
+  const image = main.locator('.activity-hero img[src$="oosthoek-wijkhuis.webp"]');
+  await expect(image).toBeVisible();
+  await expect.poll(() => image.evaluate((i: HTMLImageElement) => i.naturalWidth)).toBe(1536);
+  await expect(main).toContainText("Vertrek om 10.30 uur aan Wijkhuis Oosthoek.");
+  await expect(main).toContainText("zodra ze bevestigd zijn");
+  await expect(main).not.toContainText("Opstal");
+  await expect(main.locator('a[href*="maps"], a[href*="openstreetmap"], .leaflet-container, iframe')).toHaveCount(0);
+  await expect(main.getByRole("link", { name: /Route|kaart/ })).toHaveCount(0);
+  await expect(main.locator(".pill, .status")).toHaveCount(0);
+  expect(seen.external).toEqual([]);
+});
+
+test("sponsors: één algemene pagina met de goedgekeurde kaarten, de centrale lijst en originele logo's", async ({ page }) => {
+  await page.goto(`${SITE}/#/sponsors`);
+  await expect(page.locator("h1")).toHaveText("Onze sponsors");
+  await expect(page.locator(".activity-hero img")).toHaveAttribute("src", "/sinterklaas/assets/oosthoek-sponsors.webp");
+  const cards = page.locator(".sponsor-card");
+  await expect(cards).toHaveCount(sponsors.length);
+  expect(sponsors.length).toBe(33);
+  await expect(page.locator(".pill, .status")).toHaveCount(0);
   // Originele logo's; wie geen logo heeft, krijgt de naam als plaat.
-  await expect(section.locator(".sponsor-logo img")).toHaveCount(Object.keys(sponsorLogos).length);
-  for (const img of await section.locator(".sponsor-logo img").all()) {
+  const logos = cards.locator(".sponsor-logo img");
+  await expect(logos).toHaveCount(Object.keys(sponsorLogos).length);
+  for (const img of await logos.all()) {
     await img.scrollIntoViewIfNeeded();
     await expect.poll(() => img.evaluate((i: HTMLImageElement) => i.naturalWidth)).toBeGreaterThan(0);
   }
-  await expect(section.locator(".sponsor-logo .wordmark")).toHaveCount(33 - Object.keys(sponsorLogos).length);
-
-  const search = section.getByRole("searchbox");
+  await expect(cards.locator(".sponsor-nameplate")).toHaveCount(33 - Object.keys(sponsorLogos).length);
+  // De goedgekeurde vormgeving, ook in de stijl van de wijkwebsite: kaarten op een rij delen hun rijen, dus titel,
+  // gegevens, knop en dankwoord staan op dezelfde hoogte, hoe lang de naam ook is.
+  const firstRow = await cards.evaluateAll((all) => {
+    const top = (el: Element | null) => Math.round(el!.getBoundingClientRect().top);
+    const row = all.filter((card) => top(card) === top(all[0]));
+    return {
+      subgrid: getComputedStyle(all[0]).gridTemplateRows.startsWith("subgrid"),
+      columns: row.length,
+      misaligned: [".sponsor-title", ".sponsor-details", ".sponsor-action", ".sponsor-thanks"].filter(
+        (part) => new Set(row.map((card) => top(card.querySelector(part)))).size > 1,
+      ),
+    };
+  });
+  expect(firstRow).toEqual({ subgrid: true, columns: 3, misaligned: [] });
+  // Alle contact- en websitegegevens per sponsor.
+  for (const sponsor of sponsors) {
+    const card = cards.filter({ has: page.getByRole("heading", { name: sponsor.name, exact: true }) });
+    await expect(card).toHaveCount(1);
+    await expect(card).toContainText(sponsor.address);
+    for (const phone of sponsor.phones)
+      await expect(card.locator(`.sponsor-phones a[href="tel:${phone.replace(/[^\d+]/g, "")}"]`)).toHaveText(phone);
+    if (sponsor.email) await expect(card.locator(`a[href="mailto:${sponsor.email}"]`).first()).toBeAttached();
+    if (sponsor.website) await expect(card.locator(".sponsor-website")).toHaveAttribute("href", sponsor.website);
+    else await expect(card.locator(".sponsor-website")).toHaveCount(0);
+  }
+  const search = page.getByRole("searchbox");
   await search.fill("Stef Nuyens");
   await expect(cards).toHaveCount(1);
   await search.fill("onbestaande sponsor");
-  await expect(section.getByText("Geen sponsor gevonden")).toBeVisible();
-  await search.fill("");
+  await expect(page.getByText("Geen sponsor gevonden")).toBeVisible();
+  await page.getByRole("button", { name: "Toon alle sponsors" }).click();
   await expect(cards).toHaveCount(33);
+});
 
-  for (const sponsor of sponsors) {
-    const open = section.getByRole("button", { name: `Contactgegevens ${sponsor.name}`, exact: true });
-    await open.click();
-    const dialog = page.getByRole("dialog");
-    await expect(dialog.getByRole("heading", { name: sponsor.name, exact: true })).toBeVisible();
-    await expect(dialog).toContainText(sponsor.address);
-    for (const phone of sponsor.phones)
-      await expect(dialog.getByRole("link", { name: phone, exact: true })).toHaveAttribute("href", `tel:${phone.replace(/[^\d+]/g, "")}`);
-    await expect(dialog.getByRole("link", { name: /E-mail/ })).toHaveCount(sponsor.email ? 1 : 0);
-    if (sponsor.website)
-      await expect(dialog.getByRole("link", { name: /Website/ })).toHaveAttribute("href", sponsor.website);
-    else await expect(dialog.getByRole("link", { name: /Website/ })).toHaveCount(0);
-    await page.keyboard.press("Escape");
-    await expect(dialog).toHaveCount(0);
-    await expect(open).toBeFocused();
+test("sponsorlinks vanuit Sinterklaas komen op de algemene pagina, zonder kapotte oude links", async ({ page }) => {
+  const atSponsors = async (url: string) => {
+    await expect(page).toHaveURL(url);
+    await expect(page.locator("h1")).toHaveText("Onze sponsors");
+    await expect(page.locator(".sponsor-card")).toHaveCount(33);
+  };
+  // Oude directe links, ook met zoekdeel en na vernieuwen.
+  for (const [start, end] of [
+    ["/sinterklaas/#/sponsors", "/#/sponsors"],
+    ["/sinterklaas/?bron=test#/sponsors", "/?bron=test#/sponsors"],
+    ["/#/sponsors", "/#/sponsors"],
+  ]) {
+    await page.goto("about:blank");
+    await page.goto(SITE + start);
+    await atSponsors(SITE + end);
+    await page.reload();
+    await atSponsors(SITE + end);
   }
+  // Het menu en de sponsorstrook van de Sinterklaaswebsite; de terugknop gaat terug naar Sinterklaas, zonder kringloop.
+  await page.goto(`${SITE}/sinterklaas/#/home`);
+  await expect(sintHero(page)).toBeVisible();
+  await page.locator(".sponsors-link").click();
+  await atSponsors(`${SITE}/#/sponsors`);
+  await page.goBack();
+  await expect(sintHero(page)).toBeVisible();
+  expect(page.url()).toBe(`${SITE}/sinterklaas/#/home`);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.locator('#main-nav a[href="#/sponsors"]').click();
+  await atSponsors(`${SITE}/#/sponsors`);
 });
 
 test("inschrijfkoppeling: de wijkpagina volgt de serverstatus en stuurt naar het bestaande formulier", async ({ browser }) => {
@@ -301,46 +412,76 @@ test("inschrijfkoppeling: de wijkpagina volgt de serverstatus en stuurt naar het
   await page.close();
 });
 
-test("na de datum: Sinterklaas staat op voorbij en verdwijnt van de kalender, de site zelf blijft bereikbaar", async ({ page }) => {
+test("na de datum: Voorbij staat los van de inschrijving; alleen de server sluit, en de site zelf blijft bereikbaar", async ({ browser }) => {
+  for (const [status, label, link] of [
+    ["open", "Inschrijven mogelijk", 1],
+    ["closed", "Inschrijving gesloten", 0],
+  ] as const) {
+    const page = await browser.newPage();
+    await apiStatus(page, status);
+    await page.clock.setFixedTime(new Date("2026-11-29T10:00:00+01:00"));
+    await page.goto(`${SITE}/`);
+    const card = page.locator(".event").filter({ hasText: "Sinterklaas" });
+    await expect(card.getByText("Voorbij", { exact: true })).toBeVisible();
+    await expect(card.getByText(label, { exact: true })).toBeVisible();
+    await expect(card.getByRole("link", { name: /Inschrijven/ })).toHaveCount(link);
+    await expect(card.getByRole("link", { name: /Naar Sinterklaas/ })).toBeVisible();
+    await expect(page.locator(".ticker")).toHaveCount(0);
+    await page.close();
+  }
+  // Na de datum staat de rondrit niet meer op de wijkhuispagina.
+  const page = await browser.newPage();
+  await apiStatus(page, "closed");
   await page.clock.setFixedTime(new Date("2026-11-29T10:00:00+01:00"));
-  await page.goto(`${SITE}/`);
-  const card = page.locator(".event").filter({ hasText: "Sinterklaas" });
-  await expect(card.getByText("Voorbij", { exact: true })).toBeVisible();
-  await expect(card.getByRole("link", { name: /Inschrijven/ })).toHaveCount(0);
-  await expect(card.getByRole("link", { name: /Naar Sinterklaas/ })).toBeVisible();
-  await expect(page.locator(".ticker")).toHaveCount(0);
+  await page.goto(`${SITE}/#/wijkhuis`);
+  await expect(page.locator("h1")).toHaveText("Waar is ons wijkhuis?");
+  await expect(page.locator("main")).not.toContainText("10.30");
+  await page.close();
 });
 
-test("desktop en gsm: geen overloop, beelden 3:2, menu en toetsenbord werken, geen externe bronnen", async ({ page }) => {
+test("desktop en gsm: evenwichtige tegels, geen overloop, beelden 3:2, menu en toetsenbord werken, geen externe bronnen", async ({ page }) => {
+  test.setTimeout(150_000);
   const seen = watchRequests(page);
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  for (const width of [1920, 1440, 1024, 768, 390, 320]) {
+  // Aantal tegels per rij op elke breedte: nooit een losse tegel naast een gat.
+  const rows: Record<number, number[]> = {
+    1920: [4, 3],
+    1440: [4, 3],
+    1200: [4, 3],
+    1024: [2, 2, 3],
+    768: [2, 2, 3],
+    640: [2, 2, 2, 1],
+    390: [1, 1, 1, 1, 1, 1, 1],
+    320: [1, 1, 1, 1, 1, 1, 1],
+  };
+  for (const width of [1920, 1440, 1200, 1024, 768, 640, 390, 320]) {
     await page.setViewportSize({ width, height: 900 });
-    for (const path of ["/", "/#/pasen", "/#/garageverkoop", "/#/wijkfeest"]) {
+    for (const path of ["/", "/#/pasen", "/#/garageverkoop", "/#/wijkfeest", "/#/sponsors", "/#/lief-en-leed", "/#/wijkhuis"]) {
       await page.goto("about:blank");
       await page.goto(SITE + path);
       await expect(page.locator("h1")).toBeVisible();
       await page.evaluate(() => document.fonts.ready);
       expect(await noOverflow(page), `${width}px ${path}`).toBe(true);
-      for (const img of await page.locator("main img, header img").all()) {
+      for (const img of await page.locator(".activity-hero img, .event-art img, header img").all()) {
         await img.scrollIntoViewIfNeeded();
         await expect.poll(() => img.evaluate((i: HTMLImageElement) => i.naturalWidth), `${width}px ${path}`).toBeGreaterThan(0);
       }
+      for (const hero of await page.locator(".activity-hero img").all()) {
+        const box = (await hero.boundingBox())!;
+        expect(box.width / box.height, `${width}px ${path} paginabeeld`).toBeCloseTo(1.5, 1);
+      }
     }
     await page.goto(`${SITE}/`);
-    for (const frame of await page.locator(".event-art").all()) {
+    const tiles = await page.locator(".event").evaluateAll((all) => all.map((el) => el.getBoundingClientRect().top + scrollY));
+    const perRow = [...new Set(tiles.map(Math.round))].map((top) => tiles.filter((t) => Math.round(t) === top).length);
+    expect(perRow, `${width}px rijen`).toEqual(rows[width]);
+    const frames = await page.locator(".event-art").all();
+    // De zevende tegel staat op 640 px over de hele breedte, met het beeld ernaast.
+    for (const frame of width === 640 ? frames.slice(0, 6) : frames) {
       const box = (await frame.boundingBox())!;
       expect(box.width / box.height, `${width}px kaartbeeld`).toBeCloseTo(1.5, 1);
     }
-    // Alles binnen het scherm, ook de sponsors en het dialoogvenster.
-    await page.locator("#sponsors .sponsor").first().click();
-    const dialog = page.getByRole("dialog");
-    const box = (await dialog.boundingBox())!;
-    expect(box.x, `${width}px dialoog`).toBeGreaterThanOrEqual(0);
-    expect(box.x + box.width, `${width}px dialoog`).toBeLessThanOrEqual(width);
-    await dialog.getByRole("button", { name: "Venster sluiten" }).click();
-    await expect(dialog).toHaveCount(0);
   }
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`${SITE}/`);
@@ -349,14 +490,17 @@ test("desktop en gsm: geen overloop, beelden 3:2, menu en toetsenbord werken, ge
   expect(Math.min(size.width, size.height)).toBeGreaterThanOrEqual(44);
   await toggle.click();
   const nav = page.getByRole("navigation", { name: "Hoofdnavigatie" });
-  await expect(nav.getByRole("link", { name: "Activiteiten" })).toBeVisible();
+  for (const name of ["Activiteiten", "Sinterklaas", "Onze sponsors", "Lief en leed", "Wijkhuis", "Contact"])
+    await expect(nav.getByRole("link", { name, exact: true })).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(toggle).toBeFocused();
   await expect(toggle).toHaveAttribute("aria-expanded", "false");
   await toggle.click();
-  await nav.getByRole("link", { name: "Oosthoek leeft mee" }).click();
+  await nav.getByRole("link", { name: "Lief en leed" }).click();
   await expect(toggle).toHaveAttribute("aria-expanded", "false");
-  await expect(page.locator("#leeft-mee")).toBeInViewport();
+  await expect(page).toHaveURL(`${SITE}/#/lief-en-leed`);
+  // Het menu is weer dicht, dus de link is nu verborgen; de huidige pagina staat er wel gemarkeerd.
+  await expect(page.locator('#navigation a[aria-current="page"]')).toHaveText("Lief en leed");
   expect(errors).toEqual([]);
   expect(seen.writes).toEqual([]);
   expect(seen.external).toEqual([]);

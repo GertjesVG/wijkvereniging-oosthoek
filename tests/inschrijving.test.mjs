@@ -25,13 +25,16 @@ test("feestelijke mail volgt het aangeleverde sjabloon en de tekstversie, met de
   const original = doc("Oosthoek_Sinterklaas_Email_Template.html");
   const alts = (html) => [...html.matchAll(/alt="([^"]+)"/g)].map((m) => m[1]);
   const title = (html) => html.match(/<title>.*<\/title>/)[0];
-  assert.deepEqual(alts(template.html), alts(original));
+  // Enige bewuste afwijking sinds de wijkwebsite (4 november 2026): de link gaat rechtstreeks naar de Sinterklaaswebsite,
+  // want het kale /sinterklaas/ uit het sjabloon opent nu de wijkpagina.
+  const sjabloonLink = (mail) => mail.replaceAll("/sinterklaas/#/home", "/sinterklaas/");
+  assert.deepEqual(alts(sjabloonLink(template.html)), alts(original));
   assert.equal(title(template.html), title(original));
   for (const label of ["🎟️ Inschrijvingsnummer", "👧 Ingeschreven kind(eren)", "📅 Datum", "zaterdag 28 november 2026"])
     assert.ok(original.includes(label) && template.html.includes(label), label);
   assert.ok(!/<img[^>]*\{\{/.test(template.html), "geen ingevulde gegevens in een beeld");
   const text = doc("Oosthoek_Sinterklaas_Email_Tekstversie.txt").replace(/\r\n/g, "\n").replace(/^Onderwerp:.*\n\n/, "");
-  assert.equal(template.text.trim(), text.trim());
+  assert.equal(sjabloonLink(template.text).trim(), text.trim());
   for (const part of [template.html, template.text, template.subject]) {
     const fields = part.match(/\{\{[^}]*\}\}/g) ?? [];
     assert.ok(fields.every((f) => f === "{{inschrijvingsnummer}}" || f === "{{kind_namen}}"), fields.join());

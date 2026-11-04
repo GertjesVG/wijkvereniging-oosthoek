@@ -3,7 +3,8 @@
 // Verzin hier niets: zonder bevestigde datum of locatie blijft het veld null en toont de site "Datum volgt".
 
 // De melding bij een activiteit. Ze staat alleen op de website: ze opent of sluit niets op de server.
-// Voor Sinterklaas komt de status van de server; open of dicht zetten gebeurt in het beheer.
+// Voor Sinterklaas komt de inschrijfstatus van de server; open of dicht zetten gebeurt in het beheer.
+// "Voorbij" gaat over de datum, "gesloten" over de inschrijving: dat zijn twee aparte dingen, die samen kunnen voorkomen.
 export type ActivityStatus = "info" | "open" | "closed" | "past";
 
 export const statusLabels: Record<ActivityStatus, string> = {
@@ -22,7 +23,7 @@ export type Activity = {
   text: string;
   image: string;
   imageAlt: string;
-  // YYYY-MM-DD; na deze dag toont de site vanzelf "Voorbij".
+  // YYYY-MM-DD; na deze dag toont de site vanzelf ook "Voorbij". Dat sluit geen inschrijving.
   date: string | null;
   location: string | null;
   // "open" werkt alleen samen met registrationHref. registrationDeadline = de laatste dag; daarna toont de site gesloten.
@@ -91,21 +92,63 @@ export const sinterklaas = {
   privacyHref: "/sinterklaas/#/privacy",
 };
 
+// Alleen na bevestiging invullen. Het adres in event.organisation is het correspondentieadres; dat het wijkhuis daar staat, is nergens bevestigd.
+// Met een locatie toont de site vanzelf het adres, de kaart- en routeknop en de knoptekst "Bekijk de locatie en route".
+export type WijkhuisLocation = { address: string; mapUrl: string; routeUrl: string };
+export const wijkhuisLocation = null as WijkhuisLocation | null;
+
+// Wijkinformatie: eigen tegel en pagina, zonder evenementdatum of inschrijfstatus.
+export type InfoPage = {
+  slug: string;
+  name: string;
+  teaser: string;
+  more: string;
+  image: string;
+  imageAlt: string;
+};
+
+export const infoPages: InfoPage[] = [
+  {
+    slug: "sponsors",
+    name: "Onze sponsors",
+    teaser: "Dankzij onze sponsors kunnen we mooie dingen doen voor de wijk.",
+    more: "Ontdek wie onze wijk steunt",
+    image: "assets/oosthoek-sponsors.webp",
+    imageAlt: "Sfeerillustratie: twee mensen geven elkaar een warme handdruk aan een tafel met zonnebloemen, terwijl buren op de achtergrond een straatfeest klaarzetten.",
+  },
+  {
+    slug: "lief-en-leed",
+    name: "Lief en leed in onze wijk",
+    teaser: "Geboorte, overlijden en huwelijksjubileum: Oosthoek leeft mee.",
+    more: "Ontdek onze attenties",
+    image: "assets/oosthoek-lief-en-leed.webp",
+    imageAlt: "Sfeerillustratie: een slapende baby in een rieten wieg, een krans van witte rozen en een lachend ouder echtpaar dat elkaars hand vasthoudt.",
+  },
+  {
+    slug: "wijkhuis",
+    name: "Waar is ons wijkhuis?",
+    teaser: "Een kijkje bij het witte wijkhuis van onze vereniging, tussen het groen.",
+    more: wijkhuisLocation ? "Bekijk de locatie en route" : "Bekijk ons wijkhuis",
+    image: "assets/oosthoek-wijkhuis.webp",
+    imageAlt: "Schilderachtige bewerking van het witte wijkhuis met het opschrift vzw Wijkvereniging Oosthoek, tussen hoge bomen, met een pad van klinkers, een fietsenrek, een picknicktafel en een mededelingenbord.",
+  },
+];
+
 export const lifeMoments = [
   {
-    title: "Een geboorte",
+    title: "Geboorte",
     icon: "birth",
     text: "Een nieuw gezichtje in de wijk? We verwelkomen de kleine met een attentie.",
   },
   {
-    title: "Een overlijden",
+    title: "Overlijden",
     icon: "loss",
     text: "Als blijk van medeleven voorzien we via de begrafenisondernemer een bloemstukje of krans.",
   },
   {
-    title: "50 jaar getrouwd",
+    title: "Jubilarissen",
     icon: "jubilee",
-    text: "Een gouden jubileum vieren we met een waardebon voor een etentje en een bloemetje. De officiële melding verloopt via de gemeente Beerse.",
+    text: "Voor 50 jaar huwelijk is er een waardebon voor een etentje en een bloemetje. De officiële melding blijft via de gemeente Beerse verlopen.",
   },
 ] as const;
 
@@ -113,6 +156,10 @@ export const municipalityJubileeUrl = "https://www.beerse.be/jubileum";
 
 // Bestanden uit public/ staan online onder /sinterklaas/ (één kopie, gedeeld met de Sinterklaaswebsite).
 export const publicFile = (path: string) => `/sinterklaas/${path}`;
+
+// Kleinere versie voor tegels en miniaturen. Het Sinterklaasbeeld is al licht en heeft er geen.
+export const smallImage = (path: string) =>
+  path.startsWith("assets/oosthoek-") ? path.replace(/\.webp$/, "-768.webp") : null;
 
 export const todayInBrussels = (now = new Date()) =>
   new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Brussels" }).format(now);
@@ -127,25 +174,29 @@ export function dateText(date: string | null) {
   }).format(new Date(`${date}T12:00:00Z`));
 }
 
-export function activityStatus(
+export function activityStatuses(
   activity: Pick<Activity, "date" | "status" | "registrationHref" | "registrationDeadline">,
   today: string,
-): ActivityStatus {
-  if (activity.date && today > activity.date) return "past";
-  if (activity.status !== "open") return activity.status;
-  if (!activity.registrationHref) return "info";
-  return activity.registrationDeadline && today > activity.registrationDeadline ? "closed" : "open";
+): ActivityStatus[] {
+  const past: ActivityStatus[] = activity.date && today > activity.date ? ["past"] : [];
+  if (activity.status === "closed") return [...past, "closed"];
+  if (activity.status === "open" && activity.registrationHref) {
+    const ended = activity.registrationDeadline && today > activity.registrationDeadline;
+    return [...past, ended ? "closed" : "open"];
+  }
+  return past.length ? past : ["info"];
 }
 
-// null = de server antwoordde niet: dan zegt de wijkpagina niets over de inschrijving.
-export function sinterklaasStatus(
+// De inschrijving volgt altijd de server, ook na de datum: alleen het beheer sluit ze. Blijft ze na de datum open, dan
+// toont de site dat ook. Geen antwoord van de server: dan zegt de wijkpagina niets over de inschrijving.
+export function sinterklaasStatuses(
   date: string,
   server: "open" | "closed" | "full" | null,
   today: string,
-): ActivityStatus | null {
-  if (today > date) return "past";
-  if (server === "open") return "open";
-  return server ? "closed" : null;
+): ActivityStatus[] {
+  const past: ActivityStatus[] = today > date ? ["past"] : [];
+  if (server === "open") return [...past, "open"];
+  return server ? [...past, "closed"] : past;
 }
 
 // "#/pasen" = informatiepagina, "#activiteiten" = onderdeel van de hoofdpagina.
@@ -162,5 +213,6 @@ export function readRoute(hash: string): { page: string | null; anchor: string |
 export function legacySinterklaasUrl(search: string, hash: string) {
   if (!hash.startsWith("#/")) return null;
   const { page } = readRoute(hash);
-  return activities.some((activity) => activity.slug === page) ? null : `/sinterklaas/${search}${hash}`;
+  const ownPage = [...activities, ...infoPages].some((item) => item.slug === page);
+  return ownPage ? null : `/sinterklaas/${search}${hash}`;
 }

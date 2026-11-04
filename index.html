@@ -12,8 +12,12 @@
     <title>Sinterklaas in Oosthoek</title>
     <script>
       // Het kale adres staat op de gedrukte QR-codes en opent de algemene wijkpagina; vandaar gaat de bezoeker naar
-      // /sinterklaas/#/home. Alles met een #-route of zoekdeel blijft hier. De server ziet het #-deel niet, dus dit kan alleen hier.
-      if (location.pathname === "/sinterklaas/" && !location.search && !location.hash) location.replace("/");
+      // /sinterklaas/#/home. Alles met een #-route of zoekdeel blijft hier, behalve de sponsors: die staan op de wijkpagina
+      // (bij een klik binnen de site regelt App.tsx dat). De server ziet het #-deel niet, dus dit kan alleen hier.
+      if (location.pathname === "/sinterklaas/") {
+        if (!location.search && !location.hash) location.replace("/");
+        else if (/^#\/sponsors(\?|$)/.test(location.hash)) location.replace("/" + location.search + location.hash);
+      }
     </script>
   </head>
   <body>

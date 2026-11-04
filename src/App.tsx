@@ -54,6 +54,12 @@ export default function App() {
   const previousPage = useRef(page);
   useEffect(() => {
     const change = () => {
+      // Online is er één sponsorpagina, op de wijkwebsite (zie ook index.html). Lokaal met `npm run dev` staat
+      // Sinterklaas op de hoofdmap en blijft de pagina hier.
+      if (window.location.pathname === "/sinterklaas/" && readPage() === "sponsors") {
+        window.location.replace(`/${window.location.search}${window.location.hash}`);
+        return;
+      }
       setPage(readPage());
       setMenuOpen(false);
     };

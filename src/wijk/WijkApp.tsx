@@ -1,61 +1,64 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   ArrowDown,
   ArrowLeft,
   ArrowRight,
-  ArrowUp,
   ArrowUpRight,
   Baby,
   Flower2,
   Heart,
   Mail,
+  MapPin,
   Menu,
   Phone,
   X,
 } from "lucide-react";
 import { event } from "../content/event";
 import sponsors from "../content/sponsors.json";
-import { sponsorLogos } from "../content/sponsor-logos";
 import { sinterklaasRegistration } from "../inschrijving/evenementen";
 import type { PublicEventStatus } from "../inschrijving/api";
+import { phoneHref, SponsorList } from "../SponsorCards";
 import {
   activities,
-  activityStatus,
+  activityStatuses,
   dateText,
+  infoPages,
   legacySinterklaasUrl,
   lifeMoments,
   municipalityJubileeUrl,
   publicFile,
   readRoute,
   sinterklaas,
-  sinterklaasStatus,
+  sinterklaasStatuses,
+  smallImage,
   statusLabels,
   todayInBrussels,
+  wijkhuisLocation,
   type Activity,
   type ActivityStatus,
+  type InfoPage,
 } from "../content/wijk";
 
-type Sponsor = (typeof sponsors)[number];
-
 const org = event.organisation;
-const phoneHref = (phone: string) => `tel:${phone.replace(/[^\d+]/g, "")}`;
-const FIRST_SPONSORS = 8;
+const infoPage = (slug: string) => infoPages.find((page) => page.slug === slug)!;
 
-function StatusChip({ status }: { status: ActivityStatus }) {
+function StatusChips({ statuses }: { statuses: ActivityStatus[] }) {
   return (
-    <span className={`status status-${status}`}>
-      <span className="status-dot" aria-hidden="true" />
-      {statusLabels[status]}
-    </span>
+    <>
+      {statuses.map((status) => (
+        <span className={`status status-${status}`} key={status}>
+          <span className="status-dot" aria-hidden="true" />
+          {statusLabels[status]}
+        </span>
+      ))}
+    </>
   );
 }
 
-// De echte inschrijfstatus van Sinterklaas, zoals de inschrijfpagina die ook opvraagt. Zonder antwoord: null.
-function useSinterklaasStatus(today: string) {
+// De echte inschrijfstatus van Sinterklaas, zoals de inschrijfpagina die ook opvraagt, ook na de datum van het evenement.
+function useSinterklaasStatuses(today: string) {
   const [server, setServer] = useState<PublicEventStatus["status"] | null>(null);
-  const finished = today > event.date;
   useEffect(() => {
-    if (finished) return;
     const controller = new AbortController();
     fetch(`/api/evenementen/${sinterklaasRegistration.id}`, {
       credentials: "same-origin",
@@ -69,11 +72,11 @@ function useSinterklaasStatus(today: string) {
       })
       .catch(() => undefined);
     return () => controller.abort();
-  }, [finished]);
-  return sinterklaasStatus(event.date, server, today);
+  }, []);
+  return sinterklaasStatuses(event.date, server, today);
 }
 
-function Header() {
+function Header({ page }: { page: string | null }) {
   const [open, setOpen] = useState(false);
   useEffect(() => {
     if (!open) return;
@@ -99,10 +102,15 @@ function Header() {
     };
   }, [open]);
   const close = () => setOpen(false);
+  const pageLink = (slug: string, label: string) => (
+    <a href={`#/${slug}`} aria-current={page === slug ? "page" : undefined} onClick={close}>
+      {label}
+    </a>
+  );
   return (
     <header className="site-header">
       <div className="wrap header-inner">
-        <a className="brand" href="#welkom" aria-label="Oosthoek, naar het begin van de pagina" onClick={close}>
+        <a className="brand" href="#welkom" aria-label="Oosthoek, naar de hoofdpagina" onClick={close}>
           <img src={publicFile("assets/oosthoek-logo.webp")} alt="Logo van VZW Wijkvereniging Oosthoek" width="1117" height="1409" />
           <span>
             <strong>Oosthoek</strong>
@@ -122,8 +130,10 @@ function Header() {
         </button>
         <nav id="navigation" className={open ? "is-open" : undefined} aria-label="Hoofdnavigatie">
           <a href="#activiteiten" onClick={close}>Activiteiten</a>
-          <a href="#leeft-mee" onClick={close}>Oosthoek leeft mee</a>
-          <a href="#sponsors" onClick={close}>Onze sponsors</a>
+          <a href={sinterklaas.href} onClick={close}>Sinterklaas</a>
+          {pageLink("sponsors", "Onze sponsors")}
+          {pageLink("lief-en-leed", "Lief en leed")}
+          {pageLink("wijkhuis", "Wijkhuis")}
           <a className="nav-contact" href="#contact" onClick={close}>Contact</a>
         </nav>
       </div>
@@ -154,7 +164,7 @@ function Hero() {
             <a className="btn" href="#activiteiten">
               Ontdek wat er leeft <ArrowDown size={18} aria-hidden="true" />
             </a>
-            <a className="textlink" href="#leeft-mee">Een hart voor de wijk</a>
+            <a className="textlink" href="#/lief-en-leed">Een hart voor de wijk</a>
           </div>
         </div>
         <div className="hero-art">
@@ -194,272 +204,139 @@ function Ticker() {
   );
 }
 
-function ActivityImage({ src, alt, className }: { src: string; alt: string; className?: string }) {
+// De hele tegel is aanklikbaar: de hoofdlink rekt uit over de tegel (.event-main in wijk.css).
+function Tile({
+  href,
+  image,
+  alt,
+  title,
+  text,
+  more,
+  className,
+  meta,
+  extraLink,
+}: {
+  href: string;
+  image: string;
+  alt: string;
+  title: string;
+  text: string;
+  more: string;
+  className?: string;
+  meta?: ReactNode;
+  extraLink?: ReactNode;
+}) {
+  const small = smallImage(image);
   return (
-    <div className={`event-art${className ? ` ${className}` : ""}`}>
-      <img src={publicFile(src)} alt={alt} width="1536" height="1024" loading="lazy" decoding="async" />
-    </div>
+    <article className={`event${className ? ` ${className}` : ""}`}>
+      <div className="event-art">
+        <img
+          src={publicFile(image)}
+          srcSet={small ? `${publicFile(small)} 768w, ${publicFile(image)} 1536w` : undefined}
+          sizes="(max-width: 560px) 100vw, (max-width: 1100px) 50vw, 33vw"
+          alt={alt}
+          width="1536"
+          height="1024"
+          loading="lazy"
+          decoding="async"
+        />
+      </div>
+      <div className="event-copy">
+        {meta && <div className="event-meta">{meta}</div>}
+        <h3>{title}</h3>
+        <p>{text}</p>
+        <div className="event-links">
+          <a className="event-main" href={href}>
+            {more} <ArrowRight size={17} aria-hidden="true" />
+          </a>
+          {extraLink}
+        </div>
+      </div>
+    </article>
   );
 }
 
-function ActivityCard({ activity, today }: { activity: Activity; today: string }) {
+function ActivityTile({ activity, today }: { activity: Activity; today: string }) {
   return (
-    <article className="event">
-      <ActivityImage src={activity.image} alt={activity.imageAlt} />
-      <div className="event-copy">
-        <div className="event-meta">
+    <Tile
+      href={`#/${activity.slug}`}
+      image={activity.image}
+      alt={activity.imageAlt}
+      title={activity.name}
+      text={activity.teaser}
+      more={activity.more}
+      meta={
+        <>
           <span className="pill">{dateText(activity.date)}</span>
-          <StatusChip status={activityStatus(activity, today)} />
-        </div>
-        <h3>{activity.name}</h3>
-        <p>{activity.teaser}</p>
-        <div className="event-links">
-          <a href={`#/${activity.slug}`}>
-            {activity.more} <ArrowRight size={17} aria-hidden="true" />
-          </a>
-        </div>
-      </div>
-    </article>
+          <StatusChips statuses={activityStatuses(activity, today)} />
+        </>
+      }
+    />
   );
 }
 
-function SinterklaasCard({ status }: { status: ActivityStatus | null }) {
+function SinterklaasTile({ statuses }: { statuses: ActivityStatus[] }) {
   return (
-    <article className="event event-sinterklaas">
-      <ActivityImage src={sinterklaas.image} alt={sinterklaas.imageAlt} />
-      <div className="event-copy">
-        <div className="event-meta">
+    <Tile
+      className="event-sinterklaas"
+      href={sinterklaas.href}
+      image={sinterklaas.image}
+      alt={sinterklaas.imageAlt}
+      title={sinterklaas.name}
+      text={sinterklaas.teaser}
+      more="Naar Sinterklaas"
+      meta={
+        <>
           <span className="pill">{dateText(event.date)}</span>
-          {status && <StatusChip status={status} />}
-        </div>
-        <h3>{sinterklaas.name}</h3>
-        <p>{sinterklaas.teaser}</p>
-        <div className="event-links">
-          <a href={sinterklaas.href}>
-            Naar Sinterklaas <ArrowRight size={17} aria-hidden="true" />
+          <StatusChips statuses={statuses} />
+        </>
+      }
+      extraLink={
+        statuses.includes("open") && (
+          <a href={sinterklaas.registrationHref}>
+            Inschrijven voor de cadeauactie <ArrowRight size={17} aria-hidden="true" />
           </a>
-          {status === "open" && (
-            <a href={sinterklaas.registrationHref}>
-              Inschrijven voor de cadeauactie <ArrowRight size={17} aria-hidden="true" />
-            </a>
-          )}
-        </div>
-      </div>
-    </article>
+        )
+      }
+    />
   );
 }
 
-function Activities({ today, status }: { today: string; status: ActivityStatus | null }) {
+function InfoTile({ page }: { page: InfoPage }) {
+  return (
+    <Tile
+      className="event-info"
+      href={`#/${page.slug}`}
+      image={page.image}
+      alt={page.imageAlt}
+      title={page.name}
+      text={page.teaser}
+      more={page.more}
+    />
+  );
+}
+
+function Tiles({ today, statuses }: { today: string; statuses: ActivityStatus[] }) {
   return (
     <section className="section" id="activiteiten" aria-labelledby="activiteiten-title">
       <div className="wrap">
         <div className="section-head">
           <div>
-            <p className="eyebrow">Buiten komen. Buren ontmoeten.</p>
-            <h2 id="activiteiten-title">Er leeft iets in Oosthoek.</h2>
+            <p className="eyebrow">Activiteiten en wijkinformatie</p>
+            <h2 id="activiteiten-title">Ontdek wat er leeft in Oosthoek.</h2>
           </div>
-          <p>Van paaseieren tot feestlichtjes: hier vind je onze activiteiten bij elkaar.</p>
+          <p>Van paaseieren tot ons wijkhuis: hier vind je onze activiteiten en wijkinformatie bij elkaar.</p>
         </div>
         <div className="events">
           {activities.map((activity) => (
-            <ActivityCard activity={activity} today={today} key={activity.slug} />
+            <ActivityTile activity={activity} today={today} key={activity.slug} />
           ))}
-          <SinterklaasCard status={status} />
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function LifeIcon({ icon }: { icon: (typeof lifeMoments)[number]["icon"] }) {
-  const Icon = icon === "birth" ? Baby : icon === "loss" ? Flower2 : Heart;
-  return <Icon size={34} strokeWidth={1.5} aria-hidden="true" />;
-}
-
-function LeeftMee() {
-  return (
-    <section className="section together" id="leeft-mee" aria-labelledby="leeft-mee-title">
-      <div className="wrap together-grid">
-        <div className="together-intro">
-          <p className="eyebrow">Dichtbij, ook op bijzondere momenten</p>
-          <h2 id="leeft-mee-title">
-            Oosthoek{" "}
-            <br />
-            leeft mee.
-          </h2>
-          <p>Bij een nieuw begin, een groot jubileum of een moeilijk afscheid: als wijk staan we graag even stil bij wat telt.</p>
-        </div>
-        <div>
-          <div className="moments">
-            {lifeMoments.map((moment) => (
-              <article className="moment" key={moment.title}>
-                <div className="symbol">
-                  <LifeIcon icon={moment.icon} />
-                </div>
-                <h3>{moment.title}</h3>
-                <p>{moment.text}</p>
-                {moment.icon === "jubilee" && (
-                  <a href={municipalityJubileeUrl} target="_blank" rel="noopener noreferrer">
-                    Informatie bij de gemeente <ArrowUpRight size={15} aria-hidden="true" />
-                    <span className="visually-hidden"> (opent in een nieuw venster)</span>
-                  </a>
-                )}
-              </article>
-            ))}
-          </div>
-          <p className="mailbox">
-            <strong>Een geboorte of overlijden melden?</strong>
-            <br />
-            Deponeer het originele geboortekaartje of de originele doodsbrief in de brievenbus op{" "}
-            <strong>{org.address}</strong>.
-          </p>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// Het logo uit de centrale lijst; wie (nog) geen logo heeft, krijgt zijn naam als plaat. Geen verzonnen beeldmerk.
-function SponsorLogo({ sponsor, alt = true }: { sponsor: Sponsor; alt?: boolean }) {
-  const logo = sponsorLogos[sponsor.name];
-  return (
-    <span className="sponsor-logo" style={logo?.backdrop ? { backgroundColor: logo.backdrop } : undefined}>
-      {logo ? (
-        <img
-          src={publicFile(`assets/${logo.file}`)}
-          alt={alt ? `Logo van ${sponsor.name}` : ""}
-          width={logo.width}
-          height={logo.height}
-          loading="lazy"
-          decoding="async"
-        />
-      ) : (
-        <span className="wordmark">{sponsor.name}</span>
-      )}
-    </span>
-  );
-}
-
-function SponsorDialog({ sponsor, onClose }: { sponsor: Sponsor | null; onClose: () => void }) {
-  const dialog = useRef<HTMLDialogElement>(null);
-  useEffect(() => {
-    if (sponsor && !dialog.current?.open) dialog.current?.showModal();
-  }, [sponsor]);
-  return (
-    <dialog
-      ref={dialog}
-      aria-labelledby="sponsor-title"
-      onClose={onClose}
-      // Een klik buiten het venster komt op de dialog zelf terecht; de inhoud zit in dialog-body.
-      onClick={(e) => {
-        if (e.target === e.currentTarget) e.currentTarget.close();
-      }}
-    >
-      {sponsor && (
-        <div className="dialog-body">
-          <button type="button" className="close" aria-label="Venster sluiten" onClick={() => dialog.current?.close()}>
-            <X size={22} aria-hidden="true" />
-          </button>
-          <SponsorLogo sponsor={sponsor} />
-          <h2 id="sponsor-title">{sponsor.name}</h2>
-          <p className="dialog-category">{sponsor.category}</p>
-          <p className="dialog-address">{sponsor.address}</p>
-          <div className="dialog-links">
-            {sponsor.phones.map((phone) => (
-              <a className="btn outline" href={phoneHref(phone)} key={phone}>
-                <Phone size={16} aria-hidden="true" />
-                {phone}
-              </a>
-            ))}
-            {sponsor.email && (
-              <a className="btn outline" href={`mailto:${sponsor.email}`}>
-                <Mail size={16} aria-hidden="true" />
-                E-mail
-              </a>
-            )}
-            {sponsor.website && (
-              <a className="btn" href={sponsor.website} target="_blank" rel="noopener noreferrer">
-                Website <ArrowUpRight size={16} aria-hidden="true" />
-                <span className="visually-hidden"> (opent in een nieuw venster)</span>
-              </a>
-            )}
-          </div>
-        </div>
-      )}
-    </dialog>
-  );
-}
-
-function Sponsors() {
-  const [query, setQuery] = useState("");
-  const [expanded, setExpanded] = useState(false);
-  const [active, setActive] = useState<Sponsor | null>(null);
-  const normalized = query.trim().toLocaleLowerCase("nl-BE");
-  const found = sponsors.filter((s) =>
-    `${s.name} ${s.category} ${s.address}`.toLocaleLowerCase("nl-BE").includes(normalized),
-  );
-  const list = expanded || normalized ? found : found.slice(0, FIRST_SPONSORS);
-  return (
-    <section className="section sponsors" id="sponsors" aria-labelledby="sponsors-title">
-      <div className="wrap">
-        <div className="section-head">
-          <div>
-            <p className="eyebrow">Lokaal engagement, een groot verschil</p>
-            <h2 id="sponsors-title">Onze wijkmakers.</h2>
-          </div>
-          <label className="search-field">
-            <span className="eyebrow">Zoek een sponsor</span>
-            <input
-              type="search"
-              placeholder="Naam, activiteit of gemeente"
-              autoComplete="off"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-            />
-          </label>
-        </div>
-        <p className="sponsor-intro">
-          Dankzij onze sponsors kunnen we mooie dingen doen voor de wijk. Ontdek de ondernemers die Oosthoek mee mogelijk
-          maken. Klik op een naam voor de contactgegevens.
-        </p>
-        <div className="sponsor-grid">
-          {list.map((sponsor) => (
-            <button
-              type="button"
-              className="sponsor"
-              aria-label={`Contactgegevens ${sponsor.name}`}
-              onClick={() => setActive(sponsor)}
-              key={sponsor.name}
-            >
-              <SponsorLogo sponsor={sponsor} alt={false} />
-              <span className="sponsor-caption">
-                <span>{sponsor.name}</span>
-                <ArrowUpRight size={18} aria-hidden="true" />
-              </span>
-            </button>
+          <SinterklaasTile statuses={statuses} />
+          {infoPages.map((page) => (
+            <InfoTile page={page} key={page.slug} />
           ))}
         </div>
-        {found.length === 0 && <p className="empty">Geen sponsor gevonden. Probeer een andere zoekterm.</p>}
-        <div className="sponsor-controls">
-          {!normalized && (
-            <button type="button" className="btn outline" onClick={() => setExpanded(!expanded)}>
-              {expanded ? (
-                <>
-                  Toon minder <ArrowUp size={17} aria-hidden="true" />
-                </>
-              ) : (
-                <>
-                  Bekijk alle {sponsors.length} sponsors <ArrowDown size={17} aria-hidden="true" />
-                </>
-              )}
-            </button>
-          )}
-          <p className="result-count" role="status">
-            {list.length} van {found.length} sponsors
-          </p>
-        </div>
       </div>
-      <SponsorDialog sponsor={active} onClose={() => setActive(null)} />
     </section>
   );
 }
@@ -492,27 +369,25 @@ function Contact() {
   );
 }
 
-function Home({ today, status }: { today: string; status: ActivityStatus | null }) {
+function Home({ today, statuses }: { today: string; statuses: ActivityStatus[] }) {
   return (
     <>
       <Hero />
       {today <= event.date && <Ticker />}
-      <Activities today={today} status={status} />
-      <LeeftMee />
-      <Sponsors />
+      <Tiles today={today} statuses={statuses} />
       <Contact />
     </>
   );
 }
 
-function OtherLink({ href, image, name, date }: { href: string; image: string; name: string; date: string | null }) {
+function OtherLink({ href, image, name, detail }: { href: string; image: string; name: string; detail: string }) {
   return (
     <li>
       <a href={href}>
-        <img src={publicFile(image)} alt="" width="1536" height="1024" loading="lazy" decoding="async" />
+        <img src={publicFile(smallImage(image) ?? image)} alt="" width="768" height="512" loading="lazy" decoding="async" />
         <span>
           <strong>{name}</strong>
-          <small>{dateText(date)}</small>
+          <small>{detail}</small>
         </span>
         <ArrowRight size={18} aria-hidden="true" />
       </a>
@@ -520,66 +395,229 @@ function OtherLink({ href, image, name, date }: { href: string; image: string; n
   );
 }
 
-function ActivityPage({ activity, today }: { activity: Activity; today: string }) {
-  const status = activityStatus(activity, today);
+// De vaste opbouw van elke eigen pagina: de weg terug, het beeld met de kop, de inhoud en de andere tegels.
+function SubPage({
+  slug,
+  image,
+  alt,
+  eyebrow,
+  title,
+  lead,
+  side,
+  children,
+}: {
+  slug: string;
+  image: string;
+  alt: string;
+  eyebrow: string;
+  title: string;
+  lead: ReactNode;
+  side?: ReactNode;
+  children?: ReactNode;
+}) {
   return (
     <article className="section activity">
       <div className="wrap">
         <a className="back-link" href="#activiteiten">
           <ArrowLeft size={17} aria-hidden="true" />
-          Alle activiteiten
+          Terug naar de hoofdpagina
         </a>
         <div className="activity-grid">
           <div className="activity-hero">
-            <img src={publicFile(activity.image)} alt={activity.imageAlt} width="1536" height="1024" fetchPriority="high" />
+            <img src={publicFile(image)} alt={alt} width="1536" height="1024" fetchPriority="high" />
           </div>
           <div className="activity-copy">
-            <p className="eyebrow">Activiteit in Oosthoek</p>
-            <h1>{activity.title}</h1>
-            <p className="lead">{activity.text}</p>
-            <dl className="activity-facts">
-              <div>
-                <dt>Datum</dt>
-                <dd>{dateText(activity.date)}</dd>
-              </div>
-              {activity.location && (
-                <div>
-                  <dt>Locatie</dt>
-                  <dd>{activity.location}</dd>
-                </div>
-              )}
-              <div>
-                <dt>Stand van zaken</dt>
-                <dd>
-                  <StatusChip status={status} />
-                </dd>
-              </div>
-            </dl>
-            <div className="activity-actions">
-              {status === "open" && activity.registrationHref && (
-                <a className="btn" href={activity.registrationHref}>
-                  Inschrijven <ArrowRight size={17} aria-hidden="true" />
-                </a>
-              )}
-              <a className="btn outline" href={`mailto:${org.email}`}>
-                Een vraag? Mail ons <Mail size={17} aria-hidden="true" />
-              </a>
-            </div>
+            <p className="eyebrow">{eyebrow}</p>
+            <h1>{title}</h1>
+            <p className="lead">{lead}</p>
+            {side}
           </div>
         </div>
+        {children}
         <section className="other" aria-labelledby="other-title">
           <h2 id="other-title">Ook in Oosthoek</h2>
           <ul>
             {activities
-              .filter((other) => other.slug !== activity.slug)
+              .filter((other) => other.slug !== slug)
               .map((other) => (
-                <OtherLink href={`#/${other.slug}`} image={other.image} name={other.name} date={other.date} key={other.slug} />
+                <OtherLink href={`#/${other.slug}`} image={other.image} name={other.name} detail={dateText(other.date)} key={other.slug} />
               ))}
-            <OtherLink href={sinterklaas.href} image={sinterklaas.image} name={sinterklaas.name} date={event.date} />
+            <OtherLink href={sinterklaas.href} image={sinterklaas.image} name={sinterklaas.name} detail={dateText(event.date)} />
+            {infoPages
+              .filter((other) => other.slug !== slug)
+              .map((other) => (
+                <OtherLink href={`#/${other.slug}`} image={other.image} name={other.name} detail="Wijkinformatie" key={other.slug} />
+              ))}
           </ul>
         </section>
       </div>
     </article>
+  );
+}
+
+function ActivityPage({ activity, today }: { activity: Activity; today: string }) {
+  const statuses = activityStatuses(activity, today);
+  return (
+    <SubPage
+      slug={activity.slug}
+      image={activity.image}
+      alt={activity.imageAlt}
+      eyebrow="Activiteit in Oosthoek"
+      title={activity.title}
+      lead={activity.text}
+      side={
+        <>
+          <dl className="activity-facts">
+            <div>
+              <dt>Datum</dt>
+              <dd>{dateText(activity.date)}</dd>
+            </div>
+            {activity.location && (
+              <div>
+                <dt>Locatie</dt>
+                <dd>{activity.location}</dd>
+              </div>
+            )}
+            <div>
+              <dt>Stand van zaken</dt>
+              <dd className="status-list">
+                <StatusChips statuses={statuses} />
+              </dd>
+            </div>
+          </dl>
+          <div className="activity-actions">
+            {statuses.includes("open") && activity.registrationHref && (
+              <a className="btn" href={activity.registrationHref}>
+                Inschrijven <ArrowRight size={17} aria-hidden="true" />
+              </a>
+            )}
+            <a className="btn outline" href={`mailto:${org.email}`}>
+              Een vraag? Mail ons <Mail size={17} aria-hidden="true" />
+            </a>
+          </div>
+        </>
+      }
+    />
+  );
+}
+
+function SponsorsPage() {
+  const page = infoPage("sponsors");
+  return (
+    <SubPage
+      slug={page.slug}
+      image={page.image}
+      alt={page.imageAlt}
+      eyebrow="Met dank aan onze sponsors"
+      title={page.name}
+      lead={`Deze ${sponsors.length} lokale sponsors steunen Wijkvereniging Oosthoek. Koop lokaal en steun onze middenstand.`}
+    >
+      <section className="sponsors-page" aria-label="Alle sponsors">
+        <SponsorList assetUrl={publicFile} />
+      </section>
+    </SubPage>
+  );
+}
+
+function LifeIcon({ icon }: { icon: (typeof lifeMoments)[number]["icon"] }) {
+  const Icon = icon === "birth" ? Baby : icon === "loss" ? Flower2 : Heart;
+  return <Icon size={34} strokeWidth={1.5} aria-hidden="true" />;
+}
+
+function LifePage() {
+  const page = infoPage("lief-en-leed");
+  return (
+    <SubPage
+      slug={page.slug}
+      image={page.image}
+      alt={page.imageAlt}
+      eyebrow="Oosthoek leeft mee"
+      title={page.name}
+      lead="Bij een nieuw begin, een groot jubileum of een moeilijk afscheid: als wijk staan we graag even stil bij wat telt."
+    >
+      <section className="moments-band" aria-label="Onze attenties">
+        <div className="moments">
+          {lifeMoments.map((moment) => (
+            <div className="moment" key={moment.title}>
+              <div className="symbol">
+                <LifeIcon icon={moment.icon} />
+              </div>
+              <h2>{moment.title}</h2>
+              <p>{moment.text}</p>
+              {moment.icon === "jubilee" && (
+                <a href={municipalityJubileeUrl} target="_blank" rel="noopener noreferrer">
+                  Huwelijksjubileum bij de gemeente Beerse <ArrowUpRight size={15} aria-hidden="true" />
+                  <span className="visually-hidden"> (opent in een nieuw venster)</span>
+                </a>
+              )}
+            </div>
+          ))}
+        </div>
+        <p className="mailbox">
+          Deponeer het originele geboortekaartje of de originele doodsbrief in de brievenbus op <strong>{org.address}</strong>.
+        </p>
+      </section>
+    </SubPage>
+  );
+}
+
+// Zonder bevestigde locatie (wijkhuisLocation in wijk.ts) geen adres, kaart of route: alleen wat vaststaat.
+function WijkhuisPage({ today }: { today: string }) {
+  const page = infoPage("wijkhuis");
+  const location = wijkhuisLocation;
+  return (
+    <SubPage
+      slug={page.slug}
+      image={page.image}
+      alt={page.imageAlt}
+      eyebrow="Wijkinformatie"
+      title={page.name}
+      lead={
+        location
+          ? "Dit is het witte wijkhuis van onze vereniging, tussen het groen."
+          : "Dit is het witte wijkhuis van onze vereniging, tussen het groen. De exacte locatie en de route vullen we hier aan zodra ze bevestigd zijn."
+      }
+      side={
+        <>
+          <dl className="activity-facts">
+            <div>
+              <dt>Naam</dt>
+              <dd>Wijkhuis Oosthoek</dd>
+            </div>
+            {location && (
+              <div>
+                <dt>Adres</dt>
+                <dd>{location.address}</dd>
+              </div>
+            )}
+            {today <= event.date && (
+              <div>
+                <dt>Sinterklaas, {dateText(event.date)}</dt>
+                <dd>{event.departure}</dd>
+              </div>
+            )}
+          </dl>
+          <div className="activity-actions">
+            {location ? (
+              <>
+                <a className="btn" href={location.routeUrl} target="_blank" rel="noopener noreferrer">
+                  Route naar het wijkhuis <ArrowUpRight size={17} aria-hidden="true" />
+                  <span className="visually-hidden"> (opent in een nieuw venster)</span>
+                </a>
+                <a className="btn outline" href={location.mapUrl} target="_blank" rel="noopener noreferrer">
+                  Bekijk op de kaart <MapPin size={17} aria-hidden="true" />
+                  <span className="visually-hidden"> (opent in een nieuw venster)</span>
+                </a>
+              </>
+            ) : (
+              <a className="btn outline" href={`mailto:${org.email}`}>
+                Een vraag? Mail ons <Mail size={17} aria-hidden="true" />
+              </a>
+            )}
+          </div>
+        </>
+      }
+    />
   );
 }
 
@@ -588,8 +626,9 @@ export default function WijkApp() {
   const main = useRef<HTMLElement>(null);
   const previousPage = useRef(route.page);
   const today = todayInBrussels();
-  const status = useSinterklaasStatus(today);
+  const statuses = useSinterklaasStatuses(today);
   const activity = activities.find((a) => a.slug === route.page);
+  const info = infoPages.find((p) => p.slug === route.page);
 
   useEffect(() => {
     const change = () => {
@@ -602,7 +641,8 @@ export default function WijkApp() {
   }, []);
 
   useEffect(() => {
-    document.title = activity ? `${activity.title} · Wijkvereniging Oosthoek` : "Wijkvereniging Oosthoek · Beerse";
+    const pageTitle = activity?.title ?? info?.name;
+    document.title = pageTitle ? `${pageTitle} · Wijkvereniging Oosthoek` : "Wijkvereniging Oosthoek · Beerse";
     if (previousPage.current !== route.page) {
       main.current?.focus({ preventScroll: true });
       previousPage.current = route.page;
@@ -613,7 +653,7 @@ export default function WijkApp() {
       // Webfonts die na de eerste opbouw laden, verschuiven de inhoud erboven; daarna nog één keer uitlijnen.
       document.fonts?.ready.then(() => target.scrollIntoView());
     } else window.scrollTo({ top: 0, behavior: "instant" });
-  }, [activity, route]);
+  }, [activity, info, route]);
 
   return (
     <>
@@ -629,9 +669,19 @@ export default function WijkApp() {
         Ga naar de inhoud
       </a>
       <div className="topline" aria-hidden="true" />
-      <Header />
+      <Header page={route.page} />
       <main id="inhoud" ref={main} tabIndex={-1}>
-        {activity ? <ActivityPage activity={activity} today={today} /> : <Home today={today} status={status} />}
+        {activity ? (
+          <ActivityPage activity={activity} today={today} />
+        ) : route.page === "sponsors" ? (
+          <SponsorsPage />
+        ) : route.page === "lief-en-leed" ? (
+          <LifePage />
+        ) : route.page === "wijkhuis" ? (
+          <WijkhuisPage today={today} />
+        ) : (
+          <Home today={today} statuses={statuses} />
+        )}
       </main>
       <footer className="site-footer">
         <div className="wrap">
@@ -650,7 +700,7 @@ export default function WijkApp() {
           </div>
           <p className="footer-note">
             Data en praktische afspraken voor Pasen, garageverkoop en wijkfeest worden nog aangevuld. De illustraties zijn
-            sfeerbeelden, geen foto's van onze wijk.
+            sfeerbeelden, geen foto's van onze wijk; het beeld van het wijkhuis is een schilderachtige bewerking van het echte gebouw.
           </p>
         </div>
       </footer>
