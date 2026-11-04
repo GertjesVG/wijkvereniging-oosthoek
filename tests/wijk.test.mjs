@@ -97,6 +97,29 @@ test("activiteitenbeelden zijn bytegelijke kopieën; Documentatie blijft de bron
   }
 });
 
+test("hoofdpagina: zes eigen tegelbeelden, licht en met de juiste maat; het Sinterklaasbeeld blijft ongewijzigd", () => {
+  const tiles = [...activities, ...infoPages];
+  assert.deepEqual(
+    tiles.map((item) => item.tile.src),
+    ["pasen", "garageverkoop", "wijkfeest", "sponsors", "lief-en-leed", "wijkhuis"].map((name) => `assets/tegel-${name}.webp`),
+  );
+  for (const { slug, tile } of tiles) {
+    const bytes = read(`../public/${tile.src}`);
+    assert.equal(bytes.subarray(8, 12).toString("latin1"), "WEBP", slug);
+    assert.ok(bytes.length < 40_000, `${slug}: ${bytes.length} bytes`);
+    // Breedte en hoogte in de kop van een WebP (VP8): de opgegeven maat bewaart de verhouding.
+    assert.equal(bytes.readUInt16LE(26) & 0x3fff, tile.width, slug);
+    assert.equal(bytes.readUInt16LE(28) & 0x3fff, tile.height, slug);
+    assert.ok(tile.alt.length > 30, slug);
+    assert.equal(smallImage(tile.src), null, slug);
+  }
+  // Het wijkhuisbeeld is een illustratie, geen bewijs van hoe het echte wijkhuis eruitziet.
+  assert.equal(infoPages[2].slug, "wijkhuis");
+  assert.equal(infoPages[2].tile.note, "Illustratie");
+  assert.match(infoPages[2].tile.alt, /^Illustratie, geen foto/);
+  assert.ok(hash(read("../public/assets/hero.webp")).startsWith("9a5778745f857b6e"));
+});
+
 test("wijkinformatie: de nieuwste beelden als eigen WebP, met kleine versie; de bronnen blijven in Documentatie", () => {
   assert.deepEqual(infoPages.map((p) => [p.slug, p.name]), [
     ["sponsors", "Onze sponsors"],

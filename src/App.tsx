@@ -130,6 +130,13 @@ export default function App() {
       >
         Ga naar de inhoud
       </a>
+      <div className="back-bar">
+        <div className="container">
+          <a className="button button-outline" href="https://wijkvereniging-oosthoek.pages.dev/">
+            <span aria-hidden="true">←</span> Terug naar Oosthoek
+          </a>
+        </div>
+      </div>
       <header className="site-header">
         <div className="header-inner">
           <Brand onNavigate={() => setMenuOpen(false)} />
@@ -190,7 +197,6 @@ export default function App() {
               Contact <ArrowUpRight size={13} />
             </a>
             <a href="#/privacy">Privacy</a>
-            <a href="../">Wijkwebsite Oosthoek</a>
             <span>
               Met liefde voor de wijk <Heart size={12} />
             </span>

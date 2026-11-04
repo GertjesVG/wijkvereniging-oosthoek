@@ -215,6 +215,7 @@ function Tile({
   className,
   meta,
   extraLink,
+  frame,
 }: {
   href: string;
   image: string;
@@ -225,21 +226,25 @@ function Tile({
   className?: string;
   meta?: ReactNode;
   extraLink?: ReactNode;
+  frame?: Activity["tile"];
 }) {
   const small = smallImage(image);
   return (
     <article className={`event${className ? ` ${className}` : ""}`}>
-      <div className="event-art">
+      <div className={`event-art${frame?.whole ? " event-art-whole" : ""}`}>
+        {frame?.whole && <span className="event-art-fill" style={{ backgroundImage: `url(${publicFile(image)})` }} aria-hidden="true" />}
         <img
           src={publicFile(image)}
           srcSet={small ? `${publicFile(small)} 768w, ${publicFile(image)} 1536w` : undefined}
           sizes="(max-width: 560px) 100vw, (max-width: 1100px) 50vw, 33vw"
           alt={alt}
-          width="1536"
-          height="1024"
+          width={frame?.width ?? 1536}
+          height={frame?.height ?? 1024}
+          style={frame?.position ? { objectPosition: frame.position } : undefined}
           loading="lazy"
           decoding="async"
         />
+        {frame?.note && <span className="event-art-note">{frame.note}</span>}
       </div>
       <div className="event-copy">
         {meta && <div className="event-meta">{meta}</div>}
@@ -260,8 +265,9 @@ function ActivityTile({ activity, today }: { activity: Activity; today: string }
   return (
     <Tile
       href={`#/${activity.slug}`}
-      image={activity.image}
-      alt={activity.imageAlt}
+      image={activity.tile.src}
+      alt={activity.tile.alt}
+      frame={activity.tile}
       title={activity.name}
       text={activity.teaser}
       more={activity.more}
@@ -307,8 +313,9 @@ function InfoTile({ page }: { page: InfoPage }) {
     <Tile
       className="event-info"
       href={`#/${page.slug}`}
-      image={page.image}
-      alt={page.imageAlt}
+      image={page.tile.src}
+      alt={page.tile.alt}
+      frame={page.tile}
       title={page.name}
       text={page.teaser}
       more={page.more}
