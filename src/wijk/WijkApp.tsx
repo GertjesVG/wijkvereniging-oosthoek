@@ -215,7 +215,7 @@ function Tile({
   className,
   meta,
   extraLink,
-  frame,
+  note,
 }: {
   href: string;
   image: string;
@@ -226,25 +226,23 @@ function Tile({
   className?: string;
   meta?: ReactNode;
   extraLink?: ReactNode;
-  frame?: Activity["tile"];
+  note?: string;
 }) {
   const small = smallImage(image);
   return (
     <article className={`event${className ? ` ${className}` : ""}`}>
-      <div className={`event-art${frame?.whole ? " event-art-whole" : ""}`}>
-        {frame?.whole && <span className="event-art-fill" style={{ backgroundImage: `url(${publicFile(image)})` }} aria-hidden="true" />}
+      <div className="event-art">
         <img
           src={publicFile(image)}
           srcSet={small ? `${publicFile(small)} 768w, ${publicFile(image)} 1536w` : undefined}
           sizes="(max-width: 560px) 100vw, (max-width: 1100px) 50vw, 33vw"
           alt={alt}
-          width={frame?.width ?? 1536}
-          height={frame?.height ?? 1024}
-          style={frame?.position ? { objectPosition: frame.position } : undefined}
+          width="1536"
+          height="1024"
           loading="lazy"
           decoding="async"
         />
-        {frame?.note && <span className="event-art-note">{frame.note}</span>}
+        {note && <span className="event-art-note">{note}</span>}
       </div>
       <div className="event-copy">
         {meta && <div className="event-meta">{meta}</div>}
@@ -267,7 +265,6 @@ function ActivityTile({ activity, today }: { activity: Activity; today: string }
       href={`#/${activity.slug}`}
       image={activity.tile.src}
       alt={activity.tile.alt}
-      frame={activity.tile}
       title={activity.name}
       text={activity.teaser}
       more={activity.more}
@@ -315,7 +312,7 @@ function InfoTile({ page }: { page: InfoPage }) {
       href={`#/${page.slug}`}
       image={page.tile.src}
       alt={page.tile.alt}
-      frame={page.tile}
+      note={page.tile.note}
       title={page.name}
       text={page.teaser}
       more={page.more}

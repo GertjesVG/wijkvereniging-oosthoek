@@ -418,6 +418,7 @@ main:focus {
   text-underline-offset: 4px;
 }
 .event-art {
+  position: relative;
   aspect-ratio: 3 / 2;
   overflow: hidden;
   background: #e9eddf;
@@ -430,21 +431,6 @@ main:focus {
 /* Het Sinterklaasbeeld is breder dan 3:2: rechts uitlijnen houdt de Sint en beide paarden in beeld. */
 .event-sinterklaas .event-art img {
   object-position: 100% 50%;
-}
-/* Zeer brede uitsnede: het hele beeld, op een donkere, wazige achtergrond van zichzelf. Niets afgesneden, niets uitgerekt. */
-.event-art-whole {
-  position: relative;
-}
-.event-art-fill {
-  position: absolute;
-  inset: -48px;
-  background-position: center;
-  background-size: cover;
-  filter: blur(30px) brightness(0.5) saturate(1.2);
-}
-.event-art-whole img {
-  position: relative;
-  object-fit: contain;
 }
 .event-art-note {
   position: absolute;

@@ -97,21 +97,25 @@ test("activiteitenbeelden zijn bytegelijke kopieën; Documentatie blijft de bron
   }
 });
 
-test("hoofdpagina: zes eigen tegelbeelden, licht en met de juiste maat; het Sinterklaasbeeld blijft ongewijzigd", () => {
+test("hoofdpagina: zes eigen tegelbeelden in 3:2, groot genoeg en licht; het Sinterklaasbeeld blijft ongewijzigd", () => {
   const tiles = [...activities, ...infoPages];
   assert.deepEqual(
     tiles.map((item) => item.tile.src),
     ["pasen", "garageverkoop", "wijkfeest", "sponsors", "lief-en-leed", "wijkhuis"].map((name) => `assets/tegel-${name}.webp`),
   );
   for (const { slug, tile } of tiles) {
-    const bytes = read(`../public/${tile.src}`);
-    assert.equal(bytes.subarray(8, 12).toString("latin1"), "WEBP", slug);
-    assert.ok(bytes.length < 40_000, `${slug}: ${bytes.length} bytes`);
-    // Breedte en hoogte in de kop van een WebP (VP8): de opgegeven maat bewaart de verhouding.
-    assert.equal(bytes.readUInt16LE(26) & 0x3fff, tile.width, slug);
-    assert.equal(bytes.readUInt16LE(28) & 0x3fff, tile.height, slug);
+    // Breedte en hoogte staan in de kop van een WebP (VP8). 3:2 past precies in het vak: niets afgesneden, geen opvulling.
+    for (const [file, width, height, limit] of [
+      [tile.src, 1536, 1024, 500_000],
+      [smallImage(tile.src), 768, 512, 150_000],
+    ]) {
+      const bytes = read(`../public/${file}`);
+      assert.equal(bytes.subarray(8, 12).toString("latin1"), "WEBP", file);
+      assert.ok(bytes.length < limit, `${file}: ${bytes.length} bytes`);
+      assert.equal(bytes.readUInt16LE(26) & 0x3fff, width, file);
+      assert.equal(bytes.readUInt16LE(28) & 0x3fff, height, file);
+    }
     assert.ok(tile.alt.length > 30, slug);
-    assert.equal(smallImage(tile.src), null, slug);
   }
   // Het wijkhuisbeeld is een illustratie, geen bewijs van hoe het echte wijkhuis eruitziet.
   assert.equal(infoPages[2].slug, "wijkhuis");

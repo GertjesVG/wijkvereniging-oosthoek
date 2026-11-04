@@ -14,16 +14,10 @@ export const statusLabels: Record<ActivityStatus, string> = {
   past: "Voorbij",
 };
 
-// Beeld op de hoofdpagina. De eigen pagina's houden hun grotere beeld (`image`): deze uitsneden zijn daarvoor te klein.
+// Beeld op de hoofdpagina: altijd 3:2 (1536 × 1024, met een kleine versie), dus het vult het vak zonder iets af te snijden.
 export type TileImage = {
   src: string;
   alt: string;
-  width: number;
-  height: number;
-  // Welk deel in beeld blijft als het vak smaller is dan het beeld.
-  position?: string;
-  // Zeer brede uitsnede: helemaal tonen, want in een 3:2-vak zou een onderwerp wegvallen.
-  whole?: boolean;
   // Korte vermelding op het beeld.
   note?: string;
 };
@@ -60,9 +54,6 @@ export const activities: Activity[] = [
     tile: {
       src: "assets/tegel-pasen.webp",
       alt: "Sfeerillustratie: een rieten mand met beschilderde paaseieren en een wit paashaasje tussen de lentebloemen, in warm licht.",
-      width: 349,
-      height: 153,
-      position: "38% 50%",
     },
     date: null,
     location: null,
@@ -82,9 +73,6 @@ export const activities: Activity[] = [
     tile: {
       src: "assets/tegel-garageverkoop.webp",
       alt: "Sfeerillustratie: een krijtbord met het opschrift Garage Verkoop naast een lamp, oude koffers en snuisterijen, in een zonnige straat.",
-      width: 336,
-      height: 153,
-      position: "70% 50%",
     },
     date: null,
     location: null,
@@ -104,8 +92,6 @@ export const activities: Activity[] = [
     tile: {
       src: "assets/tegel-wijkfeest.webp",
       alt: "Sfeerillustratie: buren van alle leeftijden lachen samen aan een lange feesttafel buiten, onder vlaggetjes en lichtjes.",
-      width: 331,
-      height: 153,
     },
     date: null,
     location: null,
@@ -154,9 +140,6 @@ export const infoPages: InfoPage[] = [
     tile: {
       src: "assets/tegel-sponsors.webp",
       alt: "Sfeerillustratie: twee mensen schudden elkaar de hand boven een bloemenperk, met een ingepakt cadeau op de voorgrond.",
-      width: 465,
-      height: 105,
-      whole: true,
     },
   },
   {
@@ -169,9 +152,6 @@ export const infoPages: InfoPage[] = [
     tile: {
       src: "assets/tegel-lief-en-leed.webp",
       alt: "Sfeerillustratie: een slapende baby in een rieten wieg, een boeket witte bloemen en een lachend ouder echtpaar dat elkaars hand vasthoudt.",
-      width: 468,
-      height: 105,
-      whole: true,
     },
   },
   {
@@ -184,9 +164,6 @@ export const infoPages: InfoPage[] = [
     tile: {
       src: "assets/tegel-wijkhuis.webp",
       alt: "Illustratie, geen foto: een wit wijkhuis met het opschrift VZW Wijkvereniging Oosthoek, tussen bomen en bloemen.",
-      width: 458,
-      height: 105,
-      whole: true,
       note: "Illustratie",
     },
   },
@@ -217,7 +194,7 @@ export const publicFile = (path: string) => `/sinterklaas/${path}`;
 
 // Kleinere versie voor tegels en miniaturen. Het Sinterklaasbeeld is al licht en heeft er geen.
 export const smallImage = (path: string) =>
-  path.startsWith("assets/oosthoek-") ? path.replace(/\.webp$/, "-768.webp") : null;
+  /^assets\/(oosthoek|tegel)-/.test(path) ? path.replace(/\.webp$/, "-768.webp") : null;
 
 export const todayInBrussels = (now = new Date()) =>
   new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Brussels" }).format(now);

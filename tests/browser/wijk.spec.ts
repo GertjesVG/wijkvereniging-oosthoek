@@ -227,9 +227,10 @@ test("hoofdpagina: zeven aanklikbare tegels, contact uit de bevestigde gegevens;
     "/sinterklaas/assets/tegel-lief-en-leed.webp",
     "/sinterklaas/assets/tegel-wijkhuis.webp",
   ]);
-  // Nooit uitgerekt: de browser bewaart de verhouding van elk beeld, en het hele brede beeld blijft zichtbaar.
+  // Elk beeld vult zijn vak: geen opvulling of wazige achtergrond.
   const fits = await cards.locator("img").evaluateAll((all) => all.map((i) => getComputedStyle(i).objectFit));
-  expect(fits).toEqual(["cover", "cover", "cover", "cover", "contain", "contain", "contain"]);
+  expect(fits).toEqual(Array(7).fill("cover"));
+  await expect(cards.locator(".event-art > *:not(img, .event-art-note)")).toHaveCount(0);
   // Het wijkhuisbeeld is een illustratie en staat ook zo op de tegel.
   await expect(tile("Waar is ons wijkhuis?").getByText("Illustratie", { exact: true })).toBeVisible();
   await expect(tile("Waar is ons wijkhuis?").locator("img")).toHaveAttribute("alt", /^Illustratie, geen foto/);
@@ -487,6 +488,15 @@ test("desktop en gsm: evenwichtige tegels, geen overloop, beelden 3:2, menu en t
     for (const frame of width === 640 ? frames.slice(0, 6) : frames) {
       const box = (await frame.boundingBox())!;
       expect(box.width / box.height, `${width}px kaartbeeld`).toBeCloseTo(1.5, 1);
+    }
+    // De zes wijkbeelden: 3:2, en de browser kiest nooit een versie kleiner dan het vak (naturalWidth houdt rekening met srcset).
+    for (const img of await page.locator('.event-art img[src*="tegel-"]').all()) {
+      await img.scrollIntoViewIfNeeded();
+      await expect.poll(() => img.evaluate((i: HTMLImageElement) => i.naturalWidth)).toBeGreaterThan(0);
+      const size = await img.evaluate((i: HTMLImageElement) => [i.naturalWidth, i.naturalHeight, i.clientWidth, i.clientHeight]);
+      expect(size[0] / size[1], `${width}px bestand`).toBeCloseTo(1.5, 2);
+      expect(size[0], `${width}px breedte`).toBeGreaterThanOrEqual(size[2]);
+      expect(size[1], `${width}px hoogte`).toBeGreaterThanOrEqual(size[3]);
     }
   }
   await page.setViewportSize({ width: 390, height: 844 });
