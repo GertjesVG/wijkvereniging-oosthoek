@@ -205,6 +205,8 @@ test("privacyverklaring: juiste rechtsgronden en verplichte informatie, geen bel
     "artikel 6.1.f AVG",
     "Dan blijft dat zo voor jouw inschrijving",
     "opgeslagen in de Europese Unie",
+    "Alleen bevoegde personen",
+    "papieren kopieën",
     "Google Ireland Limited",
     "https://www.dataprivacyframework.gov/list",
     "adequaatheidsbesluit",
@@ -217,8 +219,8 @@ test("privacyverklaring: juiste rechtsgronden en verplichte informatie, geen bel
   ])
     assert.ok(privacy.includes(must), must);
   // Toestemming blijft alleen de grond van inschrijvingen van vóór deze tekst; "anoniem", "onomkeerbaar" en "niets aan
-  // anderen" kloppen niet met de werking.
-  for (const never of ["Dat doen we met je toestemming", "anoniem", "onomkeerbaar", "sponsors of anderen"])
+  // anderen" kloppen niet met de werking; de verwerkersrol staat pas vast als het mandaat bevestigd is.
+  for (const never of ["Dat doen we met je toestemming", "anoniem", "onomkeerbaar", "sponsors of anderen", "als verwerker"])
     assert.ok(!privacy.includes(never), never);
   assert.equal((privacy.match(/section-number/g) ?? []).length, 5);
 });

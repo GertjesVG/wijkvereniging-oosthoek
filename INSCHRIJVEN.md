@@ -46,7 +46,7 @@ Eén gratis inschrijfsysteem voor alle evenementen van VZW Wijkvereniging Oostho
 
 ### Opruimen Sinterklaas 2026: uiterlijk 31 januari 2027
 
-Het automatisch wissen raakt alleen de database. De privacyverklaring belooft de rest ook, dus één bestuurslid doet dit, in deze volgorde:
+Het automatisch wissen raakt alleen de database. De privacyverklaring belooft de rest ook. Daarvoor is één rol verantwoordelijk, de **opruimverantwoordelijke**: de beheerder uit het Cloudflare-mandaat, tenzij het bestuur iemand anders aanwijst. Die doet dit in deze volgorde:
 
 1. **Database.** Open op 31 januari `/beheer/`. Bij het evenement moet staan: "De persoonsgegevens van dit evenement zijn gewist." Staat dat er niet, zet de inschrijving dicht en gebruik "Persoonsgegevens wissen". Zet de database daarna nooit terug met een herstelpunt (Time Travel).
 2. **Gmail van vzwoosthoek@gmail.com.** Zoek `in:anywhere "Sinterklaas Oosthoek 2026"`, daarna `in:anywhere SINT26-`, en open het label 2026 - Sinterklaas. Verwijder telkens alle mails van inschrijvingen en van ouders; kijk ook naar andere mails van ouders met een ander onderwerp. Leeg daarna de prullenbak: Meer → Prullenbak → "Prullenbak nu leegmaken".

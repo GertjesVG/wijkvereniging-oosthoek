@@ -862,13 +862,12 @@ function PrivacyPage() {
             <h2>Dienstverleners en beveiliging</h2>
             <p>
               De inschrijvingen staan in een afgeschermde database bij
-              Cloudflare, opgeslagen in de Europese Unie. Alleen bevoegde
-              vrijwilligers van de vereniging zien ze, met een beheerwachtwoord.
-              Cloudflare host ook de website en werkt daarbij als verwerker. Bij
-              het verzenden controleert Cloudflare Turnstile of er een mens achter
-              het formulier zit, met technische gegevens zoals je IP-adres en
-              browsertype; die controle verbeteren doet Cloudflare onder eigen
-              verantwoordelijkheid. Tegen misbruik bewaren we hoogstens een dag
+              Cloudflare, opgeslagen in de Europese Unie. Alleen bevoegde personen
+              beheren ze, met een beheerwachtwoord. Cloudflare host ook de
+              website. Bij het verzenden controleert Cloudflare Turnstile of er
+              een mens achter het formulier zit, met technische gegevens zoals je
+              IP-adres en browsertype; Cloudflare gebruikt die ook om deze
+              controle te verbeteren. Tegen misbruik bewaren we hoogstens een dag
               een versluierde code van je internetverbinding.
             </p>
             <p>
@@ -923,8 +922,8 @@ function PrivacyPage() {
             <p>
               Op {deleteByLabel} wist de website de namen, e-mailadressen en
               adressen van Sinterklaas {event.year} automatisch uit de database.
-              Mails in de mailbox van de vereniging en eventuele lijsten die
-              vrijwilligers downloadden, verwijderen we uiterlijk die dag zelf.
+              Mails in Gmail, gedownloade lijsten en papieren kopieën ruimen we
+              apart op, ook uiterlijk die dag.
             </p>
             <p>
               Technische kopieën verdwijnen daarna vanzelf: de reservekopie van de
