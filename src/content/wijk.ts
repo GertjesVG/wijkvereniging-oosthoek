@@ -162,8 +162,9 @@ export const infoPages: InfoPage[] = [
     image: "assets/oosthoek-wijkhuis.webp",
     imageAlt: "Schilderachtige bewerking van het witte wijkhuis met het opschrift vzw Wijkvereniging Oosthoek, tussen hoge bomen, met een pad van klinkers, een fietsenrek, een picknicktafel en een mededelingenbord.",
     tile: {
-      src: "assets/tegel-wijkhuis.webp",
-      alt: "Illustratie, geen foto: een wit wijkhuis met het opschrift VZW Wijkvereniging Oosthoek, tussen bomen en bloemen.",
+      // Hetzelfde beeld als op de wijkhuispagina (keuze Gert, 4 november 2026).
+      src: "assets/oosthoek-wijkhuis.webp",
+      alt: "Illustratie, geen foto: het kleine witte wijkhuis met het opschrift vzw Wijkvereniging Oosthoek, tussen hoge bomen, met een pad van klinkers, een fietsenrek, een picknicktafel en een mededelingenbord.",
       note: "Illustratie",
     },
   },

@@ -225,7 +225,7 @@ test("hoofdpagina: zeven aanklikbare tegels, contact uit de bevestigde gegevens;
     "/sinterklaas/assets/hero.webp",
     "/sinterklaas/assets/tegel-sponsors.webp",
     "/sinterklaas/assets/tegel-lief-en-leed.webp",
-    "/sinterklaas/assets/tegel-wijkhuis.webp",
+    "/sinterklaas/assets/oosthoek-wijkhuis.webp",
   ]);
   // Elk beeld vult zijn vak: geen opvulling of wazige achtergrond.
   const fits = await cards.locator("img").evaluateAll((all) => all.map((i) => getComputedStyle(i).objectFit));
@@ -490,7 +490,7 @@ test("desktop en gsm: evenwichtige tegels, geen overloop, beelden 3:2, menu en t
       expect(box.width / box.height, `${width}px kaartbeeld`).toBeCloseTo(1.5, 1);
     }
     // De zes wijkbeelden: 3:2, en de browser kiest nooit een versie kleiner dan het vak (naturalWidth houdt rekening met srcset).
-    for (const img of await page.locator('.event-art img[src*="tegel-"]').all()) {
+    for (const img of await page.locator(".event:not(.event-sinterklaas) .event-art img").all()) {
       await img.scrollIntoViewIfNeeded();
       await expect.poll(() => img.evaluate((i: HTMLImageElement) => i.naturalWidth)).toBeGreaterThan(0);
       const size = await img.evaluate((i: HTMLImageElement) => [i.naturalWidth, i.naturalHeight, i.clientWidth, i.clientHeight]);

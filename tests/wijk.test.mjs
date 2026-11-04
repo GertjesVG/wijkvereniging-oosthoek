@@ -101,8 +101,10 @@ test("hoofdpagina: zes eigen tegelbeelden in 3:2, groot genoeg en licht; het Sin
   const tiles = [...activities, ...infoPages];
   assert.deepEqual(
     tiles.map((item) => item.tile.src),
-    ["pasen", "garageverkoop", "wijkfeest", "sponsors", "lief-en-leed", "wijkhuis"].map((name) => `assets/tegel-${name}.webp`),
+    [...["pasen", "garageverkoop", "wijkfeest", "sponsors", "lief-en-leed"].map((name) => `assets/tegel-${name}.webp`), infoPages[2].image],
   );
+  // De wijkhuistegel toont exact het beeld van de wijkhuispagina.
+  assert.equal(infoPages[2].tile.src, "assets/oosthoek-wijkhuis.webp");
   for (const { slug, tile } of tiles) {
     // Breedte en hoogte staan in de kop van een WebP (VP8). 3:2 past precies in het vak: niets afgesneden, geen opvulling.
     for (const [file, width, height, limit] of [
