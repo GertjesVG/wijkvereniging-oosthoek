@@ -206,6 +206,7 @@ function Tile({
   className,
   meta,
   extraLink,
+  note,
 }: {
   href: string;
   image: string;
@@ -216,6 +217,7 @@ function Tile({
   className?: string;
   meta?: ReactNode;
   extraLink?: ReactNode;
+  note?: string;
 }) {
   const small = smallImage(image);
   return (
@@ -231,6 +233,7 @@ function Tile({
           loading="lazy"
           decoding="async"
         />
+        {note && <span className="event-art-note">{note}</span>}
       </div>
       <div className="event-copy">
         {meta && <div className="event-meta">{meta}</div>}
@@ -251,8 +254,8 @@ function ActivityTile({ activity, today }: { activity: Activity; today: string }
   return (
     <Tile
       href={`#/${activity.slug}`}
-      image={activity.image}
-      alt={activity.imageAlt}
+      image={activity.tile.src}
+      alt={activity.tile.alt}
       title={activity.name}
       text={activity.teaser}
       more={activity.more}
@@ -298,8 +301,9 @@ function InfoTile({ page }: { page: InfoPage }) {
     <Tile
       className="event-info"
       href={`#/${page.slug}`}
-      image={page.image}
-      alt={page.imageAlt}
+      image={page.tile.src}
+      alt={page.tile.alt}
+      note={page.tile.note}
       title={page.name}
       text={page.teaser}
       more={page.more}

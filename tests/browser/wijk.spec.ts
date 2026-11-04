@@ -224,17 +224,24 @@ test("hoofdpagina: zeven aanklikbare tegels, contact uit de bevestigde gegevens;
   await expect(tile("Onze sponsors")).toContainText("Ontdek wie onze wijk steunt");
   await expect(tile("Lief en leed in onze wijk")).toContainText("Geboorte, overlijden en huwelijksjubileum: Oosthoek leeft mee.");
   await expect(tile("Lief en leed in onze wijk")).toContainText("Ontdek onze attenties");
-  // De beelden: bestaande sfeerbeelden, het bestaande Sinterklaasbeeld en de drie nieuwste, allemaal lokaal.
+  // De beelden: zes eigen tegelbeelden en het ongewijzigde Sinterklaasbeeld, allemaal lokaal.
   const sources = await cards.locator("img").evaluateAll((all) => all.map((i) => (i as HTMLImageElement).getAttribute("src")));
   expect(sources).toEqual([
-    "/sinterklaas/assets/oosthoek-pasen.webp",
-    "/sinterklaas/assets/oosthoek-garageverkoop.webp",
-    "/sinterklaas/assets/oosthoek-wijkfeest.webp",
+    "/sinterklaas/assets/tegel-pasen.webp",
+    "/sinterklaas/assets/tegel-garageverkoop.webp",
+    "/sinterklaas/assets/tegel-wijkfeest.webp",
     "/sinterklaas/assets/hero.webp",
-    "/sinterklaas/assets/oosthoek-sponsors.webp",
-    "/sinterklaas/assets/oosthoek-lief-en-leed.webp",
+    "/sinterklaas/assets/tegel-sponsors.webp",
+    "/sinterklaas/assets/tegel-lief-en-leed.webp",
     "/sinterklaas/assets/oosthoek-wijkhuis.webp",
   ]);
+  // Elk beeld vult zijn vak: geen opvulling of wazige achtergrond.
+  const fits = await cards.locator("img").evaluateAll((all) => all.map((i) => getComputedStyle(i).objectFit));
+  expect(fits).toEqual(Array(7).fill("cover"));
+  await expect(cards.locator(".event-art > *:not(img, .event-art-note)")).toHaveCount(0);
+  // Het wijkhuisbeeld is een illustratie en staat ook zo op de tegel.
+  await expect(tile("Waar is ons wijkhuis?").getByText("Illustratie", { exact: true })).toBeVisible();
+  await expect(tile("Waar is ons wijkhuis?").locator("img")).toHaveAttribute("alt", /^Illustratie, geen foto/);
   // Sponsors en de uitgebreide informatie staan niet meer op de hoofdpagina.
   await expect(page.locator(".sponsor-card, #sponsors, #leeft-mee")).toHaveCount(0);
   await expect(page.locator("main")).not.toContainText("originele doodsbrief");
@@ -491,6 +498,15 @@ test("desktop en gsm: evenwichtige tegels, geen overloop, beelden 3:2, menu en t
       const box = (await frame.boundingBox())!;
       expect(box.width / box.height, `${width}px kaartbeeld`).toBeCloseTo(1.5, 1);
     }
+    // De zes wijkbeelden: 3:2, en de browser kiest nooit een versie kleiner dan het vak (naturalWidth houdt rekening met srcset).
+    for (const img of await page.locator(".event:not(.event-sinterklaas) .event-art img").all()) {
+      await img.scrollIntoViewIfNeeded();
+      await expect.poll(() => img.evaluate((i: HTMLImageElement) => i.naturalWidth)).toBeGreaterThan(0);
+      const size = await img.evaluate((i: HTMLImageElement) => [i.naturalWidth, i.naturalHeight, i.clientWidth, i.clientHeight]);
+      expect(size[0] / size[1], `${width}px bestand`).toBeCloseTo(1.5, 2);
+      expect(size[0], `${width}px breedte`).toBeGreaterThanOrEqual(size[2]);
+      expect(size[1], `${width}px hoogte`).toBeGreaterThanOrEqual(size[3]);
+    }
   }
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`${SITE}/`);
@@ -515,9 +531,38 @@ test("desktop en gsm: evenwichtige tegels, geen overloop, beelden 3:2, menu en t
   expect(seen.external).toEqual([]);
 });
 
-test("de Sinterklaassite heeft een weg terug naar de wijkpagina", async ({ page }) => {
-  await page.goto(`${SITE}/sinterklaas/#/contact`);
-  await page.locator("footer").getByRole("link", { name: "Wijkwebsite Oosthoek" }).click();
-  await expect(wijkHeading(page)).toBeVisible();
-  expect(page.url()).toBe(`${SITE}/`);
+test("elke Sinterklaaspagina heeft precies één knop terug naar de wijkpagina, zonder overlap", async ({ page }) => {
+  const home = "https://wijkvereniging-oosthoek.pages.dev/";
+  await page.route(home, (r) => r.fulfill({ contentType: "text/html", body: "<h1>Wijkpagina</h1>" }));
+  const back = page.getByRole("link", { name: "Terug naar Oosthoek" });
+  for (const width of [1280, 768, 390, 320]) {
+    await page.setViewportSize({ width, height: 800 });
+    // "sponsors" ontbreekt bewust: die link gaat naar de algemene sponsorpagina, en die heeft haar eigen weg terug.
+    for (const route of ["home", "cadeauactie", "kleurwedstrijd", "route", "praktisch", "contact", "privacy", "bestaat-niet"]) {
+      await page.goto("about:blank");
+      await page.goto(`${SITE}/sinterklaas/#/${route}`);
+      await expect(back, `${width}px ${route}`).toHaveCount(1);
+      await expect(back).toBeVisible();
+      await expect(back).toHaveAttribute("href", home);
+      await expect(back).toContainText("← Terug naar Oosthoek");
+      const button = (await back.boundingBox())!;
+      const header = (await page.locator(".site-header").boundingBox())!;
+      expect(button.y + button.height, `${width}px ${route} boven de kop`).toBeLessThanOrEqual(header.y);
+      expect(button.height).toBeGreaterThanOrEqual(44);
+      expect(await noOverflow(page), `${width}px ${route}`).toBe(true);
+    }
+  }
+  await expect(page.getByRole("link", { name: "Wijkwebsite Oosthoek" })).toHaveCount(0);
+  await back.click();
+  await expect(page.getByRole("heading", { name: "Wijkpagina" })).toBeVisible();
+  expect(page.url()).toBe(home);
+});
+
+test("elke wijkpagina heeft een weg terug naar de hoofdpagina", async ({ page }) => {
+  for (const slug of ["pasen", "garageverkoop", "wijkfeest", "sponsors", "lief-en-leed", "wijkhuis"]) {
+    await page.goto("about:blank");
+    await page.goto(`${SITE}/#/${slug}`);
+    await page.getByRole("link", { name: "Terug naar de hoofdpagina" }).click();
+    await expect(wijkHeading(page), slug).toBeVisible();
+  }
 });

@@ -15,6 +15,14 @@ export const statusLabels: Record<ActivityStatus, string> = {
   past: "Voorbij",
 };
 
+// Beeld op de hoofdpagina: altijd 3:2 (1536 × 1024, met een kleine versie), dus het vult het vak zonder iets af te snijden.
+export type TileImage = {
+  src: string;
+  alt: string;
+  // Korte vermelding op het beeld.
+  note?: string;
+};
+
 export type Activity = {
   slug: string;
   name: string;
@@ -24,6 +32,7 @@ export type Activity = {
   text: string;
   image: string;
   imageAlt: string;
+  tile: TileImage;
   // YYYY-MM-DD; na deze dag toont de site vanzelf ook "Voorbij". Dat sluit geen inschrijving.
   date: string | null;
   location: string | null;
@@ -43,6 +52,10 @@ export const activities: Activity[] = [
     text: "Een vrolijke paasactiviteit voor onze wijk. De datum, het programma en de praktische afspraken worden hier bekendgemaakt zodra ze vastliggen.",
     image: "assets/oosthoek-pasen.webp",
     imageAlt: "Sfeerillustratie: een mand met beschilderde paaseieren en een wit konijn in een lentetuin, met kinderen die eieren zoeken.",
+    tile: {
+      src: "assets/tegel-pasen.webp",
+      alt: "Sfeerillustratie: een rieten mand met beschilderde paaseieren en een wit paashaasje tussen de lentebloemen, in warm licht.",
+    },
     date: null,
     location: null,
     status: "info",
@@ -58,6 +71,10 @@ export const activities: Activity[] = [
     text: "Samen snuisteren in de wijk. Zodra de volgende editie vastligt, vind je hier de datum, informatie over deelname en de praktische afspraken.",
     image: "assets/oosthoek-garageverkoop.webp",
     imageAlt: "Sfeerillustratie: een buurvrouw toont spullen op een tafel voor haar garage aan een jong koppel, in een straat met bloemen.",
+    tile: {
+      src: "assets/tegel-garageverkoop.webp",
+      alt: "Sfeerillustratie: een krijtbord met het opschrift Garage Verkoop naast een lamp, oude koffers en snuisterijen, in een zonnige straat.",
+    },
     date: null,
     location: null,
     status: "info",
@@ -73,6 +90,10 @@ export const activities: Activity[] = [
     text: "Een gezellig moment om samen te komen met de buurt. Datum, locatie, programma en eventuele inschrijvingen volgen zodra alles vastligt.",
     image: "assets/oosthoek-wijkfeest.webp",
     imageAlt: "Sfeerillustratie: buren van alle leeftijden aan een lange feesttafel in de straat, onder vlaggetjes en lichtjes.",
+    tile: {
+      src: "assets/tegel-wijkfeest.webp",
+      alt: "Sfeerillustratie: buren van alle leeftijden lachen samen aan een lange feesttafel buiten, onder vlaggetjes en lichtjes.",
+    },
     date: null,
     location: null,
     status: "info",
@@ -106,6 +127,7 @@ export type InfoPage = {
   more: string;
   image: string;
   imageAlt: string;
+  tile: TileImage;
 };
 
 export const infoPages: InfoPage[] = [
@@ -116,6 +138,10 @@ export const infoPages: InfoPage[] = [
     more: "Ontdek wie onze wijk steunt",
     image: "assets/oosthoek-sponsors.webp",
     imageAlt: "Sfeerillustratie: twee mensen geven elkaar een warme handdruk aan een tafel met zonnebloemen, terwijl buren op de achtergrond een straatfeest klaarzetten.",
+    tile: {
+      src: "assets/tegel-sponsors.webp",
+      alt: "Sfeerillustratie: twee mensen schudden elkaar de hand boven een bloemenperk, met een ingepakt cadeau op de voorgrond.",
+    },
   },
   {
     slug: "lief-en-leed",
@@ -124,6 +150,10 @@ export const infoPages: InfoPage[] = [
     more: "Ontdek onze attenties",
     image: "assets/oosthoek-lief-en-leed.webp",
     imageAlt: "Sfeerillustratie: een slapende baby in een rieten wieg, een krans van witte rozen en een lachend ouder echtpaar dat elkaars hand vasthoudt.",
+    tile: {
+      src: "assets/tegel-lief-en-leed.webp",
+      alt: "Sfeerillustratie: een slapende baby in een rieten wieg, een boeket witte bloemen en een lachend ouder echtpaar dat elkaars hand vasthoudt.",
+    },
   },
   {
     slug: "wijkhuis",
@@ -132,6 +162,12 @@ export const infoPages: InfoPage[] = [
     more: wijkhuisLocation ? "Bekijk de locatie en route" : "Bekijk ons wijkhuis",
     image: "assets/oosthoek-wijkhuis.webp",
     imageAlt: "Schilderachtige bewerking van het witte wijkhuis met het opschrift vzw Wijkvereniging Oosthoek, tussen hoge bomen, met een pad van klinkers, een fietsenrek, een picknicktafel en een mededelingenbord.",
+    tile: {
+      // Hetzelfde beeld als op de wijkhuispagina (keuze Gert, 4 november 2026).
+      src: "assets/oosthoek-wijkhuis.webp",
+      alt: "Illustratie, geen foto: het kleine witte wijkhuis met het opschrift vzw Wijkvereniging Oosthoek, tussen hoge bomen, met een pad van klinkers, een fietsenrek, een picknicktafel en een mededelingenbord.",
+      note: "Illustratie",
+    },
   },
 ];
 
@@ -160,7 +196,7 @@ export const publicFile = (path: string) => `/sinterklaas/${path}`;
 
 // Kleinere versie voor tegels en miniaturen. Het Sinterklaasbeeld is al licht en heeft er geen.
 export const smallImage = (path: string) =>
-  path.startsWith("assets/oosthoek-") ? path.replace(/\.webp$/, "-768.webp") : null;
+  /^assets\/(oosthoek|tegel)-/.test(path) ? path.replace(/\.webp$/, "-768.webp") : null;
 
 export const todayInBrussels = (now = new Date()) =>
   new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Brussels" }).format(now);
