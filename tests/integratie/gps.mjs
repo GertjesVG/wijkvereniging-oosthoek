@@ -29,7 +29,7 @@ function replaceOnce(source, from, to) {
 function prepare(dir, { withGpsMigration = true } = {}) {
   for (const part of ["functions", "server", "migrations", "wrangler.toml"])
     cpSync(path.join(repo, part), path.join(dir, part), { recursive: true });
-  for (const file of ["inschrijving/api.ts", "inschrijving/evenementen.ts", "inschrijving/bevestigingsmail.ts", "gps/api.ts"]) {
+  for (const file of ["inschrijving/api.ts", "inschrijving/evenementen.ts", "inschrijving/periode.ts", "inschrijving/bevestigingsmail.ts", "gps/api.ts"]) {
     mkdirSync(path.dirname(path.join(dir, "src", file)), { recursive: true });
     cpSync(path.join(repo, "src", file), path.join(dir, "src", file));
   }

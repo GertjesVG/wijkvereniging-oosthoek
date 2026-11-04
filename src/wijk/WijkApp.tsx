@@ -15,8 +15,8 @@ import {
 } from "lucide-react";
 import { event } from "../content/event";
 import sponsors from "../content/sponsors.json";
-import { sinterklaasRegistration } from "../inschrijving/evenementen";
-import type { PublicEventStatus } from "../inschrijving/api";
+import { registrationNotice } from "../inschrijving/periode";
+import { useRegistrationStatus } from "../inschrijving/useRegistrationStatus";
 import { phoneHref, SponsorList } from "../SponsorCards";
 import {
   activities,
@@ -42,38 +42,29 @@ import {
 const org = event.organisation;
 const infoPage = (slug: string) => infoPages.find((page) => page.slug === slug)!;
 
-function StatusChips({ statuses }: { statuses: ActivityStatus[] }) {
+// notice = de zin van de server over de inschrijving; "Voorbij" gaat over de datum en blijft dus zijn eigen woord.
+function StatusChips({ statuses, notice }: { statuses: ActivityStatus[]; notice?: string | null }) {
   return (
     <>
       {statuses.map((status) => (
         <span className={`status status-${status}`} key={status}>
           <span className="status-dot" aria-hidden="true" />
-          {statusLabels[status]}
+          {status !== "past" && notice ? notice : statusLabels[status]}
         </span>
       ))}
     </>
   );
 }
 
-// De echte inschrijfstatus van Sinterklaas, zoals de inschrijfpagina die ook opvraagt, ook na de datum van het evenement.
-function useSinterklaasStatuses(today: string) {
-  const [server, setServer] = useState<PublicEventStatus["status"] | null>(null);
-  useEffect(() => {
-    const controller = new AbortController();
-    fetch(`/api/evenementen/${sinterklaasRegistration.id}`, {
-      credentials: "same-origin",
-      headers: { Accept: "application/json" },
-      signal: controller.signal,
-    })
-      .then((response) => (response.ok ? response.json() : null))
-      .then((body) => {
-        const status = body?.status;
-        if (status === "open" || status === "closed" || status === "full") setServer(status);
-      })
-      .catch(() => undefined);
-    return () => controller.abort();
-  }, []);
-  return sinterklaasStatuses(event.date, server, today);
+type SinterklaasState = { statuses: ActivityStatus[]; notice: string | null };
+
+// De echte inschrijfstatus van Sinterklaas, dezelfde als op de inschrijfpagina, ook na de datum van het evenement.
+function useSinterklaas(today: string): SinterklaasState {
+  const server = useRegistrationStatus();
+  return {
+    statuses: sinterklaasStatuses(event.date, server?.status ?? null, today),
+    notice: server ? registrationNotice(server.status, server.period) : null,
+  };
 }
 
 function Header({ page }: { page: string | null }) {
@@ -275,7 +266,7 @@ function ActivityTile({ activity, today }: { activity: Activity; today: string }
   );
 }
 
-function SinterklaasTile({ statuses }: { statuses: ActivityStatus[] }) {
+function SinterklaasTile({ statuses, notice }: SinterklaasState) {
   return (
     <Tile
       className="event-sinterklaas"
@@ -288,7 +279,7 @@ function SinterklaasTile({ statuses }: { statuses: ActivityStatus[] }) {
       meta={
         <>
           <span className="pill">{dateText(event.date)}</span>
-          <StatusChips statuses={statuses} />
+          <StatusChips statuses={statuses} notice={notice} />
         </>
       }
       extraLink={
@@ -316,7 +307,7 @@ function InfoTile({ page }: { page: InfoPage }) {
   );
 }
 
-function Tiles({ today, statuses }: { today: string; statuses: ActivityStatus[] }) {
+function Tiles({ today, sinterklaasState }: { today: string; sinterklaasState: SinterklaasState }) {
   return (
     <section className="section" id="activiteiten" aria-labelledby="activiteiten-title">
       <div className="wrap">
@@ -331,7 +322,7 @@ function Tiles({ today, statuses }: { today: string; statuses: ActivityStatus[] 
           {activities.map((activity) => (
             <ActivityTile activity={activity} today={today} key={activity.slug} />
           ))}
-          <SinterklaasTile statuses={statuses} />
+          <SinterklaasTile {...sinterklaasState} />
           {infoPages.map((page) => (
             <InfoTile page={page} key={page.slug} />
           ))}
@@ -369,12 +360,12 @@ function Contact() {
   );
 }
 
-function Home({ today, statuses }: { today: string; statuses: ActivityStatus[] }) {
+function Home({ today, sinterklaasState }: { today: string; sinterklaasState: SinterklaasState }) {
   return (
     <>
       <Hero />
       {today <= event.date && <Ticker />}
-      <Tiles today={today} statuses={statuses} />
+      <Tiles today={today} sinterklaasState={sinterklaasState} />
       <Contact />
     </>
   );
@@ -626,7 +617,7 @@ export default function WijkApp() {
   const main = useRef<HTMLElement>(null);
   const previousPage = useRef(route.page);
   const today = todayInBrussels();
-  const statuses = useSinterklaasStatuses(today);
+  const sinterklaasState = useSinterklaas(today);
   const activity = activities.find((a) => a.slug === route.page);
   const info = infoPages.find((p) => p.slug === route.page);
 
@@ -680,7 +671,7 @@ export default function WijkApp() {
         ) : route.page === "wijkhuis" ? (
           <WijkhuisPage today={today} />
         ) : (
-          <Home today={today} statuses={statuses} />
+          <Home today={today} sinterklaasState={sinterklaasState} />
         )}
       </main>
       <footer className="site-footer">

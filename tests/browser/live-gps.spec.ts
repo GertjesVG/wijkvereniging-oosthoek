@@ -128,6 +128,7 @@ test("zonder antwoord van de server verdwijnt de positie vanzelf, en op het stop
 test("beheer op de gsm: verbinding, Start en Stop", async ({ page }) => {
   const summary = {
     id: "sinterklaas-2026", title: "Sinterklaas in Oosthoek 2026", date: "2026-11-28", status: "open", capacity: 150,
+    period: { opensAt: "2026-11-09T23:00:00.000Z", closesAt: "2026-11-27T23:00:00.000Z" }, publicStatus: "open",
     active: 0, available: 150, registrations: 0, pickedUp: 0, mail: { pending: 0, sending: 0, sent: 0, failed: 0 },
     personalDataErased: false, pendingDecisions: [], series: "Sinterklaas in Oosthoek", edition: 2026, cancelled: 0,
     ages: [], addressReview: 0, deleteBy: "2027-01-31", autoErase: true, deleteByPassed: false,

@@ -1,11 +1,14 @@
 // Afspraken tussen website/beheer en de server onder functions/. Alleen types, geen code.
+import type { RegistrationPeriod, RegistrationStatus } from "./periode";
 
 export type PublicEventStatus = {
   id: string;
-  // "full" alleen als er in het beheer een maximum is ingesteld en dat bereikt is.
-  status: "open" | "closed" | "full";
+  // "upcoming" = de periode is nog niet begonnen. "full" alleen als er in het beheer een maximum is ingesteld en dat bereikt is.
+  status: RegistrationStatus;
   // Vrije plaatsen onder het ingestelde maximum; null = geen maximum (het formulier toont dan geen aantal).
   available: number | null;
+  // Ingestelde periode; null = geen periode (dan blijft de inschrijving dicht) of nog niet ingesteld op de server.
+  period: RegistrationPeriod | null;
   // null = Turnstile nog niet ingesteld; dan blijft het formulier dicht.
   turnstileSiteKey: string | null;
 };
@@ -65,7 +68,10 @@ export type AdminEventSummary = {
   id: string;
   title: string;
   date: string;
+  // De schakelaar in het beheer; wat bezoekers nu zien staat in publicStatus (schakelaar, periode, maximum en wisdatum samen).
   status: "open" | "closed";
+  period: RegistrationPeriod | null;
+  publicStatus: RegistrationStatus;
   // Ingesteld maximum aantal kinderen; null = geen maximum. available is dan ook null.
   capacity: number | null;
   // Werkelijk aantal actief ingeschreven kinderen.

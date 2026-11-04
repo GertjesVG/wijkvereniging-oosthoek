@@ -1,5 +1,6 @@
 // Gedeelde hulpfuncties voor functions/. Alleen wisbare TypeScript (Node-tests draaien deze bestanden rechtstreeks).
 import type { ApiError, ApiErrorCode } from "../src/inschrijving/api.ts";
+import type { RegistrationPeriod } from "../src/inschrijving/periode.ts";
 
 export type Env = {
   DB?: D1Database;
@@ -121,6 +122,10 @@ export const capacityGuard = (db: D1Database, eventId: string) => db.prepare(CAP
 // Vrije plaatsen bij een ingesteld maximum; null = geen maximum (dan bestaat er geen getal om te tonen).
 export const freePlaces = (limited: number, capacity: number, active: number) =>
   limited === 1 ? Math.max(0, capacity - active) : null;
+
+// De ingestelde periode van een evenementrij (migratie 0008); null = geen periode, dus dicht.
+export const periodOf = (row: { opens_at: string | null; closes_at: string | null } | null): RegistrationPeriod | null =>
+  row?.opens_at && row.closes_at ? { opensAt: row.opens_at, closesAt: row.closes_at } : null;
 
 export function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : String(error);

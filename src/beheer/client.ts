@@ -85,8 +85,12 @@ export const api = {
   events: () => request<AdminEventSummary[]>("GET", "/api/beheer/evenementen"),
   patchEvent: (
     id: string,
-    // capacity: null = geen maximum.
-    patch: { status?: "open" | "closed"; capacity?: number | null },
+    // capacity: null = geen maximum. period: Belgische tijd, zoals een datetime-local-veld ("2026-11-10T00:00").
+    patch: {
+      status?: "open" | "closed";
+      capacity?: number | null;
+      period?: { opensAt: string; closesAt: string };
+    },
   ) => request<AdminEventSummary>("PATCH", `/api/beheer/evenementen/${enc(id)}`, patch),
   registrations: (id: string) =>
     request<AdminRegistration[]>(

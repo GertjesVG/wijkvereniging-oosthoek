@@ -16,6 +16,7 @@ import type {
   RegistrationResponse,
 } from "./api";
 import { sinterklaasRegistration, type RegistrationEvent } from "./evenementen";
+import { registrationNotice } from "./periode";
 import "./registration.css";
 
 export type TurnstileSlotProps = {
@@ -92,11 +93,11 @@ function PanelShell({ children }: { children: ReactNode }) {
   );
 }
 
-// Exact de toestand van de site zolang de inschrijving niet open is.
-function ClosedPanel() {
+// Voorbeeld van het formulier zolang de inschrijving nog moet beginnen, of zolang de server niets over de status zegt.
+function PreviewPanel({ message = event.registration.message }: { message?: string }) {
   return (
     <PanelShell>
-      <StatusNote>{event.registration.message}</StatusNote>
+      <StatusNote>{message}</StatusNote>
       <p className="quiet-copy">
         Dit is een voorbeeld van het toekomstige formulier. Je kunt nog geen
         gegevens invullen of verzenden.
@@ -151,12 +152,17 @@ function ClosedPanel() {
   );
 }
 
-function FullPanel({ config }: { config: RegistrationEvent }) {
+// Gesloten of volzet: geen formulier, want er komt er ook geen meer.
+function NoticePanel({
+  message,
+  config,
+}: {
+  message: string;
+  config: RegistrationEvent;
+}) {
   return (
     <PanelShell>
-      <StatusNote>
-        De inschrijving is volzet. Alle cadeautjes zijn vergeven.
-      </StatusNote>
+      <StatusNote>{message}</StatusNote>
       <p className="registration-lead">
         Er kunnen geen nieuwe {config.participant.plural} meer ingeschreven
         worden. Dank je wel voor je interesse! Vragen? Mail naar{" "}
@@ -483,7 +489,9 @@ function OpenPanel({
   return (
     <PanelShell>
       {/* Bewust geen aantal vrije plaatsen: er is geen vaste grens; een maximum uit het beheer bewaakt de server. */}
-      <StatusNote tone="blue">De inschrijving is open</StatusNote>
+      <StatusNote tone="blue">
+        {registrationNotice(status.status, status.period)}
+      </StatusNote>
       <p className="registration-lead">
         Een ouder of voogd schrijft de {participant.plural} in. Per{" "}
         {participant.singular} is er maximaal één cadeautje. Na het verzenden
@@ -821,11 +829,19 @@ export function RegistrationForm({
         }}
       />
     );
-  if (!status || override === "closed") return <ClosedPanel />;
+  if (!status) return <PreviewPanel />;
   if (status.status === "full" || override === "full")
-    return <FullPanel config={config} />;
-  if (status.status !== "open" || !status.turnstileSiteKey)
-    return <ClosedPanel />;
+    return (
+      <NoticePanel message={registrationNotice("full", status.period)} config={config} />
+    );
+  // Geen spamcontrole en geen periode = de server is nog niet ingesteld; pas dan is het formulier echt "nog niet beschikbaar".
+  if (override === "closed" || (status.status === "closed" && (status.turnstileSiteKey || status.period)))
+    return (
+      <NoticePanel message={registrationNotice("closed", status.period)} config={config} />
+    );
+  if (status.status === "upcoming")
+    return <PreviewPanel message={registrationNotice("upcoming", status.period)} />;
+  if (status.status !== "open" || !status.turnstileSiteKey) return <PreviewPanel />;
   return (
     <OpenPanel
       key={formKey}

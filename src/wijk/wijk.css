@@ -476,6 +476,9 @@ main:focus {
 .status-closed .status-dot {
   background: #b96a3a;
 }
+.status-upcoming .status-dot {
+  background: #d3a02f;
+}
 .status-past .status-dot {
   background: #7a8579;
 }

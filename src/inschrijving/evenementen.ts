@@ -1,8 +1,9 @@
 // Evenementen met online inschrijving, gedeeld door website, beheer en server (functions/).
 // Nieuw evenement = nieuw blok hieronder, plus een bevestigingsmail met dezelfde sleutel in bevestigingsmail.ts.
 // Oude evenementen laten staan: de historiek in het beheer toont alleen evenementen uit deze lijst.
-// Het maximum aantal deelnemers en open/dicht staan in de database en wijzig je in het beheerdashboard;
-// het evenement staat na de eerste beheeraanroep automatisch "dicht" in de database.
+// Het maximum aantal deelnemers, open/dicht en de inschrijvingsperiode staan in de database en wijzig je in het
+// beheerdashboard; een nieuw evenement staat na de eerste beheeraanroep "dicht" en zonder periode in de database.
+// Inschrijven kan pas als de schakelaar open staat én de periode loopt (src/inschrijving/periode.ts).
 
 // Huisnummers van..tot zoals de gemeentelijke lijst ze schrijft; parity = alleen even of oneven nummers.
 export type NumberRange = { from: number; to: number; parity?: "even" | "odd" };

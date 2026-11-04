@@ -29,9 +29,9 @@ const guard = (db) => db.prepare(CAPACITY_GUARD_SQL).run(EVENT);
 const active = (db) => db.prepare("SELECT COUNT(*) AS n FROM participants WHERE status = 'active'").get().n;
 
 test("migratie 0007 voegt alleen een kolom toe: inschrijvingen, nummers, mails en reglementakkoorden blijven, de grens van 150 vervalt", () => {
-  assert.equal(files.at(-1), NEW);
+  assert.ok(files.includes(NEW));
   const db = new DatabaseSync(":memory:");
-  apply(db, files.slice(0, -1));
+  apply(db, files.filter((f) => f < NEW));
   // Fictieve stand zoals in productie: open, grens 150, een gezin met twee kinderen, verstuurde mail, akkoord met het reglement.
   db.exec(`
     INSERT INTO events (id, capacity, status, next_seq) VALUES ('${EVENT}', 150, 'open', 3);
@@ -65,7 +65,8 @@ test("ingesteld maximum: de bewaking laat precies tot het maximum toe en draait 
   const db = new DatabaseSync(":memory:");
   apply(db, files);
   db.exec(`
-    INSERT INTO events (id, capacity, status, capacity_limited) VALUES ('${EVENT}', 0, 'open', 0);
+    INSERT INTO events (id, capacity, status, capacity_limited, registration_opens_at, registration_closes_at)
+    VALUES ('${EVENT}', 0, 'open', 0, '2026-01-01T00:00:00.000Z', '2099-01-01T00:00:00.000Z');
     INSERT INTO registrations (event_id, submission_id, seq, reference, parent_name, email, created_at, updated_at)
     VALUES ('${EVENT}', 'aaaaaaaa-0000-4000-8000-000000000002', 1, 'SINT26-0001', 'Fictieve Ouder', 'fictief@example.org',
       '2026-11-03T10:40:00.000Z', '2026-11-03T10:40:00.000Z');

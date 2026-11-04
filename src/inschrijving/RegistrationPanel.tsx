@@ -1,15 +1,14 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import type {
   ApiError,
-  PublicEventStatus,
   RegistrationRequest,
   RegistrationResponse,
 } from "./api";
-import { sinterklaasRegistration } from "./evenementen";
 import {
   RegistrationForm,
   type TurnstileSlotProps,
 } from "./RegistrationForm";
+import { useRegistrationStatus } from "./useRegistrationStatus";
 
 type TurnstileApi = {
   render(
@@ -122,18 +121,6 @@ async function readJson(response: Response): Promise<unknown> {
   }
 }
 
-function isStatus(value: unknown): value is PublicEventStatus {
-  if (typeof value !== "object" || value === null) return false;
-  const v = value as Record<string, unknown>;
-  return (
-    typeof v.id === "string" &&
-    (v.status === "open" || v.status === "closed" || v.status === "full") &&
-    // null = geen maximum ingesteld.
-    (v.available === null || typeof v.available === "number") &&
-    (v.turnstileSiteKey === null || typeof v.turnstileSiteKey === "string")
-  );
-}
-
 async function submitRegistration(
   request: RegistrationRequest,
 ): Promise<RegistrationResponse> {
@@ -170,28 +157,8 @@ async function submitRegistration(
   } satisfies ApiError;
 }
 
-// Haalt de status op; elke fout (netwerk, 404, geen JSON) betekent: dicht.
 export function RegistrationPanel() {
-  const [status, setStatus] = useState<PublicEventStatus | null>(null);
-  useEffect(() => {
-    const controller = new AbortController();
-    fetch(`/api/evenementen/${sinterklaasRegistration.id}`, {
-      credentials: "same-origin",
-      headers: { Accept: "application/json" },
-      signal: controller.signal,
-    })
-      .then(async (response) => {
-        if (!response.ok) return null;
-        const body = await readJson(response);
-        return isStatus(body) ? body : null;
-      })
-      .catch(() => null)
-      .then((result) => {
-        if (!controller.signal.aborted) setStatus(result);
-      });
-    return () => controller.abort();
-  }, []);
-
+  const status = useRegistrationStatus();
   const renderTurnstile = useCallback(
     (props: TurnstileSlotProps) => <TurnstileWidget {...props} />,
     [],

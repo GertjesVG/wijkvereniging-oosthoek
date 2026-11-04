@@ -54,7 +54,7 @@ function prepare(dir, edit = (source) => source) {
   for (const part of ["functions", "server", "migrations", "wrangler.toml"])
     cpSync(path.join(repo, part), path.join(dir, part), { recursive: true });
   mkdirSync(path.join(dir, "src/inschrijving"), { recursive: true });
-  for (const file of ["api.ts", "evenementen.ts", "bevestigingsmail.ts"])
+  for (const file of ["api.ts", "evenementen.ts", "periode.ts", "bevestigingsmail.ts"])
     cpSync(path.join(repo, "src/inschrijving", file), path.join(dir, "src/inschrijving", file));
   const serverFile = path.join(dir, "server/inschrijven.ts");
   const serverSource = readFileSync(serverFile, "utf8");
@@ -161,6 +161,10 @@ function family({ kids = 1, email, street, houseNumber, names, parent, coParent 
 let ipCount = 0;
 const nextIp = () => (ipCount++, `198.18.${Math.floor(ipCount / 256)}.${ipCount % 256}`);
 const register = (body, ip = nextIp()) => call("POST", "/api/inschrijvingen", body, { "CF-Connecting-IP": ip });
+// Een ruime periode rond vandaag, in Belgische tijd zoals het beheer ze doorgeeft, en dezelfde periode zoals de server ze bewaart.
+const RUIME_PERIODE = { opensAt: "2026-01-01T00:00", closesAt: "2099-01-01T00:00" };
+const RUIME_PERIODE_UTC = { opensAt: "2025-12-31T23:00:00.000Z", closesAt: "2098-12-31T23:00:00.000Z" };
+const openEvent = (id = EVENT) => admin("PATCH", `/evenementen/${id}`, { status: "open", period: RUIME_PERIODE });
 const summary = async () => (await admin("GET", "/evenementen")).data.find((e) => e.id === EVENT);
 const registrations = async () => (await admin("GET", `/evenementen/${EVENT}/inschrijvingen`)).data;
 const serverVars = (secretNumber, extra = {}) => ({
@@ -193,7 +197,7 @@ try {
     assert.equal(open.status, 409);
     assert.match(open.data.message, /Nog niet vrijgegeven/);
     const pub = await call("GET", `/api/evenementen/${EVENT}`);
-    assert.deepEqual(pub.data, { id: EVENT, status: "closed", available: null, turnstileSiteKey: null });
+    assert.deepEqual(pub.data, { id: EVENT, status: "closed", available: null, period: null, turnstileSiteKey: null });
     assert.equal((await register(family())).status, 423);
   });
   stop(server);
@@ -230,10 +234,52 @@ try {
     assert.equal(foreign.status, 403);
     const plain = await call("PATCH", `/api/beheer/evenementen/${EVENT}`, undefined, { "Content-Type": "text/plain" });
     assert.equal(plain.status, 403);
+    // De schakelaar alleen opent niets: zonder periode blijft de inschrijving dicht.
+    assert.deepEqual([before.period, before.publicStatus], [null, "closed"]);
     assert.equal((await admin("PATCH", `/evenementen/${EVENT}`, { status: "open" })).data.status, "open");
+    assert.equal((await call("GET", `/api/evenementen/${EVENT}`)).data.status, "closed");
+    assert.equal((await register(family())).status, 423);
+    assert.equal((await openEvent()).data.publicStatus, "open");
     const pub = await call("GET", `/api/evenementen/${EVENT}`);
     // Geen maximum: de publieke kant geeft geen aantal vrije plaatsen.
-    assert.deepEqual(pub.data, { id: EVENT, status: "open", available: null, turnstileSiteKey: siteKey });
+    assert.deepEqual(pub.data, { id: EVENT, status: "open", available: null, period: RUIME_PERIODE_UTC, turnstileSiteKey: siteKey });
+  });
+
+  await step("inschrijvingsperiode in het beheer: toekomst, verleden en ongeldig; de site en de server volgen meteen", async () => {
+    const save = (opensAt, closesAt) => admin("PATCH", `/evenementen/${EVENT}`, { period: { opensAt, closesAt } });
+    const checks = verified.calls;
+    // Toekomst: nog niet open, en de ouder krijgt de juiste zin.
+    const future = await save("2099-01-01T00:00", "2099-02-01T00:00");
+    assert.deepEqual([future.status, future.data.status, future.data.publicStatus], [200, "open", "upcoming"]);
+    assert.deepEqual(future.data.period, { opensAt: "2098-12-31T23:00:00.000Z", closesAt: "2099-01-31T23:00:00.000Z" });
+    assert.equal((await call("GET", `/api/evenementen/${EVENT}`)).data.status, "upcoming");
+    const early = await register(family());
+    assert.deepEqual([early.status, early.data.error, early.data.message], [423, "GESLOTEN", "Inschrijven mogelijk van 1 tot en met 31 januari 2099."]);
+    // Verleden: gesloten, de schakelaar staat nog altijd open, en er heropent niets.
+    const over = await save("2020-01-01T00:00", "2020-02-01T00:00");
+    assert.deepEqual([over.data.status, over.data.publicStatus], ["open", "closed"]);
+    assert.equal((await call("GET", `/api/evenementen/${EVENT}`)).data.status, "closed");
+    const late = await register(family());
+    assert.deepEqual([late.status, late.data.message], [423, "De inschrijvingen zijn gesloten."]);
+    assert.equal(verified.calls, checks, "buiten de periode geen spamcontrole nodig");
+    // Ongeldig: geweigerd en niets gewijzigd.
+    assert.equal((await save("2099-02-01T00:00", "2099-01-01T00:00")).status, 400);
+    assert.equal((await save("2099-01-01T00:00", "")).status, 400);
+    assert.equal((await save("2027-03-28T02:30", "2027-04-01T00:00")).status, 400);
+    assert.equal((await summary()).period.opensAt, "2019-12-31T23:00:00.000Z");
+    // Zonder aanmelding niet te wijzigen; handmatig gesloten gaat voor op een lopende periode.
+    const saved = cookie;
+    cookie = "";
+    assert.equal((await save("2026-01-01T00:00", "2099-01-01T00:00")).status, 401);
+    cookie = saved;
+    assert.equal((await summary()).period.opensAt, "2019-12-31T23:00:00.000Z");
+    await save("2026-01-01T00:00", "2099-01-01T00:00");
+    assert.equal((await call("GET", `/api/evenementen/${EVENT}`)).data.status, "open");
+    await admin("PATCH", `/evenementen/${EVENT}`, { status: "closed" });
+    assert.equal((await call("GET", `/api/evenementen/${EVENT}`)).data.status, "closed");
+    assert.equal((await register(family())).status, 423);
+    assert.equal((await openEvent()).data.publicStatus, "open");
+    assert.equal((await registrations()).length, 0);
   });
 
   let firstFamily;
@@ -362,7 +408,7 @@ try {
     const cleared = await admin("PATCH", `/evenementen/${EVENT}`, { capacity: null });
     assert.deepEqual([cleared.data.capacity, cleared.data.available, cleared.data.active], [null, null, activeNow]);
     const pub = await call("GET", `/api/evenementen/${EVENT}`);
-    assert.deepEqual(pub.data, { id: EVENT, status: "open", available: null, turnstileSiteKey: siteKey });
+    assert.deepEqual(pub.data, { id: EVENT, status: "open", available: null, period: RUIME_PERIODE_UTC, turnstileSiteKey: siteKey });
     assert.equal((await register(family({ kids: 8 }))).status, 201);
     assert.equal((await summary()).active, activeNow + 8);
   });
@@ -459,7 +505,7 @@ try {
   server = await start(dirC, serverVars(2));
   await step("Turnstile wordt op de server gecontroleerd: afgekeurd = geen inschrijving", async () => {
     await login();
-    await admin("PATCH", `/evenementen/${EVENT}`, { status: "open" });
+    await openEvent();
     const res = await register(family({ kids: 2 }));
     assert.equal(res.status, 403);
     assert.equal(res.data.error, "TURNSTILE");
@@ -489,7 +535,7 @@ try {
   server = await start(dirD, serverVars(1));
   await step("adrescontrole: officiële straat binnen de grens = in orde; daarbuiten of onbekend = aanvaard en nakijken", async () => {
     await login();
-    await admin("PATCH", `/evenementen/${EVENT}`, { status: "open" });
+    await openEvent();
     const ok = await register(family({ names: ["Anna"], street: "dr paul janssenstraat", houseNumber: "5" }));
     assert.equal(ok.status, 201, ok.text);
     assert.equal(ok.data.addressReview, false);
@@ -577,7 +623,7 @@ try {
   server = await start(dirE, serverVars(1));
   await step("co-ouderschap en reglement: adres van de andere ouder telt, akkoord verplicht en bewaard", async () => {
     await login();
-    await admin("PATCH", `/evenementen/${EVENT}`, { status: "open" });
+    await openEvent();
     // Zonder akkoord of met een verouderde versie van het reglement: niets opgeslagen.
     const before = (await registrations()).length;
     const noRules = await register({ ...family({ names: ["Hugo"] }), confirmations: { rules: false, privacy: true } });
@@ -619,7 +665,7 @@ try {
   server = await start(dirF, serverVars(1));
   await step("verwijderen: alleen ingelogd en met het juiste nummer; kinderen, mail en cijfers mee weg; nummer nooit opnieuw", async () => {
     await login();
-    await admin("PATCH", `/evenementen/${EVENT}`, { status: "open" });
+    await openEvent();
     const proef = await register(family({ names: ["Piepje", "Testje"], street: "Gerststraat", houseNumber: "3" }));
     assert.equal(proef.status, 201, proef.text);
     assert.equal(proef.data.reference, "SINT26-0001");
@@ -692,7 +738,7 @@ try {
     await login();
     const s = await byId(EVENT);
     assert.deepEqual([s.autoErase, s.deleteBy, s.deleteByPassed], [true, "2027-01-31", false]);
-    for (const id of [EVENT, OTHER]) await admin("PATCH", `/evenementen/${id}`, { status: "open" });
+    for (const id of [EVENT, OTHER]) await openEvent(id);
     const a = await register(family({ names: ["Fien", "Jules"], email: "wis.test@example.org", parent: "Wis Testouder" }));
     const b = await register(family({ names: ["Lotte"] }));
     const c = await register({ ...family({ names: ["Rik"], email: "blijft@example.org", parent: "Blijf Testouder" }), eventId: OTHER });
@@ -733,6 +779,35 @@ try {
     const next = await register({ ...family({ names: ["Mats"] }), eventId: OTHER });
     assert.equal(next.data.reference, "TEST27-0002");
     assert.equal((await admin("PATCH", `/evenementen/${EVENT}`, { status: "open" })).status, 409);
+  });
+  stop(server);
+
+  // Fase H: nieuwe database; in de kopie is de periodecontrole in de code uitgeschakeld, zoals bij een oude publicatie
+  // die nog op haar eigen adres draait. Dan moet de database zelf weigeren. Ook het bewijs dat wrangler de trigger juist verwerkt.
+  const dirH = path.join(work, "h");
+  prepare(dirH);
+  const registerFile = path.join(dirH, "server/inschrijven.ts");
+  writeFileSync(registerFile, replaceOnce(readFileSync(registerFile, "utf8"), 'if (phase !== "open") return', 'if (phase === ("nooit" as string)) return'));
+  server = await start(dirH, serverVars(1));
+  await step("oude code zonder periodecontrole: de database weigert buiten de periode, antwoord 423 en niets opgeslagen", async () => {
+    await login();
+    const save = (opensAt, closesAt) => admin("PATCH", `/evenementen/${EVENT}`, { status: "open", period: { opensAt, closesAt } });
+    for (const [opensAt, closesAt] of [["2099-01-01T00:00", "2099-02-01T00:00"], ["2020-01-01T00:00", "2020-02-01T00:00"]]) {
+      await save(opensAt, closesAt);
+      const checks = verified.calls;
+      const refused = await register(family({ names: ["Rik", "Sien"] }));
+      assert.deepEqual([refused.status, refused.data.error], [423, "GESLOTEN"], refused.text);
+      // De spamcontrole liep wel: de code liet door, de database weigerde.
+      assert.equal(verified.calls, checks + 1);
+      const s = await summary();
+      assert.deepEqual([s.registrations, s.active, s.mail.pending], [0, 0, 0]);
+    }
+    // Binnen de periode werkt dezelfde code gewoon, en de eerder geweigerde pogingen kostten geen nummer.
+    await openEvent();
+    const ok = await register(family({ names: ["Rik", "Sien"] }));
+    assert.equal(ok.status, 201, ok.text);
+    assert.equal(ok.data.reference, "SINT26-0001");
+    assert.equal((await summary()).active, 2);
   });
 } catch (error) {
   failed = true;

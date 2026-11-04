@@ -14,12 +14,20 @@ const GITHUB = "https://gertjesvg.github.io/wijkvereniging-oosthoek";
 const WIJK_TITEL = "Hier kennen we elkaar.";
 const github = readFileSync(new URL("../../github-pages/index.html", import.meta.url), "utf8");
 
-async function apiStatus(page: Page, status: "open" | "closed" | "full" | "error") {
+const PERIOD = { opensAt: "2026-11-09T23:00:00.000Z", closesAt: "2026-11-27T23:00:00.000Z" };
+const NOTICES = {
+  upcoming: "Inschrijven mogelijk van 10 tot en met 27 november 2026.",
+  open: "Inschrijvingen geopend tot en met 27 november 2026.",
+  closed: "De inschrijvingen zijn gesloten.",
+  full: "De inschrijving is volzet. Alle cadeautjes zijn vergeven.",
+};
+
+async function apiStatus(page: Page, status: "open" | "closed" | "full" | "upcoming" | "error") {
   await page.route("https://challenges.cloudflare.com/**", (r) => r.abort());
   await page.route("**/api/evenementen/sinterklaas-2026", (r) =>
     status === "error"
       ? r.abort()
-      : r.fulfill({ json: { id: "sinterklaas-2026", status, available: null, turnstileSiteKey: "1x00000000000000000000AA" } }),
+      : r.fulfill({ json: { id: "sinterklaas-2026", status, available: null, period: PERIOD, turnstileSiteKey: "1x00000000000000000000AA" } }),
   );
   await page.route("**/api/gps", (r) => r.fulfill({ json: { state: "off", refreshSeconds: 120 } }));
 }
@@ -380,9 +388,10 @@ test("sponsorlinks vanuit Sinterklaas komen op de algemene pagina, zonder kapott
 
 test("inschrijfkoppeling: de wijkpagina volgt de serverstatus en stuurt naar het bestaande formulier", async ({ browser }) => {
   const shown = {
-    open: { label: "Inschrijven mogelijk", link: true },
-    closed: { label: "Inschrijving gesloten", link: false },
-    full: { label: "Inschrijving gesloten", link: false },
+    open: { label: NOTICES.open, link: true },
+    upcoming: { label: NOTICES.upcoming, link: false },
+    closed: { label: NOTICES.closed, link: false },
+    full: { label: NOTICES.full, link: false },
   } as const;
   for (const [status, expected] of Object.entries(shown)) {
     const page = await browser.newPage();
@@ -396,7 +405,7 @@ test("inschrijfkoppeling: de wijkpagina volgt de serverstatus en stuurt naar het
     if (expected.link) {
       await card.getByRole("link", { name: /Inschrijven/ }).click();
       await expect(page).toHaveURL(`${SITE}/sinterklaas/#/cadeauactie`);
-      await expect(page.getByText("De inschrijving is open")).toBeVisible();
+      await expect(page.getByText(NOTICES.open)).toBeVisible();
       await expect(page.locator(".registration-form")).toBeVisible();
     }
     expect(seen.writes).toEqual([]);
@@ -414,8 +423,8 @@ test("inschrijfkoppeling: de wijkpagina volgt de serverstatus en stuurt naar het
 
 test("na de datum: Voorbij staat los van de inschrijving; alleen de server sluit, en de site zelf blijft bereikbaar", async ({ browser }) => {
   for (const [status, label, link] of [
-    ["open", "Inschrijven mogelijk", 1],
-    ["closed", "Inschrijving gesloten", 0],
+    ["open", NOTICES.open, 1],
+    ["closed", NOTICES.closed, 0],
   ] as const) {
     const page = await browser.newPage();
     await apiStatus(page, status);

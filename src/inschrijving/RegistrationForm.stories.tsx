@@ -39,6 +39,7 @@ const status = (patch: Partial<PublicEventStatus>): PublicEventStatus => ({
   status: "open",
   // Geen maximum ingesteld, zoals op de site.
   available: null,
+  period: { opensAt: "2026-11-09T23:00:00.000Z", closesAt: "2026-11-27T23:00:00.000Z" },
   turnstileSiteKey: "1x00000000000000000000AA",
   ...patch,
 });
@@ -68,3 +69,5 @@ export const Open: Story = { args: { status: status({}) } };
 export const Volzet: Story = {
   args: { status: status({ status: "full", available: 0 }) },
 };
+export const NogNietOpen: Story = { args: { status: status({ status: "upcoming" }) } };
+export const Gesloten: Story = { args: { status: status({ status: "closed" }) } };

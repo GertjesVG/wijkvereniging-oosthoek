@@ -3,6 +3,7 @@
 // Een nieuw wachtwoord maakt alle bestaande sessies ongeldig. Mislukte pogingen worden per kwartier begrensd.
 import type { AdminEventSummary, AdminRegistration, MailStatus } from "../src/inschrijving/api.ts";
 import { registrationEvents, type RegistrationEvent } from "../src/inschrijving/evenementen.ts";
+import { fromBrusselsInput, registrationStatus, type RegistrationPeriod } from "../src/inschrijving/periode.ts";
 import {
   addressKey,
   capacityGuard,
@@ -13,6 +14,7 @@ import {
   freePlaces,
   json,
   nowIso,
+  periodOf,
   readJson,
   sameText,
   sha256Hex,
@@ -95,6 +97,7 @@ async function login(request: Request, env: Env) {
 // ---------- Overzicht per evenement ----------
 
 const SUMMARY_SQL = `SELECT e.id, e.status, e.capacity, e.capacity_limited AS limited, e.personal_data_erased_at AS erased,
+  e.registration_opens_at AS opens_at, e.registration_closes_at AS closes_at,
   (SELECT COUNT(*) FROM participants p WHERE p.event_id = e.id AND p.status = 'active') AS active,
   (SELECT COUNT(*) FROM participants p WHERE p.event_id = e.id AND p.status = 'active' AND p.picked_up_at IS NOT NULL) AS picked_up,
   (SELECT COUNT(*) FROM registrations r WHERE r.event_id = e.id AND r.status = 'active') AS registrations,
@@ -112,6 +115,8 @@ type SummaryRow = {
   capacity: number;
   limited: number;
   erased: string | null;
+  opens_at: string | null;
+  closes_at: string | null;
   active: number;
   picked_up: number;
   registrations: number;
@@ -124,14 +129,19 @@ type SummaryRow = {
 function toSummary(row: SummaryRow): AdminEventSummary {
   const config = registrationEvents[row.id];
   const mail = { pending: 0, sending: 0, sent: 0, failed: 0, ...(row.mail ? JSON.parse(row.mail) : {}) };
+  const available = freePlaces(row.limited, row.capacity, row.active);
+  const period = periodOf(row);
   return {
     id: row.id,
     title: config.title,
     date: config.date,
     status: row.status,
+    period,
+    publicStatus:
+      config.pendingDecisions.length || deleteByPassed(config) ? "closed" : registrationStatus(row.status, period, available),
     capacity: row.limited === 1 ? row.capacity : null,
     active: row.active,
-    available: freePlaces(row.limited, row.capacity, row.active),
+    available,
     registrations: row.registrations,
     pickedUp: row.picked_up,
     mail: mail as Record<MailStatus, number>,
@@ -171,10 +181,26 @@ async function summary(db: D1Database, eventId: string) {
   return row ? toSummary(row) : null;
 }
 
+// De velden "Inschrijven vanaf" en "Inschrijven tot" in Belgische tijd; null = onvolledig, ongeldig of einde niet na begin.
+function cleanPeriod(value: unknown): RegistrationPeriod | null {
+  if (!value || typeof value !== "object") return null;
+  const { opensAt, closesAt } = value as Record<string, unknown>;
+  const opens = fromBrusselsInput(opensAt);
+  const closes = fromBrusselsInput(closesAt);
+  return opens && closes && opens < closes ? { opensAt: opens, closesAt: closes } : null;
+}
+
 async function updateEvent(request: Request, db: D1Database, eventId: string) {
   const body = (await readJson(request)) ?? {};
   const current = await summary(db, eventId);
   if (!current) return fail(404, "NIET_GEVONDEN", "Onbekend evenement.");
+  const period = body.period === undefined ? null : cleanPeriod(body.period);
+  if (body.period !== undefined) {
+    if (current.personalDataErased)
+      return fail(409, "VERBODEN", "De gegevens van dit evenement zijn gewist; de periode kan niet meer wijzigen.");
+    if (!period)
+      return fail(400, "VALIDATIE", "Vul een geldig begin en einde in (Belgische tijd). Het einde moet na het begin liggen.");
+  }
   if (body.status !== undefined) {
     if (body.status !== "open" && body.status !== "closed")
       return fail(400, "VALIDATIE", "Ongeldige status.");
@@ -204,6 +230,11 @@ async function updateEvent(request: Request, db: D1Database, eventId: string) {
     if (!result.meta.changes)
       return fail(409, "VALIDATIE", "Het maximum kan niet lager dan het aantal ingeschreven kinderen.");
   }
+  if (period)
+    await db
+      .prepare("UPDATE events SET registration_opens_at = ?2, registration_closes_at = ?3, updated_at = ?4 WHERE id = ?1")
+      .bind(eventId, period.opensAt, period.closesAt, nowIso())
+      .run();
   return json(await summary(db, eventId));
 }
 

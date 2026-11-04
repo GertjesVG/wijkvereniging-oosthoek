@@ -3,14 +3,15 @@
 // Verzin hier niets: zonder bevestigde datum of locatie blijft het veld null en toont de site "Datum volgt".
 
 // De melding bij een activiteit. Ze staat alleen op de website: ze opent of sluit niets op de server.
-// Voor Sinterklaas komt de inschrijfstatus van de server; open of dicht zetten gebeurt in het beheer.
+// Voor Sinterklaas komen status en zin van de server; de periode en de schakelaar staan in het beheer.
 // "Voorbij" gaat over de datum, "gesloten" over de inschrijving: dat zijn twee aparte dingen, die samen kunnen voorkomen.
-export type ActivityStatus = "info" | "open" | "closed" | "past";
+export type ActivityStatus = "info" | "open" | "closed" | "upcoming" | "past";
 
 export const statusLabels: Record<ActivityStatus, string> = {
   info: "Informatie volgt",
   open: "Inschrijven mogelijk",
   closed: "Inschrijving gesloten",
+  upcoming: "Inschrijving nog niet open",
   past: "Voorbij",
 };
 
@@ -187,15 +188,15 @@ export function activityStatuses(
   return past.length ? past : ["info"];
 }
 
-// De inschrijving volgt altijd de server, ook na de datum: alleen het beheer sluit ze. Blijft ze na de datum open, dan
-// toont de site dat ook. Geen antwoord van de server: dan zegt de wijkpagina niets over de inschrijving.
+// De inschrijving volgt altijd de server (schakelaar, periode en maximum in het beheer), ook na de datum van het
+// evenement. Geen antwoord van de server: dan zegt de wijkpagina niets over de inschrijving.
 export function sinterklaasStatuses(
   date: string,
-  server: "open" | "closed" | "full" | null,
+  server: "open" | "closed" | "full" | "upcoming" | null,
   today: string,
 ): ActivityStatus[] {
   const past: ActivityStatus[] = today > date ? ["past"] : [];
-  if (server === "open") return [...past, "open"];
+  if (server === "open" || server === "upcoming") return [...past, server];
   return server ? [...past, "closed"] : past;
 }
 

@@ -149,6 +149,7 @@ input[type="email"],
 input[type="password"],
 input[type="number"],
 input[type="search"],
+input[type="datetime-local"],
 input:not([type]),
 select,
 textarea {
@@ -404,6 +405,32 @@ textarea:disabled {
 }
 .inline-form .field {
   width: 130px;
+}
+.period {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.period h3 {
+  margin: 0 0 6px;
+  font-size: 1rem;
+}
+.period-now {
+  margin: 0;
+}
+.period-form {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: flex-end;
+}
+.period-form .field {
+  flex: 1 1 200px;
+  max-width: 260px;
+}
+.period .muted {
+  margin: 8px 0 0;
 }
 .mail-preview {
   margin-top: 14px;

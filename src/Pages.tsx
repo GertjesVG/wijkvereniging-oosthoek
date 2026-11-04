@@ -19,7 +19,9 @@ import { ButtonLink, PageHeading, Reglement, StatusNote } from "./components";
 import { asset, dateLabel, event } from "./content/event";
 import sponsors from "./content/sponsors.json";
 import { sinterklaasRegistration } from "./inschrijving/evenementen";
+import { registrationNotice } from "./inschrijving/periode";
 import { RegistrationPanel } from "./inschrijving/RegistrationPanel";
+import { useRegistrationStatus } from "./inschrijving/useRegistrationStatus";
 import { ShareCode } from "./ShareCode";
 import { phoneHref, SponsorList } from "./SponsorCards";
 import { ageLabel, timeOf, useLiveGps, type LiveGpsView } from "./gps/useLiveGps";
@@ -390,6 +392,7 @@ const faqs = [
 ];
 
 function PracticalPage() {
+  const signup = useRegistrationStatus();
   return (
     <>
       <PageHeading eyebrow="ALLES VOOR EEN FIJNE DAG" title="Goed om te weten.">
@@ -431,12 +434,17 @@ function PracticalPage() {
           <h2 id="practical-registration-title">
             Een verrassing voor de kleintjes
           </h2>
+          {signup && (
+            <StatusNote>
+              {registrationNotice(signup.status, signup.period)}
+            </StatusNote>
+          )}
           <p>
-            Schrijf je kinderen gratis online in op de cadeauactiepagina. Per
-            kind is er maximaal één cadeautje.
+            De inschrijving is gratis en verloopt online via de
+            cadeauactiepagina. Per kind is er maximaal één cadeautje.
           </p>
           <ButtonLink href="#/cadeauactie" variant="outline">
-            Naar de inschrijving
+            Naar de cadeauactie
           </ButtonLink>
         </section>
         <section aria-labelledby="practical-route-title">

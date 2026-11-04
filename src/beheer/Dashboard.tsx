@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } fro
 import { Download, LogOut, Mail, RefreshCw, Trash2 } from "lucide-react";
 import type { AdminEventSummary, AdminRegistration } from "../inschrijving/api";
 import { renderConfirmation, repliesInGmail } from "../inschrijving/bevestigingsmail";
+import { registrationNotice, toBrusselsInput } from "../inschrijving/periode";
 import { AdminError, api, describeError, exportUrl, setUnauthorizedHandler } from "./client";
 import { GpsPanel } from "./GpsPanel";
 import { RegistrationItem } from "./RegistrationItem";
@@ -99,6 +100,85 @@ function MailPreview({ eventId }: { eventId: string }) {
   );
 }
 
+// De periode instellen. Velden in Belgische tijd; de server rekent om en bewaakt de periode bij elke nieuwe inschrijving.
+function PeriodBlock({
+  event,
+  onChange,
+}: {
+  event: AdminEventSummary;
+  onChange: (updated: AdminEventSummary) => void;
+}) {
+  const save = useAction();
+  const savedOpens = event.period ? toBrusselsInput(event.period.opensAt) : "";
+  const savedCloses = event.period ? toBrusselsInput(event.period.closesAt) : "";
+  const [opensAt, setOpensAt] = useState(savedOpens);
+  const [closesAt, setClosesAt] = useState(savedCloses);
+
+  useEffect(() => {
+    setOpensAt(savedOpens);
+    setClosesAt(savedCloses);
+  }, [savedOpens, savedCloses, event.id]);
+
+  const complete = opensAt !== "" && closesAt !== "";
+  const inOrder = complete && opensAt < closesAt;
+  const changed = opensAt !== savedOpens || closesAt !== savedCloses;
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    if (!inOrder || !changed) return;
+    const updated = await save.run(() => api.patchEvent(event.id, { period: { opensAt, closesAt } }));
+    if (updated) onChange(updated);
+  }
+
+  return (
+    <div className="period">
+      <h3>Inschrijvingsperiode</h3>
+      <p className="period-now">
+        Bezoekers zien nu: <strong>{registrationNotice(event.publicStatus, event.period)}</strong>
+      </p>
+      {!event.period && (
+        <p className="note">
+          Er is nog geen periode ingesteld. Zonder periode blijft de inschrijving dicht, ook als de schakelaar op open staat.
+        </p>
+      )}
+      {!event.personalDataErased && (
+        <form className="period-form" onSubmit={submit}>
+          <label className="field">
+            <span>Inschrijven vanaf</span>
+            <input
+              type="datetime-local"
+              value={opensAt}
+              onChange={(e) => setOpensAt(e.target.value)}
+              disabled={save.busy}
+              required
+            />
+          </label>
+          <label className="field">
+            <span>Inschrijven tot</span>
+            <input
+              type="datetime-local"
+              value={closesAt}
+              onChange={(e) => setClosesAt(e.target.value)}
+              disabled={save.busy}
+              aria-invalid={complete && !inOrder ? true : undefined}
+              required
+            />
+          </label>
+          <button type="submit" className="btn btn-small" disabled={save.busy || !inOrder || !changed}>
+            Periode opslaan
+          </button>
+        </form>
+      )}
+      {complete && !inOrder && <p className="note note-error">"Inschrijven tot" moet na "Inschrijven vanaf" liggen.</p>}
+      <p className="muted small">
+        Belgische tijd. "Vanaf" telt mee, "tot" niet: voor 27 november als laatste dag vul je 28 november 00:00 in. De site opent en
+        sluit dan vanzelf. "Handmatig gesloten" gaat altijd voor; na het einde gaat de inschrijving niet vanzelf opnieuw open.
+      </p>
+      <ErrorNote>{save.error}</ErrorNote>
+    </div>
+  );
+}
+
 function EventPanel({
   event,
   onChange,
@@ -175,7 +255,7 @@ function EventPanel({
           <span className="switch-track" aria-hidden="true">
             <span className="switch-thumb" />
           </span>
-          <span>Inschrijving {open ? "open" : "dicht"}</span>
+          <span>Handmatig {open ? "open" : "gesloten"}</span>
         </button>
       </div>
       {event.pendingDecisions.length > 0 && (
@@ -190,6 +270,8 @@ function EventPanel({
         </p>
       )}
       <ErrorNote>{toggle.error}</ErrorNote>
+
+      <PeriodBlock event={event} onChange={onChange} />
 
       <dl className="stats">
         <Stat label="Kinderen ingeschreven" value={event.active} />
@@ -307,7 +389,7 @@ function EventPanel({
               Persoonsgegevens wissen
             </button>
             {open && (
-              <span className="muted small">Zet de inschrijving eerst op dicht om te kunnen wissen.</span>
+              <span className="muted small">Zet de schakelaar eerst op "Handmatig gesloten" om te kunnen wissen.</span>
             )}
           </>
         )}

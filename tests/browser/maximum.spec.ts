@@ -5,6 +5,7 @@ import { expect, test, type Page } from "@playwright/test";
 
 const BEHEER = "http://127.0.0.1:5174/beheer/";
 const shots = process.env.MAXIMUM_SCREENSHOTS;
+const PERIOD = { opensAt: "2026-11-09T23:00:00.000Z", closesAt: "2026-11-27T23:00:00.000Z" };
 
 const noOverflow = (page: Page) =>
   page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth);
@@ -14,7 +15,7 @@ test.use({ viewport: { width: 390, height: 844 } });
 async function publicStatus(page: Page, status: "open" | "full", available: number | null) {
   await page.route("https://challenges.cloudflare.com/**", (r) => r.abort());
   await page.route("**/api/evenementen/sinterklaas-2026", (r) =>
-    r.fulfill({ json: { id: "sinterklaas-2026", status, available, turnstileSiteKey: "1x00000000000000000000AA" } }),
+    r.fulfill({ json: { id: "sinterklaas-2026", status, available, period: PERIOD, turnstileSiteKey: "1x00000000000000000000AA" } }),
   );
 }
 
@@ -22,7 +23,7 @@ test("zonder maximum: formulier open, geen aantal vrije plaatsen, reglement verp
   await publicStatus(page, "open", null);
   await page.goto("/#/cadeauactie");
   const form = page.locator(".registration-form");
-  await expect(page.getByText("De inschrijving is open")).toBeVisible();
+  await expect(page.getByText("Inschrijvingen geopend tot en met 27 november 2026.")).toBeVisible();
   await expect(page.getByText("is er maximaal één cadeautje")).toBeVisible();
   const panel = page.locator(".gift-layout");
   await expect(panel).not.toContainText(/beschikbaar|plaatsen|volzet|onbeperkt/i);
@@ -43,7 +44,7 @@ test("ingesteld maximum bereikt: volzet", async ({ page }) => {
 test("beheer: werkelijk aantal kinderen, maximum instellen en weer wissen", async ({ page }) => {
   const base = {
     id: "sinterklaas-2026", title: "Sinterklaas in Oosthoek 2026", date: "2026-11-28", status: "open",
-    active: 37, registrations: 21, pickedUp: 0, mail: { pending: 0, sending: 0, sent: 21, failed: 0 },
+    period: PERIOD, publicStatus: "open", active: 37, registrations: 21, pickedUp: 0, mail: { pending: 0, sending: 0, sent: 21, failed: 0 },
     personalDataErased: false, pendingDecisions: [], series: "Sinterklaas in Oosthoek", edition: 2026, cancelled: 0,
     ages: [], addressReview: 0, deleteBy: "2027-01-31", autoErase: true, deleteByPassed: false,
   };

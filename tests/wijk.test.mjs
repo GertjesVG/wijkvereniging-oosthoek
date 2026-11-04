@@ -183,6 +183,7 @@ test("status: informatie volgt, inschrijven mogelijk, gesloten en voorbij", () =
     info: "Informatie volgt",
     open: "Inschrijven mogelijk",
     closed: "Inschrijving gesloten",
+    upcoming: "Inschrijving nog niet open",
     past: "Voorbij",
   });
   const base = { date: null, status: "info", registrationHref: null, registrationDeadline: null };
@@ -208,6 +209,7 @@ test("Sinterklaas volgt altijd de server: de datum zet er alleen 'Voorbij' bij; 
   assert.deepEqual(sinterklaasStatuses("2026-11-28", "open", "2026-11-28"), ["open"]);
   assert.deepEqual(sinterklaasStatuses("2026-11-28", "closed", "2026-11-04"), ["closed"]);
   assert.deepEqual(sinterklaasStatuses("2026-11-28", "full", "2026-11-04"), ["closed"]);
+  assert.deepEqual(sinterklaasStatuses("2026-11-28", "upcoming", "2026-11-04"), ["upcoming"]);
   assert.deepEqual(sinterklaasStatuses("2026-11-28", null, "2026-11-04"), []);
   assert.deepEqual(sinterklaasStatuses("2026-11-28", "open", "2026-11-29"), ["past", "open"]);
   assert.deepEqual(sinterklaasStatuses("2026-11-28", "closed", "2026-11-29"), ["past", "closed"]);

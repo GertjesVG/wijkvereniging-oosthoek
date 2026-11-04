@@ -1,7 +1,8 @@
 // Openbare kant: status van een evenement en een nieuwe inschrijving. Geeft nooit gegevens van anderen terug.
 import type { PublicEventStatus, RegistrationResponse } from "../src/inschrijving/api.ts";
 import { registrationEvents } from "../src/inschrijving/evenementen.ts";
-import { capacityGuard, connectionOf, errorMessage, fail, freePlaces, json, nowIso, readJson, sha256Hex, type Env } from "./basis.ts";
+import { registrationNotice, registrationStatus } from "../src/inschrijving/periode.ts";
+import { capacityGuard, connectionOf, errorMessage, fail, freePlaces, json, nowIso, periodOf, readJson, sha256Hex, type Env } from "./basis.ts";
 import { validateRegistration, type CleanRegistration } from "./validatie.ts";
 import { deleteByPassed } from "./wissen.ts";
 
@@ -17,11 +18,19 @@ async function counts(db: D1Database, eventId: string) {
   return db
     .prepare(
       `SELECT e.status, e.capacity, e.capacity_limited AS limited,
+         e.registration_opens_at AS opens_at, e.registration_closes_at AS closes_at,
          (SELECT COUNT(*) FROM participants p WHERE p.event_id = e.id AND p.status = 'active') AS active
        FROM events e WHERE e.id = ?1`,
     )
     .bind(eventId)
-    .first<{ status: "open" | "closed"; capacity: number; limited: number; active: number }>();
+    .first<{
+      status: "open" | "closed";
+      capacity: number;
+      limited: number;
+      opens_at: string | null;
+      closes_at: string | null;
+      active: number;
+    }>();
 }
 
 // null = geen maximum ingesteld; dan toont en belooft de website geen aantal.
@@ -32,18 +41,18 @@ export async function publicStatus(env: Env, eventId: string) {
   const config = eventFor(eventId);
   if (!config) return fail(404, "NIET_GEVONDEN", "Onbekend evenement.");
   const configured =
-    Boolean(env.DB && env.TURNSTILE_SECRET && env.TURNSTILE_SITE_KEY) &&
-    config.pendingDecisions.length === 0 &&
-    !deleteByPassed(config);
+    Boolean(env.DB && env.TURNSTILE_SECRET && env.TURNSTILE_SITE_KEY) && config.pendingDecisions.length === 0;
   const row = configured ? await counts(env.DB!, eventId) : null;
-  const available = freeOf(row);
-  const status: PublicEventStatus["status"] =
-    row?.status !== "open" ? "closed" : available === 0 ? "full" : "open";
+  const period = periodOf(row);
+  // Na de wisdatum geen formulier meer, maar de periode blijft: zo toont de site "gesloten" en niet "nog niet beschikbaar".
+  const live = deleteByPassed(config) ? null : row;
+  const available = freeOf(live);
   return json({
     id: eventId,
-    status,
+    status: live ? registrationStatus(live.status, period, available) : "closed",
     available,
-    turnstileSiteKey: configured ? env.TURNSTILE_SITE_KEY! : null,
+    period,
+    turnstileSiteKey: live ? env.TURNSTILE_SITE_KEY! : null,
   } satisfies PublicEventStatus);
 }
 
@@ -125,9 +134,13 @@ export async function register(request: Request, env: Env) {
   const again = await replay(db, data);
   if (again) return again;
 
+  if (config.pendingDecisions.length || deleteByPassed(config))
+    return fail(423, "GESLOTEN", registrationNotice("closed", null));
+  // available null: "volzet" loopt via de bewaking in de batch hieronder, ook bij gelijktijdige inschrijvingen.
   const state = await counts(db, config.id);
-  if (state?.status !== "open" || config.pendingDecisions.length || deleteByPassed(config))
-    return fail(423, "GESLOTEN", "De inschrijvingen zijn gesloten.");
+  const period = periodOf(state);
+  const phase = state ? registrationStatus(state.status, period, null) : "closed";
+  if (phase !== "open") return fail(423, "GESLOTEN", registrationNotice(phase, period));
   const ip = request.headers.get("CF-Connecting-IP");
   if (!(await verifyTurnstile(env, data.challenge, ip)))
     return fail(403, "TURNSTILE", "De controle tegen spam is mislukt. Probeer het opnieuw.");
@@ -205,7 +218,7 @@ export async function register(request: Request, env: Env) {
     await db.batch(statements);
   } catch (error) {
     const message = errorMessage(error);
-    if (message.includes("gesloten")) return fail(423, "GESLOTEN", "De inschrijvingen zijn gesloten.");
+    if (message.includes("gesloten")) return fail(423, "GESLOTEN", registrationNotice("closed", null));
     if (message.includes("volzet")) {
       const available = freeOf(await counts(db, config.id));
       // Het maximum werd net gewist in het beheer: gewoon opnieuw proberen.
