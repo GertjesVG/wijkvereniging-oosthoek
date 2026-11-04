@@ -1,8 +1,8 @@
-// Vult de Cloudflare Pages-uitvoer aan na `vite build --outDir _site/sinterklaas` (zie `npm run build:cloudflare`).
-// /sinterklaas/ is altijd de Sinterklaaswebsite zelf; alleen het hoofdadres mag later naar een ander evenement wijzen, daarom 302.
-import { writeFileSync } from "node:fs";
+// Vult de Cloudflare Pages-uitvoer aan na de drie builds: Sinterklaas (_site/sinterklaas), beheer (_site/beheer) en de wijkwebsite (_site/).
+// Het hoofdadres is de wijkwebsite zelf: geen serverdoorverwijzing meer. Oude #-links op het hoofdadres stuurt src/wijk/main.tsx door.
+import { rmSync, writeFileSync } from "node:fs";
 
-writeFileSync("_site/_redirects", "/ /sinterklaas/ 302\n");
+rmSync("_site/_redirects", { force: true });
 // Het beheer: niet in zoekmachines, niet in een frame van een andere site, niets in de browsercache.
 writeFileSync(
   "_site/_headers",
@@ -18,5 +18,5 @@ writeFileSync(
 // Met een eigen 404.html valt Cloudflare niet terug op single-page-gedrag voor onbekende paden.
 writeFileSync(
   "_site/404.html",
-  '<!doctype html><html lang="nl-BE"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Pagina niet gevonden - Wijkvereniging Oosthoek</title></head><body><p>Deze pagina bestaat niet.</p><p><a href="/sinterklaas/">Naar de Sinterklaaswebsite van Oosthoek</a></p></body></html>\n',
+  '<!doctype html><html lang="nl-BE"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Pagina niet gevonden - Wijkvereniging Oosthoek</title></head><body><p>Deze pagina bestaat niet.</p><p><a href="/">Naar de website van Wijkvereniging Oosthoek</a></p><p><a href="/sinterklaas/#/home">Naar de Sinterklaaswebsite</a></p></body></html>\n',
 );

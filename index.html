@@ -10,6 +10,11 @@
     />
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
     <title>Sinterklaas in Oosthoek</title>
+    <script>
+      // Het kale adres staat op de gedrukte QR-codes en opent de algemene wijkpagina; vandaar gaat de bezoeker naar
+      // /sinterklaas/#/home. Alles met een #-route of zoekdeel blijft hier. De server ziet het #-deel niet, dus dit kan alleen hier.
+      if (location.pathname === "/sinterklaas/" && !location.search && !location.hash) location.replace("/");
+    </script>
   </head>
   <body>
     <div id="root"></div>

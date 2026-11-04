@@ -184,6 +184,7 @@ export default function App() {
               Contact <ArrowUpRight size={13} />
             </a>
             <a href="#/privacy">Privacy</a>
+            <a href="../">Wijkwebsite Oosthoek</a>
             <span>
               Met liefde voor de wijk <Heart size={12} />
             </span>
