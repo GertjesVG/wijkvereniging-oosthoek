@@ -1,4 +1,6 @@
 import type { PublicWebsite } from "./public-website";
+// Definitief adres van vereniging én wijkhuis, bevestigd door Gert op 5 november 2026.
+const oosthoekAddress = "Opstal 5, 2340 Beerse";
 // Alleen openbare evenementgegevens. Geen sleutels of deelnemersgegevens in deze website.
 export const event = {
   year: 2026,
@@ -11,8 +13,7 @@ export const event = {
   } as PublicWebsite,
   organisation: {
     name: "VZW Wijkvereniging Oosthoek",
-    // Zetel- en correspondentieadres; het wijkhuis staat ergens anders (wijkhuisLocation in wijk.ts).
-    address: "Opstal 5, 2340 Beerse",
+    address: oosthoekAddress,
     email: "vzwoosthoek@gmail.com",
     enterprise: "BE0553.481.505",
   },
@@ -25,8 +26,8 @@ export const event = {
     offMessage: "De live GPS is nu niet actief. Tijdens de rondrit volg je hier de huifkar.",
     dayMessage: "Tijdens de rondrit volg je de huifkar live op de routepagina.",
   },
-  // Letterlijk zo aangeleverd door de vereniging (3 november 2026): geen straat of huisnummer toevoegen.
-  departure: "Vertrek om 10.30 uur aan Wijkhuis Oosthoek.",
+  // Vertrektijd van 3 november; definitief wijkhuisadres aangevuld door Gert op 5 november 2026.
+  departure: `Vertrek om 10.30 uur aan Wijkhuis Oosthoek, ${oosthoekAddress}.`,
   programme: [
     {
       title: "Sinterklaas in de wijk",

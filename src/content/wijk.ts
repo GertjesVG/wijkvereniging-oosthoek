@@ -1,6 +1,7 @@
 // Inhoud van de algemene wijkwebsite op het hoofdadres. Verenigingsgegevens en de datum van Sinterklaas komen uit
 // event.ts, sponsors uit sponsors.json en sponsor-logos.ts: hier staat daarvan geen tweede kopie.
 // Verzin hier niets: zonder bevestigde datum of locatie blijft het veld null en toont de site "Datum volgt".
+import { event } from "./event.ts";
 
 // De melding bij een activiteit. Ze staat alleen op de website: ze opent of sluit niets op de server.
 // Voor Sinterklaas komen status en zin van de server; de periode en de schakelaar staan in het beheer.
@@ -114,13 +115,13 @@ export const sinterklaas = {
   privacyHref: "/sinterklaas/#/privacy",
 };
 
-// De plaats van het wijkhuis, aangeleverd door Gert via de kaart "Afhaling prijzen" met de rode cirkel. Het adres in
-// event.organisation is het zetel- en correspondentieadres, niet deze plaats. Geen huisnummer: het gebouw heeft er geen.
+// Naam en adres definitief bevestigd door Gert op 5 november 2026. Gebruik geen adreslabel van een kaartendienst.
+// De fysieke plaats is aangeleverd door Gert via de kaart "Afhaling prijzen" met de rode cirkel.
 // De coördinaten zijn het midden van het gebouw binnen de rode cirkel, afgeleid uit luchtfoto en GRB (Digitaal Vlaanderen)
 // en OpenStreetMap; de berekening staat in Project dossier\ONTWERP-EN-BOUWPLAN.md.
 export const wijkhuisLocation = {
   name: "Wijkhuis Oosthoek",
-  address: "Oosteneinde, vlak bij de brug over het kanaal, 2340 Beerse.",
+  address: event.organisation.address,
   lat: 51.32974,
   lon: 4.86997,
   zoom: 17,
@@ -166,7 +167,7 @@ export const infoPages: InfoPage[] = [
   {
     slug: "wijkhuis",
     name: "Waar is ons wijkhuis?",
-    teaser: "Een kijkje bij het witte wijkhuis van onze vereniging, tussen het groen.",
+    teaser: `${wijkhuisLocation.name} — ${wijkhuisLocation.address}.`,
     more: "Bekijk de locatie en route",
     image: "assets/oosthoek-wijkhuis.webp",
     imageAlt: "Schilderachtige bewerking van het witte wijkhuis met het opschrift vzw Wijkvereniging Oosthoek, tussen hoge bomen, met een pad van klinkers, een fietsenrek, een picknicktafel en een mededelingenbord.",

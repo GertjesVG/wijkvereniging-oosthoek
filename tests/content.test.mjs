@@ -264,7 +264,7 @@ test("cadeauactie en kleurwedstrijd: inschrijving is open; niets over jury of wi
   assert.ok(text.includes("afhankelijk van de beschikbare voorraad"));
 });
 
-test("route 2026: de 24 bevestigde straten in volgorde, vertrek zonder adres, kaart per straat", () => {
+test("route 2026: de 24 bevestigde straten in volgorde, vertrek met definitief adres, kaart per straat", () => {
   // Letterlijk de definitieve volgorde van de vereniging (Gert, 3 november 2026).
   const confirmed = [
     "Gorenstraat", "Veldstraat", "Huffelenstraat", "Paddesteenstraat", "Zandstraat", "Veerpontstraat",
@@ -274,7 +274,7 @@ test("route 2026: de 24 bevestigde straten in volgorde, vertrek zonder adres, ka
   ];
   assert.deepEqual(event.route.stops, confirmed);
   assert.equal(event.date, "2026-11-28");
-  assert.equal(event.departure, "Vertrek om 10.30 uur aan Wijkhuis Oosthoek.");
+  assert.equal(event.departure, "Vertrek om 10.30 uur aan Wijkhuis Oosthoek, Opstal 5, 2340 Beerse.");
   assert.equal(event.route.transport, "Huifkar met witte paarden");
   assert.equal(
     event.route.turnNote,

@@ -155,12 +155,15 @@ test("wijkinformatie: de nieuwste beelden als eigen WebP, met kleine versie; de 
   assert.equal(smallImage("assets/hero.webp"), null);
 });
 
-test("wijkhuis: de aangeleverde locatie bij de kanaalbrug, zonder huisnummer en los van de zetel en de route van Sinterklaas", () => {
-  assert.equal(wijkhuisLocation.address, "Oosteneinde, vlak bij de brug over het kanaal, 2340 Beerse.");
-  assert.doesNotMatch(wijkhuisLocation.address, /Opstal|Oosteneinde \d/);
+test("wijkhuis: definitief adres Opstal 5 met de bestaande fysieke locatie, los van de live GPS", () => {
+  assert.equal(wijkhuisLocation.name, "Wijkhuis Oosthoek");
+  assert.equal(wijkhuisLocation.address, "Opstal 5, 2340 Beerse");
+  assert.equal(wijkhuisLocation.lat, 51.32974);
+  assert.equal(wijkhuisLocation.lon, 4.86997);
   assert.equal(new URL(wijkhuisLocation.routeUrl).searchParams.get("destination"), `${wijkhuisLocation.lat},${wijkhuisLocation.lon}`);
   assert.equal(infoPages[2].more, "Bekijk de locatie en route");
-  assert.doesNotMatch(text("../src/content/event.ts").match(/departure: .*/)[0], /Opstal|straat/);
+  assert.ok(infoPages[2].teaser.includes(wijkhuisLocation.name));
+  assert.ok(infoPages[2].teaser.includes(wijkhuisLocation.address));
   // Strikte scheiding: de wijkhuiskaart gebruikt geen GPS-code, geen locatieverzoek, en laadt alleen via lazy().
   const map = text("../src/wijk/WijkhuisMap.tsx");
   assert.doesNotMatch(map, /from "[^"]*gps|geolocation|\.locate\(/i);

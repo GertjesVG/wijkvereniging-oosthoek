@@ -27,8 +27,11 @@ export default function WijkhuisMap() {
       maxZoom: 19,
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>-bijdragers',
     }).addTo(created);
-    L.marker(HERE, { icon: pin, title: wijkhuisLocation.name, alt: wijkhuisLocation.name })
-      .bindTooltip(wijkhuisLocation.name, { permanent: true, direction: "top", className: "wijkhuis-tooltip" })
+    const label = `${wijkhuisLocation.name}, ${wijkhuisLocation.address}`;
+    const tooltip = document.createElement("span");
+    tooltip.append(wijkhuisLocation.name, document.createElement("br"), wijkhuisLocation.address);
+    L.marker(HERE, { icon: pin, title: label, alt: label })
+      .bindTooltip(tooltip, { permanent: true, direction: "top", className: "wijkhuis-tooltip" })
       .addTo(created);
     // De knop "Toon de kaart" is net verdwenen: de toetsenbordfocus gaat naar de kaart zelf.
     created.getContainer().focus({ preventScroll: true });
@@ -41,7 +44,7 @@ export default function WijkhuisMap() {
 
   return (
     <div className="wijkhuis-map-wrap">
-      <div ref={box} className="wijkhuis-map" role="region" aria-label={`Kaart met de plaats van ${wijkhuisLocation.name}`} />
+      <div ref={box} className="wijkhuis-map" role="region" aria-label={`Kaart met de plaats van ${wijkhuisLocation.name}, ${wijkhuisLocation.address}`} />
       <button type="button" className="wijkhuis-map-center" onClick={() => map.current?.setView(HERE, wijkhuisLocation.zoom)}>
         <LocateFixed size={17} aria-hidden="true" />
         Terug naar het wijkhuis
