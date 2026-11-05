@@ -214,6 +214,27 @@
   text-decoration: underline;
   text-underline-offset: 3px;
 }
+/* De adresregel opent Google Maps: herkenbaar als link, met een ruim aanraakvlak en duidelijke toetsenbordfocus. */
+.sponsor-details a.sponsor-address {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+  min-height: 34px;
+}
+.sponsor-address > span {
+  min-width: 0;
+  padding: 4px 0;
+  overflow-wrap: anywhere;
+  text-decoration: underline;
+  text-decoration-color: #caaa6a;
+  text-underline-offset: 3px;
+}
+.sponsor-details a.sponsor-address:focus-visible {
+  outline: 3px solid var(--red);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
 .sponsor-phones a + a::before {
   content: "/";
   display: inline-block;

@@ -114,10 +114,18 @@ export const sinterklaas = {
   privacyHref: "/sinterklaas/#/privacy",
 };
 
-// Alleen na bevestiging invullen. Het adres in event.organisation is het correspondentieadres; dat het wijkhuis daar staat, is nergens bevestigd.
-// Met een locatie toont de site vanzelf het adres, de kaart- en routeknop en de knoptekst "Bekijk de locatie en route".
-export type WijkhuisLocation = { address: string; mapUrl: string; routeUrl: string };
-export const wijkhuisLocation = null as WijkhuisLocation | null;
+// De plaats van het wijkhuis, aangeleverd door Gert via de kaart "Afhaling prijzen" met de rode cirkel. Het adres in
+// event.organisation is het zetel- en correspondentieadres, niet deze plaats. Geen huisnummer: het gebouw heeft er geen.
+// De coördinaten zijn het midden van het gebouw binnen de rode cirkel, afgeleid uit luchtfoto en GRB (Digitaal Vlaanderen)
+// en OpenStreetMap; de berekening staat in Project dossier\ONTWERP-EN-BOUWPLAN.md.
+export const wijkhuisLocation = {
+  name: "Wijkhuis Oosthoek",
+  address: "Oosteneinde, vlak bij de brug over het kanaal, 2340 Beerse.",
+  lat: 51.32974,
+  lon: 4.86997,
+  zoom: 17,
+  routeUrl: "https://www.google.com/maps/dir/?api=1&destination=51.32974%2C4.86997",
+};
 
 // Wijkinformatie: eigen tegel en pagina, zonder evenementdatum of inschrijfstatus.
 export type InfoPage = {
@@ -159,7 +167,7 @@ export const infoPages: InfoPage[] = [
     slug: "wijkhuis",
     name: "Waar is ons wijkhuis?",
     teaser: "Een kijkje bij het witte wijkhuis van onze vereniging, tussen het groen.",
-    more: wijkhuisLocation ? "Bekijk de locatie en route" : "Bekijk ons wijkhuis",
+    more: "Bekijk de locatie en route",
     image: "assets/oosthoek-wijkhuis.webp",
     imageAlt: "Schilderachtige bewerking van het witte wijkhuis met het opschrift vzw Wijkvereniging Oosthoek, tussen hoge bomen, met een pad van klinkers, een fietsenrek, een picknicktafel en een mededelingenbord.",
     tile: {
@@ -189,7 +197,9 @@ export const lifeMoments = [
   },
 ] as const;
 
-export const municipalityJubileeUrl = "https://www.beerse.be/jubileum";
+// De aanvraag van de gemeente zelf; www.beerse.be/jubileum verwijst ernaar. Geen kopie of formulier op onze website.
+export const municipalityJubileeUrl =
+  "https://eloket.beerse.be/nl/beerseweb/eloket/1/31/0?at=0&sc=ETm3UovYl8RDHhBNXeNVr3oADZp2xR3PMwGxdbjVI3d";
 
 // Bestanden uit public/ staan online onder /sinterklaas/ (één kopie, gedeeld met de Sinterklaaswebsite).
 export const publicFile = (path: string) => `/sinterklaas/${path}`;

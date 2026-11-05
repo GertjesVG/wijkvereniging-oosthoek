@@ -11,8 +11,8 @@ export const event = {
   } as PublicWebsite,
   organisation: {
     name: "VZW Wijkvereniging Oosthoek",
+    // Zetel- en correspondentieadres; het wijkhuis staat ergens anders (wijkhuisLocation in wijk.ts).
     address: "Opstal 5, 2340 Beerse",
-    phone: "0496 56 06 79",
     email: "vzwoosthoek@gmail.com",
     enterprise: "BE0553.481.505",
   },

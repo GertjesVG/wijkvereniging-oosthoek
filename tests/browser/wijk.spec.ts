@@ -7,6 +7,7 @@ import { PNG } from "pngjs";
 import jsQR from "jsqr";
 import sponsors from "../../src/content/sponsors.json" with { type: "json" };
 import { sponsorLogos } from "../../src/content/sponsor-logos";
+import { sponsorMapUrl } from "../../src/content/sponsor-kaart";
 
 const SITE = process.env.WIJK_URL ?? "http://127.0.0.1:8788";
 const CLOUDFLARE = "https://wijkvereniging-oosthoek.pages.dev";
@@ -272,10 +273,14 @@ test("hoofdpagina: zeven aanklikbare tegels, contact uit de bevestigde gegevens;
 
   const contact = page.locator("#contact");
   await expect(contact.getByRole("link", { name: /vzwoosthoek@gmail\.com/ })).toHaveAttribute("href", "mailto:vzwoosthoek@gmail.com");
-  await expect(contact.getByRole("link", { name: "0496 56 06 79" })).toHaveAttribute("href", "tel:0496560679");
+  await expect(contact.locator('a[href^="tel:"]')).toHaveCount(0);
   await expect(contact).toContainText("Opstal 5, 2340 Beerse");
-  await expect(page.locator("footer")).toContainText("BE0553.481.505");
-  await expect(page.locator("footer").getByRole("link", { name: "Privacy" })).toHaveAttribute("href", "/sinterklaas/#/privacy");
+  const footer = page.locator("footer");
+  await expect(footer).toContainText("BE0553.481.505");
+  await expect(footer.getByRole("link", { name: "Privacy" })).toHaveAttribute("href", "/sinterklaas/#/privacy");
+  await expect(footer.getByRole("link")).toHaveCount(1);
+  await expect(footer).toContainText("website made by Gert Van Genechten");
+  await expect(footer).not.toContainText("sfeerbeelden");
   await expect(page.locator("iframe")).toHaveCount(0);
 });
 
@@ -287,7 +292,12 @@ test("lief en leed: drie onderdelen, één gezamenlijke instructie, geen bedrag 
   await expect(main.locator(".moment h2")).toHaveText(["Geboorte", "Overlijden", "Jubilarissen"]);
   await expect(main.locator(".mailbox")).toHaveText("Deponeer het originele geboortekaartje of de originele doodsbrief in de brievenbus op Opstal 5, 2340 Beerse.");
   await expect(main.getByText(/originele doodsbrief/)).toHaveCount(1);
-  await expect(main.getByRole("link", { name: /gemeente Beerse/ })).toHaveAttribute("href", "https://www.beerse.be/jubileum");
+  const jubilee = main.getByRole("link", { name: /Huwelijksjubileum melden bij de gemeente/ });
+  await expect(jubilee).toHaveCount(1);
+  await expect(jubilee).toHaveAttribute("href", "https://eloket.beerse.be/nl/beerseweb/eloket/1/31/0?at=0&sc=ETm3UovYl8RDHhBNXeNVr3oADZp2xR3PMwGxdbjVI3d");
+  await expect(jubilee).toHaveAttribute("target", "_blank");
+  await expect(jubilee).toHaveAttribute("rel", "noopener noreferrer");
+  await expect(main.locator(".jubilee-note strong")).toHaveText("‘Wij geven toestemming om onze persoonlijke gegevens te bezorgen aan het bestuur van de wijk/buurt’");
   await expect(main.locator(".moments-band")).not.toContainText("€");
   await expect(main.locator("form, input")).toHaveCount(0);
   await expect(main.locator(".pill, .status")).toHaveCount(0);
@@ -295,8 +305,19 @@ test("lief en leed: drie onderdelen, één gezamenlijke instructie, geen bedrag 
   await expect(page.locator("h1")).toHaveText("Lief en leed in onze wijk");
 });
 
-test("wijkhuis: het nieuwe beeld en wat vaststaat; zonder bevestiging geen adres, kaartpin of route", async ({ page }) => {
+test("wijkhuis: beeld, locatie en route; kaarttegels pas na de klik, zonder locatieverzoek", async ({ page }) => {
   const seen = watchRequests(page);
+  const tiles: string[] = [];
+  await page.route("https://tile.openstreetmap.org/**", (r) => {
+    tiles.push(r.request().url());
+    return r.abort();
+  });
+  await page.addInitScript(() => {
+    (window as unknown as { geoCalls: number }).geoCalls = 0;
+    navigator.geolocation.getCurrentPosition = () => {
+      (window as unknown as { geoCalls: number }).geoCalls++;
+    };
+  });
   await page.goto(`${SITE}/#/wijkhuis`);
   const main = page.locator("main");
   await expect(page.locator("h1")).toHaveText("Waar is ons wijkhuis?");
@@ -304,12 +325,24 @@ test("wijkhuis: het nieuwe beeld en wat vaststaat; zonder bevestiging geen adres
   await expect(image).toBeVisible();
   await expect.poll(() => image.evaluate((i: HTMLImageElement) => i.naturalWidth)).toBe(1536);
   await expect(main).toContainText("Vertrek om 10.30 uur aan Wijkhuis Oosthoek.");
-  await expect(main).toContainText("zodra ze bevestigd zijn");
+  await expect(main).not.toContainText("zodra ze bevestigd zijn");
+  await expect(main).toContainText("Oosteneinde, vlak bij de brug over het kanaal, 2340 Beerse.");
   await expect(main).not.toContainText("Opstal");
-  await expect(main.locator('a[href*="maps"], a[href*="openstreetmap"], .leaflet-container, iframe')).toHaveCount(0);
-  await expect(main.getByRole("link", { name: /Route|kaart/ })).toHaveCount(0);
+  await expect(main.locator(".activity-hero .event-art-note")).toHaveText("Illustratie");
+  await expect(main.getByRole("link", { name: /Route naar het wijkhuis/ })).toHaveAttribute("href", "https://www.google.com/maps/dir/?api=1&destination=51.32974%2C4.86997");
+  await expect(main.locator(".leaflet-container, iframe")).toHaveCount(0);
   await expect(main.locator(".pill, .status")).toHaveCount(0);
   expect(seen.external).toEqual([]);
+  expect(tiles).toEqual([]);
+
+  await main.getByRole("button", { name: "Toon de kaart" }).click();
+  await expect(main.locator(".leaflet-container")).toHaveCount(1);
+  await expect(main.locator(".wijkhuis-pin")).toHaveCount(1);
+  await expect(main.locator(".leaflet-control-zoom-in")).toBeVisible();
+  await expect(main.locator(".leaflet-control-attribution")).toContainText("OpenStreetMap");
+  await expect.poll(() => tiles.length).toBeGreaterThan(0);
+  await expect(main.getByRole("button", { name: "Terug naar het wijkhuis" })).toBeVisible();
+  expect(await page.evaluate(() => (window as unknown as { geoCalls: number }).geoCalls)).toBe(0);
 });
 
 test("sponsors: één algemene pagina met de goedgekeurde kaarten, de centrale lijst en originele logo's", async ({ page }) => {
@@ -347,6 +380,10 @@ test("sponsors: één algemene pagina met de goedgekeurde kaarten, de centrale l
     const card = cards.filter({ has: page.getByRole("heading", { name: sponsor.name, exact: true }) });
     await expect(card).toHaveCount(1);
     await expect(card).toContainText(sponsor.address);
+    const address = card.locator("a.sponsor-address");
+    await expect(address).toHaveAttribute("href", sponsorMapUrl(sponsor));
+    await expect(address).toHaveAttribute("target", "_blank");
+    await expect(address).toHaveAttribute("rel", "noopener noreferrer");
     for (const phone of sponsor.phones)
       await expect(card.locator(`.sponsor-phones a[href="tel:${phone.replace(/[^\d+]/g, "")}"]`)).toHaveText(phone);
     if (sponsor.email) await expect(card.locator(`a[href="mailto:${sponsor.email}"]`).first()).toBeAttached();

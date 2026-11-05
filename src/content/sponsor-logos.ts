@@ -1,21 +1,29 @@
 // Logo's van de sponsors, gekoppeld op de exacte naam uit sponsors.json (die blijft de enige bron
 // van de bedrijfsgegevens). Bron: het sponsorpakket van 3 november 2026 (Documentatie\Sponsors),
-// gecontroleerd op naam, adres en contactgegevens. De bestanden in public/assets/ zijn webversies:
+// gecontroleerd op naam, adres en contactgegevens; bron per later toegevoegd logo in
+// Documentatie\Sponsors\Vervolgonderzoek-ontbrekende-logos.txt. De bestanden in public/assets/ zijn webversies:
 // alleen de lege rand weggesneden en verkleind, kleuren en vorm ongewijzigd.
 // Een sponsor zonder regel hier krijgt de naam als typografische plaat in de logozone.
 // Logo toevoegen: bestand als public/assets/sponsor-<naam>.webp, en hier één regel met de
 // afmetingen van het bestand. `backdrop` = de egale achtergrondkleur van het logo zelf, zodat
 // de hele logozone die kleur krijgt (nodig bij een wit of licht logo, of een logo op een eigen vlak).
+// `maxWidth` = grootste weergave in css-pixels, voor een klein bestand dat anders wazig uitgerekt wordt.
 export type SponsorLogo = {
   file: string;
   width: number;
   height: number;
   backdrop?: string;
+  maxWidth?: number;
 };
 
 export const sponsorLogos: Record<string, SponsorLogo> = {
   ZEEPVENTJE: { file: "sponsor-zeepventje.webp", width: 840, height: 323 },
-  "Delaplace Tuinen": { file: "sponsor-delaplace-tuinen.webp", width: 404, height: 176 },
+  "Delaplace Tuinen": {
+    file: "sponsor-delaplace-tuinen.webp",
+    width: 1002,
+    height: 418,
+    backdrop: "#ffffff",
+  },
   "Strijkatelier Aerts Britt": {
     file: "sponsor-strijkatelier-aerts-britt.webp",
     width: 409,
@@ -47,6 +55,7 @@ export const sponsorLogos: Record<string, SponsorLogo> = {
     backdrop: "#303030",
   },
   "Een Hart Voor Zorg": { file: "sponsor-een-hart-voor-zorg.webp", width: 325, height: 340 },
+  "Bouwwerken Rombouts": { file: "sponsor-rombouts.svg", width: 974, height: 65 },
   Aerts: { file: "sponsor-grafzerken-aerts.webp", width: 840, height: 192 },
   "Slagerij Havermans Dennis": {
     file: "sponsor-havermans.webp",
@@ -54,7 +63,7 @@ export const sponsorLogos: Record<string, SponsorLogo> = {
     height: 192,
     backdrop: "#ffffff",
   },
-  "Van Bladel R.": { file: "sponsor-van-bladel.webp", width: 250, height: 250 },
+  "Van Bladel R.": { file: "sponsor-van-bladel.webp", width: 480, height: 480 },
   "Stanny Roefs & Zonen": {
     file: "sponsor-stanny-roefs.webp",
     width: 840,
@@ -63,11 +72,16 @@ export const sponsorLogos: Record<string, SponsorLogo> = {
   },
   "VerZeker BV": {
     file: "sponsor-verzeker.webp",
-    width: 316,
-    height: 110,
-    backdrop: "#173657",
+    width: 803,
+    height: 286,
+    backdrop: "#133557",
   },
-  "Walbers Zonweringen": { file: "sponsor-walbers.webp", width: 196, height: 36 },
+  "Walbers Zonweringen": {
+    file: "sponsor-walbers.webp",
+    width: 196,
+    height: 36,
+    maxWidth: 196,
+  },
   "Brasserie De Sjokola": {
     file: "sponsor-de-sjokola.webp",
     width: 276,

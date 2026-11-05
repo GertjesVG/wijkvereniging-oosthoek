@@ -43,7 +43,7 @@ De eerder gedeelde externe tunnel serveert nog de vorige `dist/`-versie. Deze ui
 
 - `src/content/event.ts`: datum, jaartal, programma, verenigingsgegevens, status, route (straten in volgorde), downloadpaden, wedstrijdregels en campagnekoppen. Gebruik `YYYY-MM-DD` voor de datum en pas het jaartal tegelijk aan. Controleer steeds de officiële bron voor wijzigingen.
 - `src/content/sponsors.json`: alle 33 officiële sponsors met categorie, adres, telefoons en e-mail. Geen verzonnen logo's of websites.
-- `src/content/sponsor-logos.ts`: de 24 bevestigde sponsorlogo's (sponsorpakket 3 november 2026), op exacte naam gekoppeld; bestanden als `public/assets/sponsor-*.webp`. Een sponsor zonder regel krijgt zijn naam als typografische plaat. Een officieel logo toevoegen = bestand in `public/assets/` plus één regel in dit bestand (uitleg bovenaan).
+- `src/content/sponsor-logos.ts`: de 25 bevestigde sponsorlogo's (sponsorpakket 3 november 2026, aangevuld op 5 november), op exacte naam gekoppeld; bestanden als `public/assets/sponsor-*.webp` of `.svg`. Een sponsor zonder regel krijgt zijn naam als typografische plaat. Een officieel logo toevoegen = bestand in `public/assets/` plus één regel in dit bestand (uitleg bovenaan).
 - `src/Pages.tsx`: overige vaste paginateksten en FAQ. Het datumlabel in FAQ wordt automatisch uit de evenementgegevens afgeleid.
 - `public/downloads/`: alleen de publieke kleurplaat voor het betreffende jaar. Vervang nooit de originele bronnen in de projecthoofdmap.
 - `src/styles.css`, `src/pages.css`, `src/layout.css`: gedeelde huisstijl en responsive weergave.

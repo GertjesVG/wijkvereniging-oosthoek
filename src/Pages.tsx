@@ -9,7 +9,6 @@ import {
   Mail,
   MapPin,
   MapPinned,
-  Phone,
   Printer,
   Radio,
   ShieldCheck,
@@ -23,7 +22,7 @@ import { registrationNotice } from "./inschrijving/periode";
 import { RegistrationPanel } from "./inschrijving/RegistrationPanel";
 import { useRegistrationStatus } from "./inschrijving/useRegistrationStatus";
 import { ShareCode } from "./ShareCode";
-import { phoneHref, SponsorList } from "./SponsorCards";
+import { SponsorList } from "./SponsorCards";
 import { ageLabel, timeOf, useLiveGps, type LiveGpsView } from "./gps/useLiveGps";
 import "./pages.css";
 
@@ -527,7 +526,7 @@ function ContactPage() {
             <div>
               <dt>
                 <MapPin size={21} aria-hidden="true" />
-                Adres
+                Zetel en correspondentie
               </dt>
               <dd>{org.address}</dd>
             </div>
@@ -539,18 +538,6 @@ function ContactPage() {
               <dd>
                 <a href={`mailto:${org.email}`}>
                   {org.email}
-                  <ArrowUpRight size={17} aria-hidden="true" />
-                </a>
-              </dd>
-            </div>
-            <div>
-              <dt>
-                <Phone size={21} aria-hidden="true" />
-                Telefoon
-              </dt>
-              <dd>
-                <a href={phoneHref(org.phone)}>
-                  {org.phone}
                   <ArrowUpRight size={17} aria-hidden="true" />
                 </a>
               </dd>
@@ -683,10 +670,17 @@ function PrivacyPage() {
             <p>
               Bij elk bezoek ontvangt Cloudflare technische verbindingsgegevens,
               zoals je IP-adres. De kaart van OpenStreetMap ontvangt die pas als
-              ze laadt: na je klik op de kaartknop, of vanzelf terwijl de live
-              GPS loopt. De live GPS toont alleen de huifkar tijdens de rondrit,
-              nooit jouw locatie. Er zijn geen advertentie- of analysetrackers, en
-              geen cookies of browseropslag om bezoekers te volgen.
+              ze laadt: na je klik op de kaartknop bij de route of bij het
+              wijkhuis, of vanzelf op de routepagina terwijl de live GPS loopt. De
+              live GPS toont alleen de huifkar tijdens de rondrit, nooit jouw
+              locatie. Er zijn geen advertentie- of analysetrackers, en geen
+              cookies of browseropslag om bezoekers te volgen.
+            </p>
+            <p>
+              Klik je op een sponsoradres of op de routeknop bij het wijkhuis, dan
+              opent Google Maps in een nieuw tabblad. Pas vanaf die klik ziet
+              Google dat bezoek en geldt zijn eigen privacybeleid. Onze website
+              vraagt nooit om je locatie.
             </p>
             <p>
               Cloudflare en Google kunnen gegevens ook buiten de Europese Unie
@@ -749,8 +743,7 @@ function PrivacyPage() {
               verbeteren of verwijderen, de verwerking laten beperken of je
               gegevens in een gangbare vorm krijgen om door te geven. Ouders en
               voogden kunnen dat ook voor hun kinderen. Mail naar{" "}
-              <a href={`mailto:${org.email}`}>{org.email}</a> of bel{" "}
-              <a href={phoneHref(org.phone)}>{org.phone}</a> en vermeld je
+              <a href={`mailto:${org.email}`}>{org.email}</a> en vermeld je
               inschrijvingsnummer.
             </p>
             <p>

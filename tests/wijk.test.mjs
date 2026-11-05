@@ -8,6 +8,7 @@ import {
   dateText,
   infoPages,
   legacySinterklaasUrl,
+  municipalityJubileeUrl,
   readRoute,
   sinterklaasStatuses,
   smallImage,
@@ -154,10 +155,48 @@ test("wijkinformatie: de nieuwste beelden als eigen WebP, met kleine versie; de 
   assert.equal(smallImage("assets/hero.webp"), null);
 });
 
-test("wijkhuis: zonder bevestigde locatie geen adres, kaart of route, en geen knop die dat belooft", () => {
-  assert.equal(wijkhuisLocation, null);
-  assert.equal(infoPages[2].more, "Bekijk ons wijkhuis");
+test("wijkhuis: de aangeleverde locatie bij de kanaalbrug, zonder huisnummer en los van de zetel en de route van Sinterklaas", () => {
+  assert.equal(wijkhuisLocation.address, "Oosteneinde, vlak bij de brug over het kanaal, 2340 Beerse.");
+  assert.doesNotMatch(wijkhuisLocation.address, /Opstal|Oosteneinde \d/);
+  assert.equal(new URL(wijkhuisLocation.routeUrl).searchParams.get("destination"), `${wijkhuisLocation.lat},${wijkhuisLocation.lon}`);
+  assert.equal(infoPages[2].more, "Bekijk de locatie en route");
   assert.doesNotMatch(text("../src/content/event.ts").match(/departure: .*/)[0], /Opstal|straat/);
+  // Strikte scheiding: de wijkhuiskaart gebruikt geen GPS-code, geen locatieverzoek, en laadt alleen via lazy().
+  const map = text("../src/wijk/WijkhuisMap.tsx");
+  assert.doesNotMatch(map, /from "[^"]*gps|geolocation|\.locate\(/i);
+  const app = text("../src/wijk/WijkApp.tsx");
+  assert.doesNotMatch(app, /geolocation|from "leaflet"|from "\.\/WijkhuisMap"/);
+  assert.ok(app.includes('lazy(() => import("./WijkhuisMap"))'));
+});
+
+test("het persoonlijke telefoonnummer staat nergens in de broncode of publieke tekstbestanden; sponsornummers blijven", () => {
+  // Een hash in plaats van het nummer zelf: deze repository is openbaar.
+  const PERSONAL = "956c4a081b11dee0119cdbb7c5adfcf6c868d32feaf118990ffbc4552068f9c3";
+  const walk = (dir) =>
+    readdirSync(new URL(dir, import.meta.url), { withFileTypes: true }).flatMap((entry) =>
+      entry.isDirectory() ? walk(`${dir}${entry.name}/`) : [`${dir}${entry.name}`],
+    );
+  const files = ["../src/", "../public/", "../mail/", "../server/", "../functions/", "../github-pages/", "../tests/"]
+    .flatMap(walk)
+    .concat(["../index.html", "../wijk/index.html", "../README.md", "../INSCHRIJVEN.md", "../GPS.md"])
+    .filter((file) => /\.(tsx?|mjs|js|json|html|css|md|svg|txt)$/.test(file));
+  assert.ok(files.length > 30);
+  for (const file of files)
+    for (const found of text(file).match(/\+?\d[\d .\-/]{7,}\d/g) ?? []) {
+      const digits = found.replace(/\D/g, "").replace(/^(00)?32/, "0");
+      assert.notEqual(hash(digits), PERSONAL, file);
+    }
+  const sponsors = JSON.parse(text("../src/content/sponsors.json"));
+  assert.deepEqual(sponsors.filter((s) => s.phones.length === 0).map((s) => s.name), ["ZEEPVENTJE"]);
+  assert.ok(text("../src/SponsorCards.tsx").includes("phoneHref(phone)"));
+});
+
+test("jubileum: één gemeentelijke link, zonder formulier op onze website en zonder aangevinkte keuze", () => {
+  assert.equal(new URL(municipalityJubileeUrl).origin, "https://eloket.beerse.be");
+  const app = text("../src/wijk/WijkApp.tsx");
+  assert.equal(app.match(/municipalityJubileeUrl\}/g)?.length, 1);
+  assert.equal(app.match(/Huwelijksjubileum melden bij de gemeente/g)?.length, 1);
+  for (const never of ["<iframe", "<form", "checked", "parochie"]) assert.ok(!app.includes(never), never);
 });
 
 test("bevestigingsmail: de link gaat rechtstreeks naar de Sinterklaaswebsite; opmaak en beelden blijven", () => {
@@ -183,9 +222,11 @@ test("geen iframe, hotlinks of base64-beelden; sponsors en verenigingsgegevens u
   const all = wijkSources.map((file) => [file, text(file)]);
   for (const [file, source] of all) {
     assert.doesNotMatch(source, /<iframe|;base64,/i, file);
-    assert.doesNotMatch(source, /https?:\/\/[^"'\s)]+\.(webp|png|jpe?g|gif|svg|avif)/i, file);
+    // De kaarttegels van OpenStreetMap zijn geen hotlink: ze laden pas na de klik op "Toon de kaart".
+    const withoutTiles = source.replace("https://tile.openstreetmap.org/{z}/{x}/{y}.png", "");
+    assert.doesNotMatch(withoutTiles, /https?:\/\/[^"'\s)]+\.(webp|png|jpe?g|gif|svg|avif)/i, file);
     // Geen tweede lijst of tweede kopie van contactgegevens.
-    assert.doesNotMatch(source, /zeepventje|delaplace|vzwoosthoek@|0496 56 06 79|Opstal 5|0553\.481\.505/i, file);
+    assert.doesNotMatch(source, /zeepventje|delaplace|vzwoosthoek@|Opstal 5|0553\.481\.505/i, file);
   }
   const app = all.map(([, source]) => source).join("\n");
   assert.ok(app.includes('content/sponsors.json"'));

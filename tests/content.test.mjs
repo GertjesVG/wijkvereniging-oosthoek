@@ -7,6 +7,7 @@ import { event } from "../src/content/event.ts";
 import { reglement } from "../src/content/reglement.ts";
 import { sinterklaasRegistration } from "../src/inschrijving/evenementen.ts";
 import { sponsorLogos } from "../src/content/sponsor-logos.ts";
+import { addressOnly, sponsorMapUrl } from "../src/content/sponsor-kaart.ts";
 const sponsors = JSON.parse(
   readFileSync(
     new URL("../src/content/sponsors.json", import.meta.url),
@@ -65,25 +66,47 @@ test("alleen de 20 bevestigde eigen sponsorwebsites worden aangeboden", () => {
   );
 });
 
-test("24 sponsorlogo’s op naam gekoppeld en als eigen bestand aanwezig; 9 sponsors krijgen een naamplaat", () => {
+test("sponsoradressen: 33 gecodeerde Google Maps-links met het volledige gepubliceerde adres", () => {
+  const urls = new Set();
+  for (const sponsor of sponsors) {
+    const url = new URL(sponsorMapUrl(sponsor));
+    assert.equal(`${url.origin}${url.pathname}`, "https://www.google.com/maps/search/");
+    assert.equal(url.searchParams.get("api"), "1");
+    const query = url.searchParams.get("query");
+    assert.ok(query.endsWith(`${sponsor.address}, België`), sponsor.name);
+    // Waar Google op de naam een ander adres of bedrijf toont, staat de naam niet in de zoekopdracht.
+    assert.equal(query.includes(sponsor.name), !addressOnly.has(sponsor.name), sponsor.name);
+    urls.add(url.href);
+  }
+  assert.equal(urls.size, 33);
+  for (const name of addressOnly) assert.ok(sponsors.some((s) => s.name === name), name);
+});
+
+test("25 sponsorlogo’s op naam gekoppeld en als eigen bestand aanwezig; 8 sponsors krijgen een naamplaat", () => {
   const names = new Set(sponsors.map((s) => s.name));
-  assert.equal(Object.keys(sponsorLogos).length, 24);
+  assert.equal(Object.keys(sponsorLogos).length, 25);
   for (const [name, logo] of Object.entries(sponsorLogos)) {
     assert.ok(names.has(name), name);
     assert.match(logo.file, /^sponsor-[a-z0-9-]+\.(webp|svg)$/);
-    assert.ok(
-      existsSync(new URL(`../public/assets/${logo.file}`, import.meta.url)),
-      logo.file,
-    );
+    const file = new URL(`../public/assets/${logo.file}`, import.meta.url);
+    assert.ok(existsSync(file), logo.file);
     assert.ok(logo.width > 0 && logo.height > 0, name);
     if (logo.backdrop) assert.match(logo.backdrop, /^#[0-9a-f]{6}$/);
+    // Een klein bestand wordt niet groter getoond dan het is.
+    if (logo.maxWidth) assert.ok(logo.maxWidth <= logo.width, name);
+    // Een externe svg: geen scripts, geen verwijzingen naar buiten.
+    if (logo.file.endsWith(".svg"))
+      assert.doesNotMatch(
+        readFileSync(file, "utf8"),
+        /<script|href\s*=|url\(|<image|<foreignObject|\son[a-z]+\s*=/i,
+        logo.file,
+      );
   }
   assert.deepEqual(
     sponsors.filter((s) => !sponsorLogos[s.name]).map((s) => s.name),
     [
       "Taxi Adrienne EDLIH",
       "GNP",
-      "Bouwwerken Rombouts",
       "Tegeldiscount",
       "Garage Peeters Wim",
       "Scheyltjens Wim",

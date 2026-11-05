@@ -572,6 +572,99 @@ main:focus {
   font-weight: 600;
   text-underline-offset: 4px;
 }
+/* Jubilarissen: de knop naar de gemeente en de uitleg over het eigen keuzevakje. */
+.moment a.jubilee-link {
+  gap: 10px;
+  color: #fff;
+  text-align: left;
+  text-decoration: none;
+}
+.moment .jubilee-note {
+  margin-top: 12px;
+  font-size: 0.92rem;
+}
+.jubilee-note strong {
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: #f5ce3759;
+  color: var(--dark);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+/* Wijkhuis: de locatiekaart, los van de route van Sinterklaas. */
+.wijkhuis-map-block {
+  margin-top: 48px;
+}
+.wijkhuis-map-block h2 {
+  margin: 0 0 16px;
+}
+.wijkhuis-map-start {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px 28px;
+  padding: 24px 28px;
+  border-radius: 14px;
+  background: #e9eddf;
+}
+.wijkhuis-map-start p {
+  flex: 1 1 320px;
+  color: #3a503b;
+  font-size: 0.95rem;
+}
+.wijkhuis-map-loading {
+  padding: 24px 0;
+  color: var(--muted);
+}
+.wijkhuis-map-wrap {
+  position: relative;
+}
+.wijkhuis-map {
+  height: 460px;
+  border-radius: 14px;
+  background: #dfe7e9;
+  color: #1c2b33;
+  isolation: isolate;
+  z-index: 0;
+  /* Eigen laag op hele pixels: anders lichte naden tussen de kaarttegels op scherpe telefoonschermen. */
+  will-change: transform;
+}
+.wijkhuis-map-center {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--green);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  box-shadow: 0 2px 8px #153d2c40;
+  cursor: pointer;
+}
+.wijkhuis-pin {
+  display: block;
+  width: 36px;
+  height: 36px;
+  border: 3px solid #fff;
+  border-radius: 50% 50% 50% 0;
+  background: var(--green);
+  box-shadow: 0 3px 10px #00000070;
+  transform: rotate(-45deg);
+}
+.wijkhuis-tooltip {
+  font-weight: 600;
+}
+
 .mailbox {
   margin-top: 28px;
   padding-top: 20px;
@@ -657,6 +750,9 @@ main:focus {
   grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
   gap: 44px;
   align-items: center;
+}
+.activity-hero {
+  position: relative;
 }
 .activity-hero img {
   width: 100%;
@@ -802,10 +898,11 @@ main:focus {
   font-style: italic;
   font-weight: 600;
 }
-.footer-note {
-  margin-top: 18px;
-  color: #5e6b60;
+.footer-credit {
+  margin-top: 14px;
+  color: #56645a;
   font-size: 0.8rem;
+  text-align: right;
 }
 
 /* Tablet */
@@ -989,6 +1086,17 @@ main:focus {
   .footer-tagline {
     align-self: flex-start;
     font-size: 1.4rem;
+  }
+  .footer-credit {
+    text-align: left;
+  }
+  .wijkhuis-map-block {
+    margin-top: 32px;
+  }
+  .wijkhuis-map {
+    height: 62vh;
+    min-height: 320px;
+    max-height: 460px;
   }
   .activity {
     padding-block: 18px 54px;

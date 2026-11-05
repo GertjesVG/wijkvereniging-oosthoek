@@ -5,6 +5,7 @@ import { ArrowUpRight, Heart, Mail, MapPin, Phone, Search, X } from "lucide-reac
 import { event } from "./content/event";
 import sponsors from "./content/sponsors.json";
 import { sponsorLogos } from "./content/sponsor-logos";
+import { sponsorMapUrl } from "./content/sponsor-kaart";
 import "./sponsors.css";
 
 type Sponsor = (typeof sponsors)[number];
@@ -43,6 +44,7 @@ function SponsorLogo({ sponsor, assetUrl }: { sponsor: Sponsor; assetUrl: AssetU
         alt={`Logo van ${sponsor.name}`}
         width={logo.width}
         height={logo.height}
+        style={logo.maxWidth ? { maxWidth: logo.maxWidth } : undefined}
         loading="lazy"
         decoding="async"
       />
@@ -104,11 +106,21 @@ function SponsorCard({ sponsor, assetUrl }: { sponsor: Sponsor; assetUrl: AssetU
       </div>
       <ul className="sponsor-details">
         <li>
-          <MapPin size={19} strokeWidth={1.6} aria-hidden="true" />
-          <span>
-            <span className="visually-hidden">Adres: </span>
-            {sponsor.address}
-          </span>
+          <a
+            className="sponsor-address"
+            href={sponsorMapUrl(sponsor)}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <MapPin size={19} strokeWidth={1.6} aria-hidden="true" />
+            <span>
+              <span className="visually-hidden">Adres: </span>
+              {sponsor.address}
+              <span className="visually-hidden">
+                , toon in Google Maps, opent in een nieuw venster
+              </span>
+            </span>
+          </a>
         </li>
         {sponsor.phones.length > 0 && (
           <li>

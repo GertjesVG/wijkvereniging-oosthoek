@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useRef, useState, type ReactNode } from "react";
 import {
   ArrowDown,
   ArrowLeft,
@@ -10,14 +10,13 @@ import {
   Mail,
   MapPin,
   Menu,
-  Phone,
   X,
 } from "lucide-react";
 import { event } from "../content/event";
 import sponsors from "../content/sponsors.json";
 import { registrationNotice } from "../inschrijving/periode";
 import { useRegistrationStatus } from "../inschrijving/useRegistrationStatus";
-import { phoneHref, SponsorList } from "../SponsorCards";
+import { SponsorList } from "../SponsorCards";
 import {
   activities,
   activityStatuses,
@@ -41,6 +40,8 @@ import {
 
 const org = event.organisation;
 const infoPage = (slug: string) => infoPages.find((page) => page.slug === slug)!;
+// Leaflet en de kaarttegels laden pas na de klik op "Toon de kaart".
+const WijkhuisMap = lazy(() => import("./WijkhuisMap"));
 
 // notice = de zin van de server over de inschrijving; "Voorbij" gaat over de datum en blijft dus zijn eigen woord.
 function StatusChips({ statuses, notice }: { statuses: ActivityStatus[]; notice?: string | null }) {
@@ -353,11 +354,7 @@ function Contact() {
             <Mail size={18} aria-hidden="true" />
             {org.email}
           </a>
-          <a href={phoneHref(org.phone)}>
-            <Phone size={18} aria-hidden="true" />
-            {org.phone}
-          </a>
-          <p>{org.address}</p>
+          <p>Zetel en correspondentie: {org.address}</p>
         </div>
       </div>
     </section>
@@ -395,6 +392,7 @@ function SubPage({
   slug,
   image,
   alt,
+  note,
   eyebrow,
   title,
   lead,
@@ -404,6 +402,7 @@ function SubPage({
   slug: string;
   image: string;
   alt: string;
+  note?: string;
   eyebrow: string;
   title: string;
   lead: ReactNode;
@@ -420,6 +419,7 @@ function SubPage({
         <div className="activity-grid">
           <div className="activity-hero">
             <img src={publicFile(image)} alt={alt} width="1536" height="1024" fetchPriority="high" />
+            {note && <span className="event-art-note">{note}</span>}
           </div>
           <div className="activity-copy">
             <p className="eyebrow">{eyebrow}</p>
@@ -540,10 +540,18 @@ function LifePage() {
               <h2>{moment.title}</h2>
               <p>{moment.text}</p>
               {moment.icon === "jubilee" && (
-                <a href={municipalityJubileeUrl} target="_blank" rel="noopener noreferrer">
-                  Huwelijksjubileum bij de gemeente Beerse <ArrowUpRight size={15} aria-hidden="true" />
-                  <span className="visually-hidden"> (opent in een nieuw venster)</span>
-                </a>
+                <>
+                  <a className="btn jubilee-link" href={municipalityJubileeUrl} target="_blank" rel="noopener noreferrer">
+                    Huwelijksjubileum melden bij de gemeente <ArrowUpRight size={17} aria-hidden="true" />
+                    <span className="visually-hidden"> (opent in een nieuw venster)</span>
+                  </a>
+                  <p className="jubilee-note">
+                    Vul het gemeentelijke formulier volledig en correct in. Wil je dat Wijkvereniging Oosthoek jouw jubileum kan
+                    opvolgen? Vink dan aan:{" "}
+                    <strong>‘Wij geven toestemming om onze persoonlijke gegevens te bezorgen aan het bestuur van de wijk/buurt’</strong>
+                    . Zo mag de gemeente jullie gegevens aan het wijkbestuur bezorgen en kunnen wij ermee aan de slag.
+                  </p>
+                </>
               )}
             </div>
           ))}
@@ -556,35 +564,53 @@ function LifePage() {
   );
 }
 
-// Zonder bevestigde locatie (wijkhuisLocation in wijk.ts) geen adres, kaart of route: alleen wat vaststaat.
+// Geen externe kaarttegels vóór de klik van de bezoeker; onze website vraagt nooit om de locatie van de bezoeker.
+function WijkhuisMapBlock() {
+  const [shown, setShown] = useState(false);
+  return (
+    <section className="wijkhuis-map-block" aria-labelledby="wijkhuis-map-title">
+      <h2 id="wijkhuis-map-title">Het wijkhuis op de kaart</h2>
+      {shown ? (
+        <Suspense fallback={<p className="wijkhuis-map-loading">De kaart wordt geladen…</p>}>
+          <WijkhuisMap />
+        </Suspense>
+      ) : (
+        <div className="wijkhuis-map-start">
+          <p>
+            De kaart komt van OpenStreetMap en laadt pas na je klik. OpenStreetMap ontvangt dan technische gegevens zoals je
+            IP-adres. Meer lees je in onze <a href={sinterklaas.privacyHref}>privacyverklaring</a>.
+          </p>
+          <button type="button" className="btn outline" onClick={() => setShown(true)}>
+            Toon de kaart <MapPin size={17} aria-hidden="true" />
+          </button>
+        </div>
+      )}
+    </section>
+  );
+}
+
 function WijkhuisPage({ today }: { today: string }) {
   const page = infoPage("wijkhuis");
-  const location = wijkhuisLocation;
   return (
     <SubPage
       slug={page.slug}
       image={page.image}
       alt={page.imageAlt}
+      note={page.tile.note}
       eyebrow="Wijkinformatie"
       title={page.name}
-      lead={
-        location
-          ? "Dit is het witte wijkhuis van onze vereniging, tussen het groen."
-          : "Dit is het witte wijkhuis van onze vereniging, tussen het groen. De exacte locatie en de route vullen we hier aan zodra ze bevestigd zijn."
-      }
+      lead="Dit is het witte wijkhuis van onze vereniging, tussen het groen."
       side={
         <>
           <dl className="activity-facts">
             <div>
               <dt>Naam</dt>
-              <dd>Wijkhuis Oosthoek</dd>
+              <dd>{wijkhuisLocation.name}</dd>
             </div>
-            {location && (
-              <div>
-                <dt>Adres</dt>
-                <dd>{location.address}</dd>
-              </div>
-            )}
+            <div>
+              <dt>Locatie</dt>
+              <dd>{wijkhuisLocation.address}</dd>
+            </div>
             {today <= event.date && (
               <div>
                 <dt>Sinterklaas, {dateText(event.date)}</dt>
@@ -593,26 +619,16 @@ function WijkhuisPage({ today }: { today: string }) {
             )}
           </dl>
           <div className="activity-actions">
-            {location ? (
-              <>
-                <a className="btn" href={location.routeUrl} target="_blank" rel="noopener noreferrer">
-                  Route naar het wijkhuis <ArrowUpRight size={17} aria-hidden="true" />
-                  <span className="visually-hidden"> (opent in een nieuw venster)</span>
-                </a>
-                <a className="btn outline" href={location.mapUrl} target="_blank" rel="noopener noreferrer">
-                  Bekijk op de kaart <MapPin size={17} aria-hidden="true" />
-                  <span className="visually-hidden"> (opent in een nieuw venster)</span>
-                </a>
-              </>
-            ) : (
-              <a className="btn outline" href={`mailto:${org.email}`}>
-                Een vraag? Mail ons <Mail size={17} aria-hidden="true" />
-              </a>
-            )}
+            <a className="btn" href={wijkhuisLocation.routeUrl} target="_blank" rel="noopener noreferrer">
+              Route naar het wijkhuis <ArrowUpRight size={17} aria-hidden="true" />
+              <span className="visually-hidden"> (opent in een nieuw venster)</span>
+            </a>
           </div>
         </>
       }
-    />
+    >
+      <WijkhuisMapBlock />
+    </SubPage>
   );
 }
 
@@ -684,19 +700,15 @@ export default function WijkApp() {
             <div>
               <p className="footer-name">{org.name}</p>
               <p className="footer-details">
-                {org.address} · Ondernemingsnummer {org.enterprise}
+                Zetel: {org.address} · Ondernemingsnummer {org.enterprise}
               </p>
               <p className="footer-links">
                 <a href={sinterklaas.privacyHref}>Privacy</a>
-                <a href={sinterklaas.href}>Sinterklaaswebsite</a>
               </p>
             </div>
             <p className="footer-tagline">Kleine momenten. Een hechte wijk.</p>
           </div>
-          <p className="footer-note">
-            Data en praktische afspraken voor Pasen, garageverkoop en wijkfeest worden nog aangevuld. De illustraties zijn
-            sfeerbeelden, geen foto's van onze wijk; het beeld van het wijkhuis is een schilderachtige bewerking van het echte gebouw.
-          </p>
+          <p className="footer-credit">website made by Gert Van Genechten</p>
         </div>
       </footer>
     </>
