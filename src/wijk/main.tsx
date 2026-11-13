@@ -8,13 +8,17 @@ import "@fontsource/dm-sans/600.css";
 import "@fontsource/dm-sans/700.css";
 import "./wijk.css";
 import { legacySinterklaasUrl } from "../content/wijk";
+import { loadTexts } from "../teksten";
 import WijkApp from "./WijkApp";
 
 const legacy = legacySinterklaasUrl(location.search, location.hash);
 if (legacy) location.replace(legacy);
-else
+else {
+  // Aangepaste teksten ophalen terwijl de pagina al opbouwt; zonder antwoord blijven de oorspronkelijke staan.
+  loadTexts();
   ReactDOM.createRoot(document.getElementById("root")!).render(
     <React.StrictMode>
       <WijkApp />
     </React.StrictMode>,
   );
+}

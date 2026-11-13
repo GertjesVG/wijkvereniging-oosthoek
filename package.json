@@ -14,7 +14,8 @@
     "test": "node --test tests/*.test.mjs",
     "test:browser": "playwright test",
     "test:inschrijving": "node tests/integratie/inschrijving.mjs",
-    "test:gps": "node tests/integratie/gps.mjs"
+    "test:gps": "node tests/integratie/gps.mjs",
+    "test:teksten": "node tests/integratie/teksten.mjs"
   },
   "dependencies": {
     "@fontsource/cormorant-garamond": "^5.2.8",

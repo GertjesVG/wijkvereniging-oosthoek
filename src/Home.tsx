@@ -3,8 +3,10 @@ import { event, asset } from "./content/event";
 import sponsors from "./content/sponsors.json";
 import { ButtonLink, DateTag, FeatureCard } from "./components";
 import { useLiveGps } from "./gps/useLiveGps";
+import { Lines, useTexts } from "./teksten";
 
 export default function Home() {
+  const t = useTexts();
   // Eén keer kijken of de live GPS loopt; verversen gebeurt alleen op de routepagina.
   const { view } = useLiveGps({ poll: false });
   return (
@@ -15,19 +17,19 @@ export default function Home() {
           <FeatureCard
             href="#/cadeauactie"
             title="Cadeauactie"
-            description="Kleur je tekening en ontdek hoe je een gratis cadeautje van de Sint krijgt."
+            description={t("sint.home.kaart-cadeauactie")}
             kind="gift"
           />
           <FeatureCard
             href="#/route"
             title="Route & live tracking"
-            description="Ontdek de rondgang en de status van de livekaart op de dag zelf."
+            description={t("sint.home.kaart-route")}
             kind="route"
           />
           <FeatureCard
             href="#/praktisch"
             title="Praktische info"
-            description="Alles wat je moet weten voor een onvergetelijke dag in de wijk."
+            description={t("sint.home.kaart-praktisch")}
             kind="info"
           />
         </section>
@@ -38,11 +40,9 @@ export default function Home() {
                 VOLG DE SINT <span aria-hidden="true">✦</span>
               </p>
               <h2>
-                Waar is de
-                <br />
-                huifkar nu?
+                <Lines text={t("sint.home.volg-titel")} />
               </h2>
-              <p>Straks volg je de Sint op zijn tocht door de wijk.</p>
+              <p>{t("sint.home.volg-tekst")}</p>
               <ButtonLink href="#/route" variant="gold">
                 Bekijk de route
               </ButtonLink>
@@ -87,11 +87,9 @@ export default function Home() {
             <div>
               <p className="eyebrow">CREATIEF VOOR SINTERKLAAS</p>
               <h2>
-                Download de
-                <br />
-                kleurplaat
+                <Lines text={t("sint.home.kleurplaat-titel")} />
               </h2>
-              <p>Pak je mooiste kleuren en maak een tekening voor de Sint!</p>
+              <p>{t("sint.home.kleurplaat-tekst")}</p>
               <ButtonLink
                 href={asset(event.downloads.colouring)}
                 variant="outline"
@@ -137,6 +135,7 @@ export default function Home() {
 }
 
 export function Hero() {
+  const t = useTexts();
   return (
     <section className="hero" aria-labelledby="hero-title">
       <div className="hero-stage">
@@ -160,7 +159,7 @@ export function Hero() {
           <div className="hero-copy">
             <p className="eyebrow">
               <span aria-hidden="true">✦</span>
-              {event.copy.eyebrow}
+              {t("sint.home.boventitel")}
             </p>
             <h1 id="hero-title">
               <span>Sinterklaas</span>
@@ -169,7 +168,7 @@ export function Hero() {
               <br />
               Oosthoek!
             </h1>
-            <p className="hero-description">{event.copy.intro}</p>
+            <p className="hero-description">{t("sint.home.intro")}</p>
             <div className="hero-actions">
               <ButtonLink
                 href="#/cadeauactie"

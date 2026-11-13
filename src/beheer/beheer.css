@@ -713,6 +713,142 @@ textarea:disabled {
   margin: 0;
 }
 
+/* Onderdelen van het beheer: inschrijvingen en GPS, of teksten van de website */
+.views {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.views a {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 42px;
+  padding: 8px 14px;
+  border: 1px solid #cdbf9f;
+  border-radius: 8px;
+  background: #fff;
+  color: var(--navy);
+  font-weight: 600;
+  font-size: 0.92rem;
+  text-decoration: none;
+}
+.views a:hover {
+  background: #fff4e2;
+}
+.views a[aria-current="page"] {
+  background: var(--red);
+  border-color: var(--red-dark);
+  color: #fff;
+}
+
+/* Teksten van de website */
+.texts-search {
+  margin: 14px 0 6px;
+  max-width: 520px;
+}
+.texts-error {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+  margin-top: 10px;
+}
+.text-sections {
+  display: grid;
+  gap: 10px;
+  margin: 12px 0;
+}
+.text-section {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+}
+.text-section > summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-height: 52px;
+  padding: 12px 14px;
+  cursor: pointer;
+  font-weight: 700;
+}
+.text-section-title {
+  margin-right: auto;
+}
+.text-section[open] > summary {
+  border-bottom: 1px solid var(--line);
+  background: #fbf6ea;
+  border-radius: 10px 10px 0 0;
+}
+.text-fields {
+  display: grid;
+  gap: 16px;
+  padding: 14px;
+}
+.text-view {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  justify-self: start;
+  color: var(--red);
+  font-weight: 600;
+}
+.text-field {
+  display: grid;
+  gap: 6px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--line);
+}
+.text-label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+}
+.text-field textarea {
+  /* 16 px: een gsm zoomt dan niet in bij het tikken. */
+  font-size: 16px;
+  line-height: 1.45;
+}
+.text-field p {
+  margin: 0;
+}
+.text-original {
+  padding: 6px 10px;
+  background: #f6f1e6;
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 0.86rem;
+  white-space: pre-line;
+}
+.text-original span {
+  font-weight: 700;
+}
+.note-ok {
+  background: var(--ok-bg);
+  color: var(--ok);
+  font-weight: 600;
+}
+.note-ok a {
+  color: inherit;
+}
+@media (max-width: 760px) {
+  .views {
+    flex: 1 1 100%;
+    order: 2;
+  }
+  .views a {
+    flex: 1 1 0;
+    justify-content: center;
+    padding: 8px 10px;
+  }
+  .text-field .actions .btn {
+    flex: 1 1 auto;
+  }
+}
+
 /* Historiek per editie */
 .table-wrap {
   overflow-x: auto;

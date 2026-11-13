@@ -255,7 +255,11 @@ test("privacyverklaring: juiste rechtsgronden en verplichte informatie, geen bel
 });
 
 test("cadeauactie en kleurwedstrijd: inschrijving is open; niets over jury of winnaars zolang de vereniging dat niet bevestigde", () => {
-  const pages = readFileSync(new URL("../src/Pages.tsx", import.meta.url), "utf8").replace(/\s+/g, " ");
+  // De paginateksten staan sinds het tekstbeheer in src/content/teksten.ts.
+  const pages = ["../src/Pages.tsx", "../src/content/teksten.ts"]
+    .map((file) => readFileSync(new URL(file, import.meta.url), "utf8"))
+    .join("\n")
+    .replace(/\s+/g, " ");
   assert.ok(!pages.includes("zodra deze opengaat"));
   assert.ok(pages.includes("via het formulier op deze pagina"));
   assert.ok(!/jury|winnaar/i.test(pages));
@@ -302,14 +306,14 @@ test("route 2026: de 24 bevestigde straten in volgorde, vertrek met definitief a
     assert.ok(v.lijnen.every((l) => l.length >= 2 && l.every(inArea)));
   }
   // Eén plek voor de stratenlijst: geen tweede kopie in de andere pagina's of de startpagina.
-  for (const file of ["../src/Pages.tsx", "../src/Home.tsx", "../src/components.tsx"]) {
+  for (const file of ["../src/Pages.tsx", "../src/Home.tsx", "../src/components.tsx", "../src/content/teksten.ts"]) {
     const source = readFileSync(new URL(file, import.meta.url), "utf8");
     assert.ok(!source.includes("Paddesteenstraat"), file);
   }
 });
 
 test("publieke site: geen vaste grens van 150 en geen aantal vrije plaatsen, wel maximaal één cadeautje per kind", () => {
-  for (const file of ["../src/Pages.tsx", "../src/Home.tsx", "../src/inschrijving/RegistrationForm.tsx"]) {
+  for (const file of ["../src/Pages.tsx", "../src/Home.tsx", "../src/content/teksten.ts", "../src/inschrijving/RegistrationForm.tsx"]) {
     const source = readFileSync(new URL(file, import.meta.url), "utf8");
     assert.doesNotMatch(source, /150 cadeau|plaatsen vrij|Nog \$\{giftCount|laatste plaatsen|onbeperkt/i, file);
   }

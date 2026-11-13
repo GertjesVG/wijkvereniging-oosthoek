@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
-import { Download, LogOut, Mail, RefreshCw, Trash2 } from "lucide-react";
+import { ClipboardList, Download, LogOut, Mail, PenLine, RefreshCw, Trash2 } from "lucide-react";
 import type { AdminEventSummary, AdminRegistration } from "../inschrijving/api";
 import { renderConfirmation, repliesInGmail } from "../inschrijving/bevestigingsmail";
 import { registrationNotice, toBrusselsInput } from "../inschrijving/periode";
 import { AdminError, api, describeError, exportUrl, setUnauthorizedHandler } from "./client";
 import { GpsPanel } from "./GpsPanel";
 import { RegistrationItem } from "./RegistrationItem";
+import { TextsPanel } from "./TextsPanel";
 import { ErrorNote, formatDay, useAction } from "./ui";
 
 // ---------- Inloggen ----------
@@ -715,6 +716,10 @@ function History({ events }: { events: AdminEventSummary[] }) {
 
 // ---------- Dashboard en app ----------
 
+// Twee onderdelen: inschrijvingen met GPS (zoals altijd), en de teksten van de website (#teksten).
+type View = "inschrijvingen" | "teksten";
+const viewOf = (hash: string): View => (hash === "#teksten" ? "teksten" : "inschrijvingen");
+
 function Dashboard({
   initialEvents,
   onLogout,
@@ -725,7 +730,21 @@ function Dashboard({
   const [events, setEvents] = useState(initialEvents);
   const [selected, setSelected] = useState(initialEvents[0]?.id ?? "");
   const [reloadKey, setReloadKey] = useState(0);
+  const [view, setView] = useState<View>(() => viewOf(window.location.hash));
+  // Eenmaal geopend blijft het tekstenscherm bestaan, zodat een niet-opgeslagen tekst niet verloren gaat bij het wisselen.
+  const [textsOpened, setTextsOpened] = useState(view === "teksten");
   const logout = useAction();
+
+  useEffect(() => {
+    const change = () => {
+      const next = viewOf(window.location.hash);
+      setView(next);
+      if (next === "teksten") setTextsOpened(true);
+      window.scrollTo({ top: 0, behavior: "instant" });
+    };
+    window.addEventListener("hashchange", change);
+    return () => window.removeEventListener("hashchange", change);
+  }, []);
 
   const refreshEvents = useCallback(async () => {
     try {
@@ -750,7 +769,17 @@ function Dashboard({
             <strong>Beheer</strong>
             <span className="muted">Wijkvereniging Oosthoek</span>
           </div>
-          {events.length > 0 && (
+          <nav className="views" aria-label="Onderdelen van het beheer">
+            <a href="#inschrijvingen" aria-current={view === "inschrijvingen" ? "page" : undefined}>
+              <ClipboardList size={16} aria-hidden="true" />
+              Inschrijvingen en GPS
+            </a>
+            <a href="#teksten" aria-current={view === "teksten" ? "page" : undefined}>
+              <PenLine size={16} aria-hidden="true" />
+              Teksten van de website
+            </a>
+          </nav>
+          {view === "inschrijvingen" && events.length > 0 && (
             <label className="field event-pick">
               <span>Evenement</span>
               <select value={event?.id ?? ""} onChange={(e) => setSelected(e.target.value)}>
@@ -769,20 +798,29 @@ function Dashboard({
         </div>
       </header>
       <main className="page">
-        <GpsPanel />
-        {!event ? (
-          <p className="empty">Er zijn geen evenementen.</p>
-        ) : (
+        {textsOpened && (
+          <div hidden={view !== "teksten"}>
+            <TextsPanel />
+          </div>
+        )}
+        {view === "inschrijvingen" && (
           <>
-            <EventPanel
-              event={event}
-              onChange={(updated) =>
-                setEvents((list) => list.map((e) => (e.id === updated.id ? updated : e)))
-              }
-              onErased={() => setReloadKey((n) => n + 1)}
-            />
-            <Registrations eventId={event.id} reloadKey={reloadKey} onMutated={refreshEvents} />
-            <History events={events} />
+            <GpsPanel />
+            {!event ? (
+              <p className="empty">Er zijn geen evenementen.</p>
+            ) : (
+              <>
+                <EventPanel
+                  event={event}
+                  onChange={(updated) =>
+                    setEvents((list) => list.map((e) => (e.id === updated.id ? updated : e)))
+                  }
+                  onErased={() => setReloadKey((n) => n + 1)}
+                />
+                <Registrations eventId={event.id} reloadKey={reloadKey} onMutated={refreshEvents} />
+                <History events={events} />
+              </>
+            )}
           </>
         )}
       </main>

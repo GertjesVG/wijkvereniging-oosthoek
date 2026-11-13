@@ -23,6 +23,7 @@ import { RegistrationPanel } from "./inschrijving/RegistrationPanel";
 import { useRegistrationStatus } from "./inschrijving/useRegistrationStatus";
 import { ShareCode } from "./ShareCode";
 import { SponsorList } from "./SponsorCards";
+import { Lines, useTexts } from "./teksten";
 import { ageLabel, timeOf, useLiveGps, type LiveGpsView } from "./gps/useLiveGps";
 import "./pages.css";
 
@@ -30,14 +31,11 @@ import "./pages.css";
 const LiveMap = lazy(() => import("./gps/LiveMap"));
 
 function GiftPage() {
+  const t = useTexts();
   return (
     <>
-      <PageHeading
-        eyebrow="EEN KLEIN CADEAUTJE, EEN GROTE GLIMLACH"
-        title="Een verrassing van de Sint."
-      >
-        Kleur je mooiste tekening en kom mee genieten van een magische dag in
-        Oosthoek.
+      <PageHeading eyebrow={t("sint.cadeau.boventitel")} title={t("sint.cadeau.titel")}>
+        {t("sint.cadeau.intro")}
       </PageHeading>
       <div className="content-two-column gift-layout">
         <section className="editorial-panel gift-intro">
@@ -47,36 +45,28 @@ function GiftPage() {
           </span>
           <p className="eyebrow">ZO DOE JE MEE</p>
           <h2>
-            De voorpret begint
-            <br />
-            met een kleurpotlood.
+            <Lines text={t("sint.cadeau.stappen-titel")} />
           </h2>
           <ol className="numbered-steps">
             <li>
               <span>01</span>
               <div>
-                <h3>Maak er iets moois van</h3>
-                <p>
-                  Download de officiële kleurplaat en kleur je
-                  Sinterklaastekening in.
-                </p>
+                <h3>{t("sint.cadeau.stap1-titel")}</h3>
+                <p>{t("sint.cadeau.stap1-tekst")}</p>
               </div>
             </li>
             <li>
               <span>02</span>
               <div>
-                <h3>Bekijk de inschrijving</h3>
-                <p>
-                  Een ouder of voogd schrijft je gratis in via het formulier op
-                  deze pagina.
-                </p>
+                <h3>{t("sint.cadeau.stap2-titel")}</h3>
+                <p>{t("sint.cadeau.stap2-tekst")}</p>
               </div>
             </li>
             <li>
               <span>03</span>
               <div>
-                <h3>Kom de Sint begroeten</h3>
-                <p>Breng je ingekleurde tekening mee op {dateLabel}.</p>
+                <h3>{t("sint.cadeau.stap3-titel")}</h3>
+                <p>{t("sint.cadeau.stap3-tekst")}</p>
               </div>
             </li>
           </ol>
@@ -95,14 +85,11 @@ function GiftPage() {
 }
 
 function ColouringPage() {
+  const t = useTexts();
   return (
     <>
-      <PageHeading
-        eyebrow="CREATIEF VOOR SINTERKLAAS"
-        title="Alle kleuren van de voorpret."
-      >
-        Pak je potloden erbij. De officiële Oosthoek-kleurplaat wacht op jouw
-        mooiste kleuren!
+      <PageHeading eyebrow={t("sint.kleur.boventitel")} title={t("sint.kleur.titel")}>
+        {t("sint.kleur.intro")}
       </PageHeading>
       <div className="content-two-column colouring-layout">
         <div className="colouring-preview">
@@ -120,15 +107,9 @@ function ColouringPage() {
         <section className="colouring-instructions">
           <p className="eyebrow">KLEUR MEE</p>
           <h2>
-            Een tekening
-            <br />
-            speciaal voor de Sint.
+            <Lines text={t("sint.kleur.uitleg-titel")} />
           </h2>
-          <p>
-            Download de kleurplaat, print hem op A4 en maak er thuis iets moois
-            van. Vul je naam en leeftijd in op de tekening en geef hem aan
-            Sinterklaas.
-          </p>
+          <p>{t("sint.kleur.uitleg-tekst")}</p>
           <ButtonLink
             href={asset(event.downloads.colouring)}
             download="Oosthoek-kleurplaat.pdf"
@@ -139,20 +120,19 @@ function ColouringPage() {
           <ul className="checklist">
             <li>
               <Check size={17} aria-hidden="true" />
-              Bij de flyer zit al één kleurplaat
+              {t("sint.kleur.punt1")}
             </li>
             <li>
               <Check size={17} aria-hidden="true" />
-              Meer kinderen in het gezin? Download en print hier een extra
-              kleurplaat per kind
+              {t("sint.kleur.punt2")}
             </li>
             <li>
               <Check size={17} aria-hidden="true" />
-              Elk kind dient één eigen ingekleurde tekening in
+              {t("sint.kleur.punt3")}
             </li>
             <li>
               <Check size={17} aria-hidden="true" />
-              Maximaal één cadeautje per deelnemend kind
+              {t("sint.kleur.punt4")}
             </li>
           </ul>
           <div className="small-editorial-note">
@@ -209,6 +189,7 @@ function LiveCaption({ view }: { view: LiveGpsView }) {
 }
 
 function RoutePage() {
+  const t = useTexts();
   // Kaart pas na een klik (privacy: dan pas verbinding met OpenStreetMap), of vanzelf zolang er een livepositie is.
   const [mapOpen, setMapOpen] = useState(false);
   const [focus, setFocus] = useState<number | null>(null);
@@ -234,9 +215,8 @@ function RoutePage() {
   );
   return (
     <>
-      <PageHeading eyebrow="MET DE HUIFKAR DOOR DE WIJK" title="Waar is de Sint?">
-        De huifkar en de witte paarden rijden door {stops.length} straten van
-        Oosthoek. Hier vind je de route en, tijdens de rondrit, de livepositie.
+      <PageHeading eyebrow={t("sint.route.boventitel")} title={t("sint.route.titel")}>
+        {t("sint.route.intro")}
       </PageHeading>
       <div className="route-overview">
         <section
@@ -279,10 +259,7 @@ function RoutePage() {
                 <br />
                 één feestelijke tocht.
               </h2>
-              <p>
-                Bekijk op de kaart door welke straten de huifkar rijdt. De
-                volgorde staat ook hieronder.
-              </p>
+              <p>{t("sint.route.kaart-tekst")}</p>
               {openMap}
             </div>
           )}
@@ -301,9 +278,7 @@ function RoutePage() {
         <aside className="route-aside">
           <p className="eyebrow">VOLG DE SINT</p>
           <h2>
-            De hele wijk
-            <br />
-            kijkt ernaar uit.
+            <Lines text={t("sint.route.volg-titel")} />
           </h2>
           <StatusNote tone="blue">{liveNote(view)}</StatusNote>
           {failed && active && (
@@ -326,11 +301,11 @@ function RoutePage() {
             </div>
             <div>
               <dt>Vervoer</dt>
-              <dd>{event.route.transport}</dd>
+              <dd>{t("sint.route.vervoer")}</dd>
             </div>
             <div>
               <dt>Tijden per straat</dt>
-              <dd>Niet bekendgemaakt. Volg de huifkar live tijdens de rondrit.</dd>
+              <dd>{t("sint.route.tijden")}</dd>
             </div>
           </dl>
           <a className="text-link" href="#/praktisch">
@@ -342,12 +317,9 @@ function RoutePage() {
       <section className="route-stops" aria-labelledby="route-stops-title">
         <div className="route-stops-intro">
           <p className="eyebrow">DE OFFICIËLE ROUTE</p>
-          <h2 id="route-stops-title">Hier komen we langs</h2>
-          <p>
-            Vanaf het vertrek aan Wijkhuis Oosthoek rijdt de huifkar de straten
-            in deze volgorde. Tik op een straat om ze op de kaart te zien.
-          </p>
-          <StatusNote>{event.route.turnNote}</StatusNote>
+          <h2 id="route-stops-title">{t("sint.route.lijst-titel")}</h2>
+          <p>{t("sint.route.lijst-tekst")}</p>
+          <StatusNote>{t("sint.route.draaien")}</StatusNote>
         </div>
         <div className="route-list-wrap">
           <ol className="route-list">
@@ -368,10 +340,7 @@ function RoutePage() {
             ))}
           </ol>
           {!event.route.mapChecked && (
-            <p className="route-disclaimer">
-              De straten en hun volgorde liggen vast. De kaart is indicatief: de
-              precieze rijweg in en tussen de straten kan afwijken.
-            </p>
+            <p className="route-disclaimer">{t("sint.route.kaart-indicatief")}</p>
           )}
         </div>
       </section>
@@ -379,24 +348,19 @@ function RoutePage() {
   );
 }
 
+// Veelgestelde vragen: vraag en antwoord (teksten beheerbaar, zie src/content/teksten.ts).
 const faqs = [
-  [
-    "Hoe druk ik de kleurplaat af?",
-    "Download de originele PDF op de kleurwedstrijdpagina en print hem op A4.",
-  ],
-  [
-    "Leveren meerdere tekeningen extra cadeautjes op?",
-    "Nee. Er geldt één kleurplaat en maximaal één cadeautje per kind, ook als je meerdere tekeningen meebrengt.",
-  ],
-];
+  ["sint.praktisch.vraag1", "sint.praktisch.antwoord1"],
+  ["sint.praktisch.vraag2", "sint.praktisch.antwoord2"],
+] as const;
 
 function PracticalPage() {
+  const t = useTexts();
   const signup = useRegistrationStatus();
   return (
     <>
-      <PageHeading eyebrow="ALLES VOOR EEN FIJNE DAG" title="Goed om te weten.">
-        Plan je bezoek aan de Sint in Oosthoek. Hier vind je de praktische
-        informatie en de actuele stand van zaken.
+      <PageHeading eyebrow={t("sint.praktisch.boventitel")} title={t("sint.praktisch.titel")}>
+        {t("sint.praktisch.intro")}
       </PageHeading>
       <div className="practical-facts">
         <article>
@@ -408,19 +372,14 @@ function PracticalPage() {
         <article>
           <MapPin size={28} aria-hidden="true" />
           <span className="eyebrow">WAAR</span>
-          <h2>Oosthoek in Beerse</h2>
-          <p>
-            De Sint rijdt met de huifkar en witte paarden door{" "}
-            {event.route.stops.length} straten van onze wijk.
-          </p>
+          <h2>{t("sint.praktisch.waar-titel")}</h2>
+          <p>{t("sint.praktisch.waar-tekst")}</p>
         </article>
         <article>
           <Gift size={28} aria-hidden="true" />
           <span className="eyebrow">WAT MEEBRENGEN</span>
-          <h2>Je ingekleurde tekening</h2>
-          <p>
-            Vul je naam en leeftijd in en breng je kleurplaat mee voor de Sint.
-          </p>
+          <h2>{t("sint.praktisch.meebrengen-titel")}</h2>
+          <p>{t("sint.praktisch.meebrengen-tekst")}</p>
           <a className="text-link" href="#/kleurwedstrijd">
             Kleurplaat downloaden
             <ArrowUpRight size={16} aria-hidden="true" />
@@ -430,30 +389,22 @@ function PracticalPage() {
       <div className="practical-updates">
         <section aria-labelledby="practical-registration-title">
           <p className="eyebrow">CADEAUACTIE</p>
-          <h2 id="practical-registration-title">
-            Een verrassing voor de kleintjes
-          </h2>
+          <h2 id="practical-registration-title">{t("sint.praktisch.cadeau-titel")}</h2>
           {signup && (
             <StatusNote>
               {registrationNotice(signup.status, signup.period)}
             </StatusNote>
           )}
-          <p>
-            De inschrijving is gratis en verloopt online via de
-            cadeauactiepagina. Per kind is er maximaal één cadeautje.
-          </p>
+          <p>{t("sint.praktisch.cadeau-tekst")}</p>
           <ButtonLink href="#/cadeauactie" variant="outline">
             Naar de cadeauactie
           </ButtonLink>
         </section>
         <section aria-labelledby="practical-route-title">
           <p className="eyebrow">ROUTE & LIVE VOLGEN</p>
-          <h2 id="practical-route-title">Waar komt de huifkar langs?</h2>
+          <h2 id="practical-route-title">{t("sint.praktisch.route-titel")}</h2>
           <StatusNote tone="blue">{event.gps.dayMessage}</StatusNote>
-          <p>
-            Op de routepagina vind je de straten in volgorde, de kaart en
-            tijdens de rondrit de livepositie van de huifkar.
-          </p>
+          <p>{t("sint.praktisch.route-tekst")}</p>
           <ButtonLink href="#/route" variant="outline">
             Bekijk de routepagina
           </ButtonLink>
@@ -462,16 +413,16 @@ function PracticalPage() {
       <section className="faq-section" aria-labelledby="faq-title">
         <div className="faq-intro">
           <p className="eyebrow">VEELGESTELDE VRAGEN</p>
-          <h2 id="faq-title">Nog even handig om te weten</h2>
+          <h2 id="faq-title">{t("sint.praktisch.vragen-titel")}</h2>
         </div>
         <div className="faq-list">
           {faqs.map(([question, answer]) => (
             <details key={question}>
               <summary>
-                {question}
+                {t(question)}
                 <ChevronDown size={18} aria-hidden="true" />
               </summary>
-              <p>{answer}</p>
+              <p>{t(answer)}</p>
             </details>
           ))}
         </div>
@@ -481,8 +432,8 @@ function PracticalPage() {
         aria-labelledby="practical-contact-title"
       >
         <div>
-          <h2 id="practical-contact-title">Een andere vraag?</h2>
-          <p>De wijkvereniging helpt je graag verder.</p>
+          <h2 id="practical-contact-title">{t("sint.praktisch.contact-titel")}</h2>
+          <p>{t("sint.praktisch.contact-tekst")}</p>
         </div>
         <ButtonLink href="#/contact" variant="outline">
           Neem contact op
@@ -508,15 +459,12 @@ function SponsorsPage() {
 }
 
 function ContactPage() {
+  const t = useTexts();
   const org = event.organisation;
   return (
     <>
-      <PageHeading
-        eyebrow="DICHT BIJ ELKAAR, DICHT BIJ DE BUURT"
-        title="We horen graag van je."
-      >
-        Een vraag over de Sinterklaasdag of de vereniging? Neem gerust contact
-        met ons op.
+      <PageHeading eyebrow={t("sint.contact.boventitel")} title={t("sint.contact.titel")}>
+        {t("sint.contact.intro")}
       </PageHeading>
       <div className="content-two-column contact-layout">
         <section className="contact-details">

@@ -4,6 +4,7 @@ import { pageLinks } from "./components";
 import { event, dateLabel, asset } from "./content/event";
 import Home from "./Home";
 import { ContentPage } from "./Pages";
+import { useTexts } from "./teksten";
 
 function readPage() {
   return window.location.hash.replace(/^#\/?/, "").split("?")[0] || "home";
@@ -31,6 +32,7 @@ function Brand({ onNavigate }: { onNavigate: () => void }) {
   );
 }
 function Village() {
+  const t = useTexts();
   return (
     <div className="village" aria-hidden="true">
       <img
@@ -42,7 +44,7 @@ function Village() {
       />
       <p>
         <Heart size={23} />
-        {event.copy.footer}
+        {t("sint.voet.slogan")}
       </p>
     </div>
   );

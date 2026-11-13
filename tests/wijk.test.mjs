@@ -24,6 +24,7 @@ const hash = (bytes) => createHash("sha256").update(bytes).digest("hex");
 const wijkSources = [
   "../wijk/index.html",
   "../src/content/wijk.ts",
+  "../src/content/teksten.ts",
   "../src/SponsorCards.tsx",
   ...readdirSync(new URL("../src/wijk/", import.meta.url)).map((f) => `../src/wijk/${f}`),
 ];

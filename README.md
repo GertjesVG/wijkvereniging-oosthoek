@@ -15,6 +15,7 @@ Open `Sinterklaas 2026.code-workspace` in de projecthoofdmap met VS Code.
 | Gebouwde website bekijken | `npm run preview` | http://127.0.0.1:4173/ |
 | Storybook bouwen | `npm run build-storybook` | uitvoer in `storybook-static/` |
 | Bronnen/downloads controleren | `npm test` | twee controles |
+| Beheerbare teksten met lokale database controleren | `npm run test:teksten` | werkt op een tijdelijke kopie |
 | Browsercontrole (Chrome geïnstalleerd) | `npm run test:browser` | website + Storybook moeten draaien; `tests/browser/wijk.spec.ts` ook de hele site op poort 8788 |
 
 Dezelfde acties staan in **Terminal → Run Task**. `Start website + Storybook` start beide ontwikkelservers. De twee open-taken openen de browser. Reeds draaiende servers hoeven niet opnieuw gestart te worden; sluit ze af met Ctrl+C in hun terminal. Poort 6008 is gekozen omdat 6006 (TypTopper) en 6007 (Nieuwe UI) op deze computer vaste Storybook-poorten zijn.
@@ -44,17 +45,30 @@ De eerder gedeelde externe tunnel serveert nog de vorige `dist/`-versie. Deze ui
 - `src/content/event.ts`: datum, jaartal, programma, verenigingsgegevens, status, route (straten in volgorde), downloadpaden, wedstrijdregels en campagnekoppen. Gebruik `YYYY-MM-DD` voor de datum en pas het jaartal tegelijk aan. Controleer steeds de officiële bron voor wijzigingen.
 - `src/content/sponsors.json`: alle 33 officiële sponsors met categorie, adres, telefoons en e-mail. Geen verzonnen logo's of websites.
 - `src/content/sponsor-logos.ts`: de 25 bevestigde sponsorlogo's (sponsorpakket 3 november 2026, aangevuld op 5 november), op exacte naam gekoppeld; bestanden als `public/assets/sponsor-*.webp` of `.svg`. Een sponsor zonder regel krijgt zijn naam als typografische plaat. Een officieel logo toevoegen = bestand in `public/assets/` plus één regel in dit bestand (uitleg bovenaan).
-- `src/Pages.tsx`: overige vaste paginateksten en FAQ. Het datumlabel in FAQ wordt automatisch uit de evenementgegevens afgeleid.
+- `src/content/teksten.ts`: de oorspronkelijke paginateksten en FAQ die in het beheer aanpasbaar zijn (zie hieronder). Het datumlabel en het aantal straten worden automatisch uit de evenementgegevens afgeleid. `src/Pages.tsx` bevat de opbouw van de pagina's, de privacyverklaring en de knoppen.
 - `public/downloads/`: alleen de publieke kleurplaat voor het betreffende jaar. Vervang nooit de originele bronnen in de projecthoofdmap.
 - `src/styles.css`, `src/pages.css`, `src/layout.css`: gedeelde huisstijl en responsive weergave.
 
 De lettertypen en illustraties worden lokaal geladen. De gegenereerde hoofdillustratie en dorpsrand zijn losse decoratieve assets; geen screenshot vormt de webpagina. Illustraties zijn sfeerbeelden, geen bewijsmateriaal van de werkelijke rondgang.
+
+## Teksten aanpassen via het beheer
+
+Voor de beheerder: open `/beheer/`, log in met het bestaande beheerwachtwoord en kies **Teksten van de website**. Zoek een tekst (bijvoorbeeld "paarden") of open een onderdeel, pas de tekst aan en klik op **Opslaan**. Bezoekers zien de nieuwe tekst zodra ze de pagina openen of vernieuwen; opnieuw publiceren is niet nodig. **Vorige versie terugzetten** zet de vorige opgeslagen tekst terug (nog eens klikken wisselt terug), **Oorspronkelijke tekst terugzetten** zet de tekst uit de code terug. Een nieuwe regel (Enter) kan alleen in titels die al over twee regels staan.
+
+- Welke teksten aanpasbaar zijn en hun oorspronkelijke versie: `src/content/teksten.ts` (13 onderdelen van de wijkwebsite en de Sinterklaaswebsite). Een pagina toont zo'n tekst met `t("sleutel")`; `npm test` controleert dat elke gebruikte sleutel bestaat.
+- Opslag: alleen de aangepaste teksten, in de tabel `site_texts` van de bestaande D1-database (migratie `0009_teksten.sql`), met per tekst de vorige versie. Publiek leesbaar via `GET /api/teksten`; aanpassen via `/api/beheer/teksten` achter de bestaande beheerlogin (`server/teksten.ts`).
+- Altijd gewone tekst, nooit HTML: ingevoerde opmaak of code verschijnt letterlijk. Hoogstens 2000 tekens; een lege tekst kan niet.
+- Zonder tabel, zonder antwoord of bij een fout toont de website gewoon de oorspronkelijke teksten. Een aangepaste tekst verschijnt pas na het laden; bij een trage verbinding is de oorspronkelijke tekst heel even zichtbaar.
+- Bewust niet aanpasbaar: adressen, datums, route en straten, sponsors, het inschrijfformulier, het reglement, de privacyverklaring, knoppen en menu.
+- Wie een tekst in de code wijzigt: een in het beheer aangepaste versie blijft voorgaan tot "Oorspronkelijke tekst terugzetten".
+- Publiceren: eerst migratie 0009 op de online database, dan de code naar `main`. Omgekeerd kan ook: tot de migratie toont de site de oorspronkelijke teksten en meldt het beheer dat de opslag nog niet is ingesteld.
 
 ## Nog aan te sluiten
 
 1. Inschrijvingen en bevestigingsmails: actief sinds 3 november 2026. Werking, beveiliging en tests staan in [INSCHRIJVEN.md](INSCHRIJVEN.md).
 2. Route 2026: definitief (Gert, 3 november 2026), vertrekadres aangevuld op 5 november: "Vertrek om 10.30 uur aan Wijkhuis Oosthoek, Opstal 5, 2340 Beerse.", 24 straten in vaste volgorde in `event.route.stops`; geen haltes of tijden per straat. De routekaart (`src/gps/LiveMap.tsx`, OpenStreetMap, pas na een klik of tijdens de live GPS) kleurt de 24 straten en nummert ze; de straatligging staat in `src/content/route-kaart.json` (zie onder). Zolang `event.route.mapChecked` op `false` staat, heet de kaart "indicatief": de rijweg in en tussen de straten is niet nagekeken.
 3. Live GPS van de huifkar: gebouwd en lokaal getest (OwnTracks op de Pixel, start en stop in het beheer), nog niet gepubliceerd. Instellen, gebruik op 28 november, belasting en de stappen om in gebruik te nemen staan in [GPS.md](GPS.md).
+4. Teksten aanpassen via het beheer: gebouwd en lokaal getest op 13 november 2026, nog niet gepubliceerd (zie hierboven; eerst migratie 0009).
 
 ## Publicatie: Cloudflare Pages
 

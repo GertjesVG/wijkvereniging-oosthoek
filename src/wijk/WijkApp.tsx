@@ -17,6 +17,8 @@ import sponsors from "../content/sponsors.json";
 import { registrationNotice } from "../inschrijving/periode";
 import { useRegistrationStatus } from "../inschrijving/useRegistrationStatus";
 import { SponsorList } from "../SponsorCards";
+import { Lines, useTexts } from "../teksten";
+import { optionalKey, type TextKey } from "../content/teksten";
 import {
   activities,
   activityStatuses,
@@ -134,13 +136,14 @@ function Header({ page }: { page: string | null }) {
 }
 
 function Hero() {
+  const t = useTexts();
   return (
     <section className="hero" id="welkom" aria-labelledby="hero-title">
       <div className="wrap hero-grid">
         <div className="hero-copy">
           <p className="eyebrow">
             <span className="dot" aria-hidden="true" />
-            Welkom in onze wijk
+            {t("wijk.welkom.boventitel")}
           </p>
           <h1 id="hero-title">
             Hier kennen{" "}
@@ -149,9 +152,7 @@ function Hero() {
             <br />
             <em>Hier is Oosthoek.</em>
           </h1>
-          <p className="intro">
-            Een fijne buurt begint bij elkaar. We brengen buren samen, vieren mooie momenten en leven met elkaar mee.
-          </p>
+          <p className="intro">{t("wijk.welkom.intro")}</p>
           <div className="hero-actions">
             <a className="btn" href="#activiteiten">
               Ontdek wat er leeft <ArrowDown size={18} aria-hidden="true" />
@@ -251,14 +252,24 @@ function Tile({
   );
 }
 
+// De tekst bij een slug ("wijk.pasen.tegel"), of de vaste tekst als er geen beheerbare bestaat.
+function useSlugText() {
+  const t = useTexts();
+  return (slug: string, part: "tegel" | "tekst", fallback: string) => {
+    const key = optionalKey(`wijk.${slug}.${part}`);
+    return key ? t(key) : fallback;
+  };
+}
+
 function ActivityTile({ activity, today }: { activity: Activity; today: string }) {
+  const slugText = useSlugText();
   return (
     <Tile
       href={`#/${activity.slug}`}
       image={activity.tile.src}
       alt={activity.tile.alt}
       title={activity.name}
-      text={activity.teaser}
+      text={slugText(activity.slug, "tegel", activity.teaser)}
       more={activity.more}
       meta={
         <>
@@ -271,6 +282,7 @@ function ActivityTile({ activity, today }: { activity: Activity; today: string }
 }
 
 function SinterklaasTile({ statuses, notice }: SinterklaasState) {
+  const t = useTexts();
   return (
     <Tile
       className="event-sinterklaas"
@@ -278,7 +290,7 @@ function SinterklaasTile({ statuses, notice }: SinterklaasState) {
       image={sinterklaas.image}
       alt={sinterklaas.imageAlt}
       title={sinterklaas.name}
-      text={sinterklaas.teaser}
+      text={t("wijk.sinterklaas.tegel")}
       more="Naar Sinterklaas"
       meta={
         <>
@@ -298,6 +310,7 @@ function SinterklaasTile({ statuses, notice }: SinterklaasState) {
 }
 
 function InfoTile({ page }: { page: InfoPage }) {
+  const slugText = useSlugText();
   return (
     <Tile
       className="event-info"
@@ -306,22 +319,23 @@ function InfoTile({ page }: { page: InfoPage }) {
       alt={page.tile.alt}
       note={page.tile.note}
       title={page.name}
-      text={page.teaser}
+      text={slugText(page.slug, "tegel", page.teaser)}
       more={page.more}
     />
   );
 }
 
 function Tiles({ today, sinterklaasState }: { today: string; sinterklaasState: SinterklaasState }) {
+  const t = useTexts();
   return (
     <section className="section" id="activiteiten" aria-labelledby="activiteiten-title">
       <div className="wrap">
         <div className="section-head">
           <div>
-            <p className="eyebrow">Activiteiten en wijkinformatie</p>
-            <h2 id="activiteiten-title">Ontdek wat er leeft in Oosthoek.</h2>
+            <p className="eyebrow">{t("wijk.activiteiten.boventitel")}</p>
+            <h2 id="activiteiten-title">{t("wijk.activiteiten.titel")}</h2>
           </div>
-          <p>Van paaseieren tot ons wijkhuis: hier vind je onze activiteiten en wijkinformatie bij elkaar.</p>
+          <p>{t("wijk.activiteiten.intro")}</p>
         </div>
         <div className="events">
           {activities.map((activity) => (
@@ -338,16 +352,15 @@ function Tiles({ today, sinterklaasState }: { today: string; sinterklaasState: S
 }
 
 function Contact() {
+  const t = useTexts();
   return (
     <section className="wrap" id="contact" aria-labelledby="contact-title">
       <div className="contact-band">
         <div>
           <h2 id="contact-title">
-            Een vraag, een idee,{" "}
-            <br />
-            of gewoon even hallo?
+            <Lines text={t("wijk.contact.titel")} />
           </h2>
-          <p>We horen graag van je. Samen maken we de wijk.</p>
+          <p>{t("wijk.contact.tekst")}</p>
         </div>
         <div className="contact-links">
           <a href={`mailto:${org.email}`}>
@@ -451,6 +464,7 @@ function SubPage({
 }
 
 function ActivityPage({ activity, today }: { activity: Activity; today: string }) {
+  const slugText = useSlugText();
   const statuses = activityStatuses(activity, today);
   return (
     <SubPage
@@ -459,7 +473,7 @@ function ActivityPage({ activity, today }: { activity: Activity; today: string }
       alt={activity.imageAlt}
       eyebrow="Activiteit in Oosthoek"
       title={activity.title}
-      lead={activity.text}
+      lead={slugText(activity.slug, "tekst", activity.text)}
       side={
         <>
           <dl className="activity-facts">
@@ -519,7 +533,15 @@ function LifeIcon({ icon }: { icon: (typeof lifeMoments)[number]["icon"] }) {
   return <Icon size={34} strokeWidth={1.5} aria-hidden="true" />;
 }
 
+// Beheerbare tekst per attentie (src/content/teksten.ts).
+const momentText = {
+  birth: "wijk.lief-en-leed.geboorte",
+  loss: "wijk.lief-en-leed.overlijden",
+  jubilee: "wijk.lief-en-leed.jubilarissen",
+} as const satisfies Record<(typeof lifeMoments)[number]["icon"], TextKey>;
+
 function LifePage() {
+  const t = useTexts();
   const page = infoPage("lief-en-leed");
   return (
     <SubPage
@@ -528,7 +550,7 @@ function LifePage() {
       alt={page.imageAlt}
       eyebrow="Oosthoek leeft mee"
       title={page.name}
-      lead="Bij een nieuw begin, een groot jubileum of een moeilijk afscheid: als wijk staan we graag even stil bij wat telt."
+      lead={t("wijk.lief-en-leed.intro")}
     >
       <section className="moments-band" aria-label="Onze attenties">
         <div className="moments">
@@ -538,7 +560,7 @@ function LifePage() {
                 <LifeIcon icon={moment.icon} />
               </div>
               <h2>{moment.title}</h2>
-              <p>{moment.text}</p>
+              <p>{t(momentText[moment.icon])}</p>
               {moment.icon === "jubilee" && (
                 <>
                   <a className="btn jubilee-link" href={municipalityJubileeUrl} target="_blank" rel="noopener noreferrer">
@@ -590,6 +612,7 @@ function WijkhuisMapBlock() {
 }
 
 function WijkhuisPage({ today }: { today: string }) {
+  const t = useTexts();
   const page = infoPage("wijkhuis");
   return (
     <SubPage
@@ -599,7 +622,7 @@ function WijkhuisPage({ today }: { today: string }) {
       note={page.tile.note}
       eyebrow="Wijkinformatie"
       title={page.name}
-      lead="Dit is het witte wijkhuis van onze vereniging, tussen het groen."
+      lead={t("wijk.wijkhuis.intro")}
       side={
         <>
           <dl className="activity-facts">
@@ -633,6 +656,7 @@ function WijkhuisPage({ today }: { today: string }) {
 }
 
 export default function WijkApp() {
+  const t = useTexts();
   const [route, setRoute] = useState(() => readRoute(location.hash));
   const main = useRef<HTMLElement>(null);
   const previousPage = useRef(route.page);
@@ -706,7 +730,7 @@ export default function WijkApp() {
                 <a href={sinterklaas.privacyHref}>Privacy</a>
               </p>
             </div>
-            <p className="footer-tagline">Kleine momenten. Een hechte wijk.</p>
+            <p className="footer-tagline">{t("wijk.voet.slogan")}</p>
           </div>
           <p className="footer-credit">website made by Gert Van Genechten</p>
         </div>

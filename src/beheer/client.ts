@@ -5,6 +5,7 @@ import type {
   ApiErrorCode,
 } from "../inschrijving/api";
 import type { AdminGps } from "../gps/api";
+import type { AdminText } from "../content/teksten";
 
 export class AdminError extends Error {
   status: number;
@@ -137,6 +138,11 @@ export const api = {
   gps: () => request<AdminGps>("GET", "/api/beheer/gps"),
   gpsStart: (hours: number) => request<AdminGps>("POST", "/api/beheer/gps", { action: "start", hours }),
   gpsStop: () => request<AdminGps>("POST", "/api/beheer/gps", { action: "stop" }),
+  // Teksten van de website: alleen de aangepaste; value null = terug naar de oorspronkelijke tekst.
+  texts: () => request<AdminText[]>("GET", "/api/beheer/teksten"),
+  saveText: (key: string, value: string | null) =>
+    request<AdminText>("PATCH", `/api/beheer/teksten/${enc(key)}`, { value }),
+  previousText: (key: string) => request<AdminText>("POST", `/api/beheer/teksten/${enc(key)}/vorige`),
 };
 
 export const exportUrl = (eventId: string) =>
