@@ -27,7 +27,7 @@ const sinterklaasHtml = `<!DOCTYPE html>
 <div style="display:none;max-height:0;overflow:hidden;font-size:1px;color:#fff8ed;opacity:0;">Piet heeft jullie inschrijving goed ontvangen. Hier zijn de bevestigingsgegevens.</div>
 <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#fff8ed;border-collapse:collapse;"><tr><td align="center" style="padding:12px 6px 24px;">
 <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="640" style="max-width:640px;width:100%;background:#fff0d4;border-collapse:collapse;">
-<tr><td><img alt="Sinterklaas en zijn Pieten — Hoera, jouw inschrijving is goed aangekomen! Piet heeft jullie inschrijving in het grote boek geschreven; de Sint kijkt uit naar jullie tekeningen." src="https://wijkvereniging-oosthoek.pages.dev/sinterklaas/email/email-boven.jpg" width="640" style="display:block;width:100%;max-width:640px;height:auto;border:0;"></td></tr>
+<tr><td><img alt="Sinterklaas en zijn Pieten — Hoera, jouw inschrijving is goed aangekomen! Piet heeft jullie inschrijving in het grote boek geschreven; de Sint kijkt uit naar jullie tekeningen." src="https://wijkvereniging-oosthoek.pages.dev/sinterklaas/email/email-boven-2026.jpg" width="640" style="display:block;width:100%;max-width:640px;height:auto;border:0;"></td></tr>
 <!-- Gegevens op het perkament. Het perkament is een achtergrondbeeld: de Gmail-app in donkere modus kleurt achtergrondkleuren
      donker en donkere tekst licht, maar laat beelden ongemoeid. Daarom staan de gegevens in wit op een rood lint (donker blijft
      donker, wit blijft wit) en is het perkament eromheen een beeld, geen kleur. -->

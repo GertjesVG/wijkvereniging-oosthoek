@@ -44,7 +44,7 @@ test("feestelijke mail volgt het aangeleverde sjabloon en de tekstversie, met de
   const size = (file) => statSync(new URL(`../public/email/${file}`, import.meta.url)).size;
   for (const [, file] of template.html.matchAll(/https:\/\/wijkvereniging-oosthoek\.pages\.dev\/sinterklaas\/email\/([^"')]+)/g))
     assert.ok(size(file) > 1000, file);
-  assert.ok(size("email-boven.jpg") + size("email-onder.jpg") < 400_000);
+  assert.ok(size("email-boven-2026.jpg") + size("email-onder.jpg") < 400_000);
   assert.equal([...template.html.matchAll(/<img /g)].length, 4);
   assert.equal([...template.html.matchAll(/alt="[^"]+"/g)].length, 4);
 });

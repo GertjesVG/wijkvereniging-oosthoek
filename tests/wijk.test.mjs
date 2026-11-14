@@ -210,7 +210,7 @@ test("bevestigingsmail: de link gaat rechtstreeks naar de Sinterklaaswebsite; op
   assert.ok(mail.text.includes(`${SITE}#/home\n`));
   // Geen enkele link meer naar het kale QR-adres; de beelden staan er wel gewoon onder.
   assert.doesNotMatch(`${mail.html}\n${mail.text}`, new RegExp(`${SITE}(?=["\\s:]|$)`, "m"));
-  for (const image of ["email-boven.jpg", "email-perkament.jpg", "email-website.png", "email-contact.png", "email-onder.jpg"])
+  for (const image of ["email-boven-2026.jpg", "email-perkament.jpg", "email-website.png", "email-contact.png", "email-onder.jpg"])
     assert.ok(mail.html.includes(`src="${SITE}email/${image}"`) || mail.html.includes(`${SITE}email/${image}`), image);
   assert.ok(mail.html.includes("SINT26-0000") && mail.html.includes("Testkind"));
 });

@@ -157,7 +157,7 @@ test("bestaande directe links, hashes, zoekdelen en bestanden blijven werken", a
     ["/sinterklaas/assets/oosthoek-sponsors-768.webp", "image/webp"],
     ["/sinterklaas/assets/oosthoek-lief-en-leed.webp", "image/webp"],
     ["/sinterklaas/assets/sponsor-zeepventje.webp", "image/webp"],
-    ["/sinterklaas/email/email-boven.jpg", "image/jpeg"],
+    ["/sinterklaas/email/email-boven-2026.jpg", "image/jpeg"],
     ["/sinterklaas/favicon.svg", "image/svg+xml"],
   ]) {
     const response = await request.get(SITE + path);
