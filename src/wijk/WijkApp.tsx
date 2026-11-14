@@ -12,7 +12,7 @@ import {
   Menu,
   X,
 } from "lucide-react";
-import { event } from "../content/event";
+import { event, websiteMaker } from "../content/event";
 import sponsors from "../content/sponsors.json";
 import { registrationNotice } from "../inschrijving/periode";
 import { useRegistrationStatus } from "../inschrijving/useRegistrationStatus";
@@ -732,7 +732,15 @@ export default function WijkApp() {
             </div>
             <p className="footer-tagline">{t("wijk.voet.slogan")}</p>
           </div>
-          <p className="footer-credit">website made by Gert Van Genechten</p>
+          <p className="footer-credit">
+            Website made by:
+            {websiteMaker.map((line) => (
+              <span key={line}>
+                <br />
+                {line}
+              </span>
+            ))}
+          </p>
         </div>
       </footer>
     </>

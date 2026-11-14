@@ -279,7 +279,7 @@ test("hoofdpagina: zeven aanklikbare tegels, contact uit de bevestigde gegevens;
   await expect(footer).toContainText("BE0553.481.505");
   await expect(footer.getByRole("link", { name: "Privacy" })).toHaveAttribute("href", "/sinterklaas/#/privacy");
   await expect(footer.getByRole("link")).toHaveCount(1);
-  await expect(footer).toContainText("website made by Gert Van Genechten");
+  await expect(footer.locator(".footer-credit")).toHaveText("Website made by:GVG Digital SystemsGert Van GenechtenOpstal 52340 Beerse");
   await expect(footer).not.toContainText("sfeerbeelden");
   await expect(page.locator("iframe")).toHaveCount(0);
 });

@@ -1,6 +1,8 @@
 import type { PublicWebsite } from "./public-website";
 // Definitief adres van vereniging én wijkhuis, bevestigd door Gert op 5 november 2026.
 const oosthoekAddress = "Opstal 5, 2340 Beerse";
+// Maker van de website, zoals Gert het op 14 november 2026 opgaf; staat onderaan de wijkpagina.
+export const websiteMaker = ["GVG Digital Systems", "Gert Van Genechten", "Opstal 5", "2340 Beerse"];
 // Alleen openbare evenementgegevens. Geen sleutels of deelnemersgegevens in deze website.
 export const event = {
   year: 2026,
