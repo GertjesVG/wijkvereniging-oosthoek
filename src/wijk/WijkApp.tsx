@@ -724,7 +724,7 @@ export default function WijkApp() {
             <div>
               <p className="footer-name">{org.name}</p>
               <p className="footer-details">
-                Zetel: {org.address} · Ondernemingsnummer {org.enterprise}
+                Zetel: {org.address} · Ondernemingsnummer {org.enterprise} · {org.register}
               </p>
               <p className="footer-links">
                 <a href={sinterklaas.privacyHref}>Privacy</a>

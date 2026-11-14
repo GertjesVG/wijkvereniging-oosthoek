@@ -37,7 +37,7 @@
           try {
             var nav = performance.getEntriesByType("navigation")[0];
             var buiten = !document.referrer || new URL(document.referrer).host !== location.host;
-            if (buiten && (!nav || nav.type === "navigate") && !navigator.webdriver)
+            if (buiten && (!nav || nav.type === "navigate") && !navigator.webdriver && !document.prerendering)
               fetch("/api/bezoek", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },

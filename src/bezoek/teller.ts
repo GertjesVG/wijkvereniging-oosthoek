@@ -36,6 +36,11 @@ function meld(page: string, visit: boolean, view: boolean) {
 // Telt de eerste pagina en daarna elke andere pagina waar de bezoeker binnen de website naartoe gaat.
 export function startBezoekteller(site: BezoekSite) {
   if (!telt()) return;
+  // Laadt de browser de pagina alvast op de achtergrond (prerender), dan telt ze pas als de bezoeker ze echt opent.
+  if ((document as Document & { prerendering?: boolean }).prerendering) {
+    document.addEventListener("prerenderingchange", () => startBezoekteller(site), { once: true });
+    return;
+  }
   let last: string | null = null;
   let first = true;
   const count = () => {

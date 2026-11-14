@@ -805,6 +805,9 @@
   gap: 10px;
   color: var(--red);
   text-decoration: none;
+  /* Aanraakvlak van minstens 24 px, zonder dat de regel verschuift. */
+  padding-block: 4px;
+  margin-block: -4px;
 }
 .contact-details dd a:hover {
   text-decoration: underline;

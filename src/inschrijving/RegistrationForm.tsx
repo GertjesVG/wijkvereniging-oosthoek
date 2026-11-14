@@ -39,6 +39,21 @@ export type RegistrationFormProps = {
 
 type Child = { key: number; name: string; age: string };
 
+// Wat de ouder al invulde, per evenement. Zo gaat niets verloren als hij tijdens het invullen naar een andere pagina van
+// de website gaat (kleurplaat, route, Vorige/Volgende) en terugkomt. Alleen in het geheugen van deze pagina: geen cookie
+// of browseropslag, dus weg na herladen of sluiten van het tabblad, en na een geslaagde inschrijving.
+type Draft = {
+  parentName: string;
+  email: string;
+  street: string;
+  houseNumber: string;
+  coParent: boolean;
+  children: Child[];
+  rulesOk: boolean;
+  privacyOk: boolean;
+};
+const drafts = new Map<string, Draft>();
+
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function isApiError(value: unknown): value is ApiError {
@@ -296,21 +311,26 @@ function OpenPanel({
     1,
     Math.min(participant.maxPerRegistration, available ?? participant.maxPerRegistration),
   );
-  const nextKey = useRef(1);
+  // Eerder ingevulde gegevens van deze pagina (zie `drafts`); nooit meer kinderen dan nu nog kan.
+  const [saved] = useState(() => drafts.get(config.id));
+  const nextKey = useRef(saved ? Math.max(...saved.children.map((c) => c.key)) + 1 : 1);
   const formRef = useRef<HTMLFormElement>(null);
   const alertRef = useRef<HTMLDivElement>(null);
   const [submissionId] = useState(newSubmissionId);
-  const [parentName, setParentName] = useState("");
-  const [email, setEmail] = useState("");
-  const [street, setStreet] = useState("");
-  const [houseNumber, setHouseNumber] = useState("");
+  const [parentName, setParentName] = useState(saved?.parentName ?? "");
+  const [email, setEmail] = useState(saved?.email ?? "");
+  const [street, setStreet] = useState(saved?.street ?? "");
+  const [houseNumber, setHouseNumber] = useState(saved?.houseNumber ?? "");
   // true = het adres is dat van de andere ouder of voogd (co-ouderschap); de inschrijver woont elders.
-  const [coParent, setCoParent] = useState(false);
-  const [children, setChildren] = useState<Child[]>([
-    { key: 0, name: "", age: "" },
-  ]);
-  const [rulesOk, setRulesOk] = useState(false);
-  const [privacyOk, setPrivacyOk] = useState(false);
+  const [coParent, setCoParent] = useState(saved?.coParent ?? false);
+  const [children, setChildren] = useState<Child[]>(
+    saved?.children.slice(0, maxChildren) ?? [{ key: 0, name: "", age: "" }],
+  );
+  const [rulesOk, setRulesOk] = useState(saved?.rulesOk ?? false);
+  const [privacyOk, setPrivacyOk] = useState(saved?.privacyOk ?? false);
+  useEffect(() => {
+    drafts.set(config.id, { parentName, email, street, houseNumber, coParent, children, rulesOk, privacyOk });
+  }, [config.id, parentName, email, street, houseNumber, coParent, children, rulesOk, privacyOk]);
   const [website, setWebsite] = useState("");
   const [token, setToken] = useState<string | null>(null);
   const [resetSignal, setResetSignal] = useState(0);
@@ -407,6 +427,7 @@ function OpenPanel({
     setGeneral(null);
     try {
       const result = await submit(request);
+      drafts.delete(config.id);
       onDone(result);
     } catch (err) {
       setToken(null);

@@ -171,3 +171,14 @@ test("de teller gebruikt geen cookie of browseropslag en staat niet in het behee
   // De server leest geen IP-adres voor de teller.
   assert.doesNotMatch(text("../server/bezoek.ts"), /CF-Connecting-IP|connectionOf|sha256/);
 });
+
+test("een pagina die de browser alvast op de achtergrond laadt, telt niet mee", () => {
+  for (const file of ["../src/bezoek/teller.ts", "../index.html"]) assert.match(text(file), /prerendering/, file);
+});
+
+test("het inschrijfformulier onthoudt ingevulde gegevens alleen in het geheugen van de pagina", () => {
+  const form = text("../src/inschrijving/RegistrationForm.tsx");
+  assert.match(form, /const drafts = new Map/);
+  assert.match(form, /drafts\.delete\(config\.id\)/);
+  assert.doesNotMatch(form, /document\.cookie|localStorage|sessionStorage|indexedDB/);
+});

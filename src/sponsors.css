@@ -209,6 +209,11 @@
   color: inherit;
   text-decoration: none;
 }
+/* Telefoon en e-mail: een aanraakvlak van minstens 24 px, zonder dat de regels verschuiven. */
+.sponsor-details a:not(.sponsor-address) {
+  padding-block: 4px;
+  margin-block: -4px;
+}
 .sponsor-details a:hover {
   color: var(--red);
   text-decoration: underline;

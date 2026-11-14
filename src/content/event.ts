@@ -18,6 +18,10 @@ export const event = {
     address: oosthoekAddress,
     email: "vzwoosthoek@gmail.com",
     enterprise: "BE0553.481.505",
+    // Verplichte vermelding (art. 2:20 WVV): "RPR" + de rechtbank van de zetel. Naam, rechtsvorm, zetel (Opstal 5 sinds
+    // 5 augustus 2026) en nummer nagekeken in de Kruispuntbank van Ondernemingen op 14 november 2026. Beerse ligt in het
+    // gerechtelijk arrondissement Antwerpen; de afdeling (Turnhout) is niet officieel bevestigd en staat er daarom niet bij.
+    register: "RPR Ondernemingsrechtbank Antwerpen",
   },
   registration: {
     status: "unavailable" as "unavailable" | "closed",

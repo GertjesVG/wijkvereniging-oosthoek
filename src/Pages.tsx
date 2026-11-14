@@ -492,11 +492,16 @@ function ContactPage() {
             </div>
             <div>
               <dt>Ondernemingsnummer</dt>
-              <dd>{org.enterprise}</dd>
+              <dd>
+                {org.enterprise}
+                <br />
+                {org.register}
+              </dd>
             </div>
           </dl>
           <p className="contact-source">
-            Officiële verenigingsgegevens uit de aangeleverde flyer.
+            Officiële verenigingsgegevens volgens de Kruispuntbank van
+            Ondernemingen.
           </p>
         </section>
         <aside className="contact-message">
@@ -703,7 +708,7 @@ function PrivacyPage() {
             </p>
             <p>
               Verantwoordelijk: {org.name}, {org.address}, ondernemingsnummer{" "}
-              {org.enterprise}. Je kunt ook altijd een klacht indienen bij de{" "}
+              {org.enterprise}, {org.register}. Je kunt ook altijd een klacht indienen bij de{" "}
               <a
                 href="https://www.gegevensbeschermingsautoriteit.be"
                 target="_blank"
