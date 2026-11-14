@@ -105,7 +105,7 @@ function Header({ page }: { page: string | null }) {
     <header className="site-header">
       <div className="wrap header-inner">
         <a className="brand" href="#welkom" aria-label="Oosthoek, naar de hoofdpagina" onClick={close}>
-          <img src={publicFile("assets/oosthoek-logo.webp")} alt="Logo van VZW Wijkvereniging Oosthoek" width="1117" height="1409" />
+          <img src={publicFile("assets/oosthoek-logo-2026.webp")} alt="Logo van VZW Wijkvereniging Oosthoek" width="600" height="656" />
           <span>
             <strong>Oosthoek</strong>
             <small>VZW Wijkvereniging · Beerse</small>

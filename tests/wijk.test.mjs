@@ -227,7 +227,10 @@ test("geen iframe, hotlinks of base64-beelden; sponsors en verenigingsgegevens u
   for (const [file, source] of all) {
     assert.doesNotMatch(source, /<iframe|;base64,/i, file);
     // De kaarttegels van OpenStreetMap zijn geen hotlink: ze laden pas na de klik op "Toon de kaart".
-    const withoutTiles = source.replace("https://tile.openstreetmap.org/{z}/{x}/{y}.png", "");
+    // Het deelbeeld (og:image) is evenmin een hotlink: een eigen bestand, dat sociale media alleen via een volledig adres vinden.
+    const withoutTiles = source
+      .replace("https://tile.openstreetmap.org/{z}/{x}/{y}.png", "")
+      .replaceAll("https://wijkvereniging-oosthoek.pages.dev/sinterklaas/assets/oosthoek-deelbeeld-2026.jpg", "");
     assert.doesNotMatch(withoutTiles, /https?:\/\/[^"'\s)]+\.(webp|png|jpe?g|gif|svg|avif)/i, file);
     // Geen tweede lijst of tweede kopie van contactgegevens.
     assert.doesNotMatch(source, /zeepventje|delaplace|vzwoosthoek@|Opstal 5|0553\.481\.505/i, file);
