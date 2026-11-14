@@ -68,7 +68,7 @@ Voor de beheerder: open `/beheer/`, log in met het bestaande beheerwachtwoord en
 1. Inschrijvingen en bevestigingsmails: actief sinds 3 november 2026. Werking, beveiliging en tests staan in [INSCHRIJVEN.md](INSCHRIJVEN.md).
 2. Route 2026: definitief (Gert, 3 november 2026), vertrekadres aangevuld op 5 november: "Vertrek om 10.30 uur aan Wijkhuis Oosthoek, Opstal 5, 2340 Beerse.", 24 straten in vaste volgorde in `event.route.stops`; geen haltes of tijden per straat. De routekaart (`src/gps/LiveMap.tsx`, OpenStreetMap, pas na een klik of tijdens de live GPS) kleurt de 24 straten en nummert ze; de straatligging staat in `src/content/route-kaart.json` (zie onder). Zolang `event.route.mapChecked` op `false` staat, heet de kaart "indicatief": de rijweg in en tussen de straten is niet nagekeken.
 3. Live GPS van de huifkar: gebouwd en lokaal getest (OwnTracks op de Pixel, start en stop in het beheer), nog niet gepubliceerd. Instellen, gebruik op 28 november, belasting en de stappen om in gebruik te nemen staan in [GPS.md](GPS.md).
-4. Teksten aanpassen via het beheer: gebouwd en lokaal getest op 13 november 2026, nog niet gepubliceerd (zie hierboven; eerst migratie 0009).
+4. Teksten aanpassen via het beheer: gepubliceerd op 14 november 2026 (migratie 0009 online, daarna `main` = `c272f61`); zie hierboven.
 
 ## Publicatie: Cloudflare Pages
 
