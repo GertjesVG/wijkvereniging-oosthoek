@@ -36,14 +36,12 @@ function meld(page: string, visit: boolean, view: boolean) {
 // Telt de eerste pagina en daarna elke andere pagina waar de bezoeker binnen de website naartoe gaat.
 export function startBezoekteller(site: BezoekSite) {
   if (!telt()) return;
-  // Laadt de browser de pagina alvast op de achtergrond (prerender), dan telt ze pas als de bezoeker ze echt opent.
-  if ((document as Document & { prerendering?: boolean }).prerendering) {
-    document.addEventListener("prerenderingchange", () => startBezoekteller(site), { once: true });
-    return;
-  }
   let last: string | null = null;
   let first = true;
   const count = () => {
+    // Alleen wat de bezoeker echt te zien krijgt: een tabblad op de achtergrond of een pagina die de browser alvast
+    // laadt (prerender) is "hidden" en telt pas zodra ze zichtbaar wordt (visibilitychange hieronder).
+    if (document.visibilityState !== "visible") return;
     const page = paginaVan(site, location.pathname, location.search, location.hash);
     if (!page || page === last) return;
     last = page;
@@ -52,6 +50,14 @@ export function startBezoekteller(site: BezoekSite) {
   };
   count();
   window.addEventListener("hashchange", count);
+  document.addEventListener("visibilitychange", count);
+  // Terug of vooruit naar een pagina die de browser in het geheugen bewaarde: het script start dan niet opnieuw,
+  // maar de bezoeker ziet de pagina wel opnieuw. Dat is een paginaweergave, geen nieuw bezoek.
+  window.addEventListener("pageshow", (event) => {
+    if (!event.persisted) return;
+    last = null;
+    count();
+  });
 }
 
 // Vlak voor een doorverwijzing naar de andere website (oude links): het bezoek tellen bij de pagina waar de bezoeker

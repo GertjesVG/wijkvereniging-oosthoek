@@ -149,7 +149,7 @@ export function StatsPanel() {
           <h2 id="stats-title">Bezoekersstatistieken</h2>
           <p className="muted small">
             Hoe vaak de website bezocht wordt en welke pagina's het meest bekeken worden. Alleen aantallen: geen namen,
-            IP-adressen of cookies.
+            IP-adressen of cookies. Een bezoek is geen persoon: wie drie keer komt, telt als drie bezoeken.
           </p>
         </div>
         <div className="stats-refresh">
@@ -215,16 +215,24 @@ export function StatsPanel() {
             <h3 className="stats-heading">Wat betekenen deze cijfers?</h3>
             <ul>
               <li>
-                <strong>Bezoek:</strong> iemand komt op de website aan, via een link, een QR-code, een zoekmachine of door het
-                adres te typen. Wie vandaag twee keer komt, telt als twee bezoeken.
+                <strong>Bezoek:</strong> iemand komt van buitenaf op de website aan: via een link (Facebook, WhatsApp, mail),
+                een QR-code, een zoekmachine of door het adres te typen. Verder klikken binnen de website, de pagina
+                vernieuwen of teruggaan is geen nieuw bezoek. Wie vandaag twee keer komt, telt als twee bezoeken.
               </li>
               <li>
-                <strong>Paginaweergave:</strong> elke pagina die geopend wordt. Eén bezoek kan dus meerdere paginaweergaven
-                geven.
+                <strong>Paginaweergave:</strong> elke pagina die iemand echt te zien krijgt, ook na doorklikken, vernieuwen
+                of teruggaan. Eén bezoek geeft dus meestal meerdere paginaweergaven. Een tabblad dat op de achtergrond
+                blijft, telt pas als het geopend wordt.
               </li>
               <li>
-                <strong>Unieke bezoekers</strong> tellen we bewust niet: daarvoor zou de website mensen moeten herkennen met
-                een cookie. Het beheer en geautomatiseerde zoekrobots tellen niet mee.
+                <strong>Unieke personen</strong> kunnen we niet tellen: daarvoor zou de website mensen moeten herkennen met
+                een cookie of een ander kenmerk, en dat doen we bewust niet. Tien bezoeken kunnen dus van tien mensen komen,
+                of van drie mensen die vaker terugkwamen.
+              </li>
+              <li>
+                <strong>Wat niet meetelt:</strong> het beheer, zoekrobots en de voorbeeldjes die WhatsApp of Facebook van een
+                link ophalen. Houdt de browser of een advertentieblokker van een bezoeker de telling tegen, dan missen we
+                dat bezoek. De cijfers zijn daarom eerder iets te laag dan te hoog.
               </li>
               <li>Een dag loopt van middernacht tot middernacht, Belgische tijd.</li>
             </ul>

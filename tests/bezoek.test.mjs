@@ -172,8 +172,15 @@ test("de teller gebruikt geen cookie of browseropslag en staat niet in het behee
   assert.doesNotMatch(text("../server/bezoek.ts"), /CF-Connecting-IP|connectionOf|sha256/);
 });
 
-test("een pagina die de browser alvast op de achtergrond laadt, telt niet mee", () => {
-  for (const file of ["../src/bezoek/teller.ts", "../index.html"]) assert.match(text(file), /prerendering/, file);
+test("alleen zichtbare pagina's tellen: geen achtergrondtabblad of pagina die de browser alvast laadt", () => {
+  const teller = text("../src/bezoek/teller.ts");
+  // Een verborgen of alvast geladen pagina is "hidden"; ze telt zodra ze zichtbaar wordt.
+  assert.match(teller, /document\.visibilityState !== "visible"\) return/);
+  assert.match(teller, /addEventListener\("visibilitychange", count\)/);
+  // Terug naar een pagina uit het browsergeheugen: weergave opnieuw tellen, geen bezoek.
+  assert.match(teller, /addEventListener\("pageshow"/);
+  assert.match(teller, /event\.persisted/);
+  assert.match(text("../index.html"), /prerendering/);
 });
 
 test("het inschrijfformulier onthoudt ingevulde gegevens alleen in het geheugen van de pagina", () => {

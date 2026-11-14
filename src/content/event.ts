@@ -1,8 +1,9 @@
 import type { PublicWebsite } from "./public-website";
 // Definitief adres van vereniging én wijkhuis, bevestigd door Gert op 5 november 2026.
 const oosthoekAddress = "Opstal 5, 2340 Beerse";
-// Maker van de website, zoals Gert het op 14 november 2026 opgaf; staat onderaan de wijkpagina.
-export const websiteMaker = ["GVG Digital Systems", "Gert Van Genechten", "Opstal 5", "2340 Beerse"];
+// Maker van de website; staat onderaan de wijkpagina ("Website ontwikkeld door …"). Alleen de bedrijfsnaam: naam en
+// adres van de maker zijn op de site van de vereniging geen verplichte vermelding (Gert, 14 november 2026).
+export const websiteMaker = "GVG Digital Systems";
 // Alleen openbare evenementgegevens. Geen sleutels of deelnemersgegevens in deze website.
 export const event = {
   year: 2026,

@@ -66,6 +66,7 @@ const catalogue = {
     lines: true,
   },
   "wijk.contact.tekst": { section: "wijk-hoofdpagina", label: "Contact: tekst", text: "We horen graag van je. Samen maken we de wijk." },
+  "wijk.voet.motto": { section: "wijk-hoofdpagina", label: "Zin onder de verenigingsnaam, onderaan elke pagina", text: "Samen maken we onze wijk bijzonder." },
   "wijk.voet.slogan": { section: "wijk-hoofdpagina", label: "Zin onderaan elke pagina", text: "Kleine momenten. Een hechte wijk." },
 
   "wijk.pasen.tegel": { section: "wijk-pasen", label: TEGEL, text: activity("pasen").teaser },

@@ -674,6 +674,14 @@ main:focus {
 .mailbox strong {
   color: var(--green);
 }
+.mailbox-privacy {
+  margin-top: 8px;
+  color: #56645a;
+  font-size: 0.9rem;
+}
+.mailbox-privacy a {
+  text-underline-offset: 3px;
+}
 
 /* Sponsors: de goedgekeurde kaarten uit sponsors.css, in de kleuren van de wijkwebsite. */
 .sponsors-page {
@@ -860,49 +868,75 @@ main:focus {
   color: var(--green);
 }
 
-/* Voet */
+/* Voet: drie rustige rijen (vereniging en slogan, wettelijke gegevens, auteursregel), alleen typografie en lijnen. */
 .site-footer {
-  padding-block: 34px;
+  padding-block: 40px 26px;
   border-top: 1px solid var(--line);
 }
-.footer-inner {
-  display: flex;
-  justify-content: space-between;
-  gap: 30px;
-}
-.footer-name {
-  font-weight: 700;
-}
-.footer-details {
-  margin-top: 4px;
-  color: #56645a;
-  font-size: 0.86rem;
-}
-.footer-links {
+.footer-top,
+.footer-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 18px;
-  margin-top: 6px;
-  font-size: 0.86rem;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 40px;
 }
-.footer-links a {
-  display: inline-block;
-  padding-block: 4px;
-  text-underline-offset: 3px;
+.footer-name {
+  color: var(--dark);
+  font-size: 1.06rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+.footer-motto {
+  margin-top: 2px;
+  color: #56645a;
+  font-size: 0.92rem;
 }
 .footer-tagline {
-  align-self: center;
   color: var(--green);
   font-family: var(--serif);
   font-size: 1.6rem;
   font-style: italic;
   font-weight: 600;
-}
-.footer-credit {
-  margin-top: 14px;
-  color: #56645a;
-  font-size: 0.8rem;
+  line-height: 1.2;
   text-align: right;
+}
+.footer-row {
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  color: #56645a;
+  font-size: 0.86rem;
+}
+.footer-details {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.footer-details li + li::before {
+  content: "·";
+  margin-inline: 10px;
+  color: #9aa79c;
+}
+.footer-privacy {
+  display: inline-block;
+  padding-block: 4px;
+  color: var(--green);
+  font-weight: 600;
+  text-underline-offset: 3px;
+}
+.footer-privacy:hover {
+  color: var(--dark);
+}
+.footer-bottom {
+  margin-top: 16px;
+  font-size: 0.8rem;
+}
+.footer-bottom strong {
+  color: var(--dark);
+  font-weight: 600;
 }
 
 /* Tablet */
@@ -971,6 +1005,20 @@ main:focus {
     margin: 6px 0 0;
     padding-inline: 14px;
     text-align: center;
+  }
+}
+
+/* Voet op tablet: de wettelijke gegevens onder elkaar, zodat een regel nooit met een scheidingspunt begint. */
+@media (max-width: 1040px) {
+  .footer-details {
+    flex-direction: column;
+    gap: 2px;
+  }
+  .footer-details li + li::before {
+    content: none;
+  }
+  .footer-legal {
+    align-items: flex-end;
   }
 }
 
@@ -1079,15 +1127,19 @@ main:focus {
     flex-shrink: 1;
     max-width: 100%;
   }
-  .footer-inner {
+  .site-footer {
+    padding-block: 32px 22px;
+  }
+  .footer-top,
+  .footer-row {
     flex-direction: column;
-    gap: 18px;
+    align-items: flex-start;
+  }
+  .footer-top {
+    gap: 14px;
   }
   .footer-tagline {
-    align-self: flex-start;
     font-size: 1.4rem;
-  }
-  .footer-credit {
     text-align: left;
   }
   .wijkhuis-map-block {

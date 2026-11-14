@@ -2,7 +2,8 @@
 // (server/bezoek.ts en de Node-tests gebruiken dit bestand rechtstreeks).
 //
 // Wat geteld wordt, per dag (Belgische tijd) en per pagina, zonder cookie, browseropslag, IP-adres of ander kenmerk:
-// - paginaweergave: een pagina van de website wordt geopend;
+// - paginaweergave: een pagina van de website wordt geopend en is zichtbaar (ook na doorklikken, vernieuwen of teruggaan;
+//   een tabblad op de achtergrond telt pas als het geopend wordt);
 // - bezoek: iemand komt op de website aan van buitenaf (link, QR-code, zoekmachine, zelf getypt adres).
 //   Verder klikken binnen de website, vernieuwen of teruggaan is geen nieuw bezoek.
 // Unieke bezoekers bestaan hier bewust niet: daarvoor zou de website een bezoeker moeten kunnen herkennen.

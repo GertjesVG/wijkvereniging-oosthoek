@@ -530,7 +530,7 @@ function PrivacyPage() {
       >
         Kort en duidelijk: welke gegevens we vragen als je kinderen inschrijft
         voor de cadeauactie, waarvoor, en hoe lang we ze bewaren. Ook de
-        tekeningen en lief en leed komen aan bod.
+        tekeningen, lief en leed en onze sponsors komen aan bod.
       </PageHeading>
       <div className="privacy-layout">
         <aside className="privacy-summary">
@@ -629,8 +629,10 @@ function PrivacyPage() {
               live GPS toont alleen de huifkar tijdens de rondrit, nooit jouw
               locatie. Er zijn geen advertentie- of analysetrackers, en geen
               cookies of browseropslag om bezoekers te volgen. We tellen wel
-              hoe vaak een pagina geopend wordt: alleen een aantal per dag en
-              per pagina, zonder IP-adres of ander gegeven over jou.
+              hoe vaak de website bezocht en een pagina geopend wordt: alleen
+              aantallen per dag en per pagina, zonder IP-adres of ander gegeven
+              over jou. We kunnen dus niet zien wie de website bezoekt of hoe
+              vaak dezelfde persoon terugkomt.
             </p>
             <p>
               Klik je op een sponsoradres of op de routeknop bij het wijkhuis, dan
@@ -693,31 +695,58 @@ function PrivacyPage() {
           </section>
           <section>
             <span className="section-number">05</span>
-            <h2>Tekeningen en lief en leed</h2>
+            <h2>Tekeningen, lief en leed en sponsors</h2>
             <p>
               <strong>Kleurwedstrijd.</strong> Op de tekening die je kind aan
               Sinterklaas geeft, staan de naam en de leeftijd van het kind. Die
-              gebruiken we alleen voor de kleurwedstrijd en de cadeauactie. Op
-              deze website publiceren we geen tekeningen en geen namen van
-              kinderen. We steunen hiervoor op ons gerechtvaardigd belang om
-              deze actie te organiseren (artikel 6.1.f AVG).
+              hebben we nodig om te weten van welk kind een tekening is, voor
+              de kleurwedstrijd en de cadeauactie; meer vragen we op de
+              tekening niet. Op deze website publiceren we geen tekeningen en
+              geen namen van kinderen. We steunen hiervoor op ons
+              gerechtvaardigd belang om deze gratis actie eerlijk te
+              organiseren (artikel 6.1.f AVG). Omdat het om kinderen gaat,
+              houden we het bij die twee gegevens en gebruiken we ze nergens
+              anders voor.
             </p>
             <p>
               <strong>Lief en leed.</strong> Bezorg je ons een geboortekaartje
               of een doodsbrief, dan gebruiken we de gegevens daarop alleen om
               de attentie van de vereniging te bezorgen; bij een overlijden
-              loopt dat via de begrafenisondernemer. Een huwelijksjubileum
-              meld je bij de gemeente Beerse. Alleen als je daar zelf
-              toestemming voor geeft, bezorgt de gemeente je gegevens aan het
-              wijkbestuur. Alleen de bestuursleden die de attentie verzorgen,
-              zien deze gegevens. We steunen hiervoor op ons gerechtvaardigd
-              belang om mee te leven met de buurt (artikel 6.1.f AVG); online
-              bewaren we hiervan niets.
+              loopt dat via de begrafenisondernemer. De privacyregels gelden
+              niet voor gegevens van overledenen, wel voor de nabestaanden die
+              op een doodsbrief staan.
             </p>
             <p>
-              Voor deze papieren stukken is nog geen vaste bewaartermijn
-              vastgelegd. Je kunt altijd vragen wat we bewaren en het laten
-              verwijderen: zie onderdeel 06.
+              Een huwelijksjubileum meld je bij de gemeente Beerse. Alleen als
+              je daar zelf toestemming voor geeft, bezorgt de gemeente je
+              gegevens aan het wijkbestuur. Die gegevens krijgen we dus niet
+              van jou, maar van de gemeente: het gaat om wat je op het
+              gemeentelijke formulier invulde. Alleen de bestuursleden die de
+              attentie verzorgen, zien deze gegevens.
+            </p>
+            <p>
+              Voor lief en leed steunen we op ons gerechtvaardigd belang om mee
+              te leven met de buurt (artikel 6.1.f AVG): je bezorgt ons de
+              stukken zelf of liet de gemeente je gegevens doorgeven, en we
+              gebruiken ze alleen voor de attentie. Online bewaren we hiervan
+              niets.
+            </p>
+            <p>
+              Voor de papieren tekeningen en de stukken van lief en leed is nog
+              geen vaste bewaartermijn vastgelegd; het bestuur beslist daar nog
+              over. Tot dan bewaren we ze niet langer dan nodig is voor de
+              wedstrijd, de actie of de attentie. Je kunt altijd vragen wat we
+              bewaren en het laten verwijderen: zie onderdeel 06.
+            </p>
+            <p>
+              <strong>Sponsors.</strong> Op de sponsorpagina staan de naam, het
+              logo, het adres en de zakelijke contactgegevens van de bedrijven
+              die de vereniging steunen. Bij een eenmanszaak of een zaak op
+              naam van een persoon zijn dat ook persoonsgegevens. We tonen ze
+              om onze sponsors te bedanken en hun zaak in de wijk bekend te
+              maken (gerechtvaardigd belang, artikel 6.1.f AVG). Ben je sponsor
+              en wil je iets laten aanpassen of weghalen? Mail ons, dan passen
+              we het aan.
             </p>
           </section>
           <section>
@@ -729,7 +758,7 @@ function PrivacyPage() {
               gegevens in een gangbare vorm krijgen om door te geven. Ouders en
               voogden kunnen dat ook voor hun kinderen. Mail naar{" "}
               <a href={`mailto:${org.email}`}>{org.email}</a> en vermeld je
-              inschrijvingsnummer.
+              inschrijvingsnummer als je er een hebt.
             </p>
             <p>
               <strong>Recht van bezwaar:</strong> waar we steunen op ons

@@ -277,9 +277,13 @@ test("hoofdpagina: zeven aanklikbare tegels, contact uit de bevestigde gegevens;
   await expect(contact).toContainText("Opstal 5, 2340 Beerse");
   const footer = page.locator("footer");
   await expect(footer).toContainText("BE0553.481.505");
-  await expect(footer.getByRole("link", { name: "Privacy" })).toHaveAttribute("href", "/sinterklaas/#/privacy");
+  for (const legal of ["VZW Wijkvereniging Oosthoek", "Zetel: Opstal 5, 2340 Beerse", "Ondernemingsnummer: BE0553.481.505", "RPR Ondernemingsrechtbank Antwerpen"])
+    await expect(footer).toContainText(legal);
+  await expect(footer.getByRole("link", { name: "Privacyverklaring" })).toHaveAttribute("href", "/sinterklaas/#/privacy");
   await expect(footer.getByRole("link")).toHaveCount(1);
-  await expect(footer.locator(".footer-credit")).toHaveText("Website made by:GVG Digital SystemsGert Van GenechtenOpstal 52340 Beerse");
+  await expect(footer.locator(".footer-bottom")).toHaveText(/^© \d{4} VZW Wijkvereniging OosthoekWebsite ontwikkeld door GVG Digital Systems$/);
+  await expect(footer).not.toContainText("Gert Van Genechten");
+  await expect(footer.locator("img, svg")).toHaveCount(0);
   await expect(footer).not.toContainText("sfeerbeelden");
   await expect(page.locator("iframe")).toHaveCount(0);
 });

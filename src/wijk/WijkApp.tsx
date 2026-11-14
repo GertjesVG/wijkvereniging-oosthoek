@@ -581,6 +581,9 @@ function LifePage() {
         <p className="mailbox">
           Deponeer het originele geboortekaartje of de originele doodsbrief in de brievenbus op <strong>{org.address}</strong>.
         </p>
+        <p className="mailbox-privacy">
+          Wat we met de gegevens op die stukken doen, lees je in onze <a href={sinterklaas.privacyHref}>privacyverklaring</a>.
+        </p>
       </section>
     </SubPage>
   );
@@ -720,27 +723,32 @@ export default function WijkApp() {
       </main>
       <footer className="site-footer">
         <div className="wrap">
-          <div className="footer-inner">
+          <div className="footer-top">
             <div>
               <p className="footer-name">{org.name}</p>
-              <p className="footer-details">
-                Zetel: {org.address} · Ondernemingsnummer {org.enterprise} · {org.register}
-              </p>
-              <p className="footer-links">
-                <a href={sinterklaas.privacyHref}>Privacy</a>
-              </p>
+              <p className="footer-motto">{t("wijk.voet.motto")}</p>
             </div>
             <p className="footer-tagline">{t("wijk.voet.slogan")}</p>
           </div>
-          <p className="footer-credit">
-            Website made by:
-            {websiteMaker.map((line) => (
-              <span key={line}>
-                <br />
-                {line}
-              </span>
-            ))}
-          </p>
+          {/* Verplichte vermeldingen van de vzw (art. 2:20 WVV): naam en rechtsvorm hierboven, zetel, nummer en rechtspersonenregister hier. */}
+          <div className="footer-row footer-legal">
+            <ul className="footer-details">
+              <li>Zetel: {org.address}</li>
+              <li>Ondernemingsnummer: {org.enterprise}</li>
+              <li>{org.register}</li>
+            </ul>
+            <a className="footer-privacy" href={sinterklaas.privacyHref}>
+              Privacyverklaring
+            </a>
+          </div>
+          <div className="footer-row footer-bottom">
+            <p>
+              © {today.slice(0, 4)} {org.name}
+            </p>
+            <p>
+              Website ontwikkeld door <strong>{websiteMaker}</strong>
+            </p>
+          </div>
         </div>
       </footer>
     </>
