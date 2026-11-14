@@ -185,7 +185,7 @@ const catalogue = {
   "sint.route.intro": {
     section: "sint-route",
     label: "Inleiding",
-    text: `De huifkar en de witte paarden rijden door ${event.route.stops.length} straten van Oosthoek. Hier vind je de route en, tijdens de rondrit, de livepositie.`,
+    text: `De huifkar en de paarden rijden door ${event.route.stops.length} straten van Oosthoek. Hier vind je de route en, tijdens de rondrit, de livepositie.`,
   },
   "sint.route.kaart-tekst": {
     section: "sint-route",
@@ -220,7 +220,7 @@ const catalogue = {
     text: "Plan je bezoek aan de Sint in Oosthoek. Hier vind je de praktische informatie en de actuele stand van zaken.",
   },
   "sint.praktisch.waar-titel": { section: "sint-praktisch", label: "Waar: titel", text: "Oosthoek in Beerse" },
-  // Correctie van Gert, 13 november 2026: "huifkar en paarden" in plaats van "huifkar en witte paarden".
+  // Correctie van Gert, 13 november 2026: "huifkar en paarden" (het woord "witte" vervalt; op 14 november overal).
   "sint.praktisch.waar-tekst": {
     section: "sint-praktisch",
     label: "Waar: tekst",

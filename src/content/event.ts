@@ -32,7 +32,7 @@ export const event = {
     {
       title: "Sinterklaas in de wijk",
       detail:
-        "Met de huifkar en witte paarden door de straten van Wijkvereniging Oosthoek.",
+        "Met de huifkar en paarden door de straten van Wijkvereniging Oosthoek.",
       time: null as string | null,
     },
   ],
@@ -66,7 +66,8 @@ export const event = {
       "Scheperstraat",
       "Oosteneinde",
     ],
-    transport: "Huifkar met witte paarden",
+    // Gert, 14 november 2026: overal "paarden", zonder "witte" (ook in beeldbeschrijvingen).
+    transport: "Huifkar met paarden",
     // false = de kaart toont de straten van de rondrit, maar de precieze rijweg binnen en tussen de straten is nog
     // niet nagekeken; de kaart heet dan "indicatief". Pas op true zetten nadat Gert de getekende route controleerde.
     mapChecked: false as boolean,
@@ -78,7 +79,7 @@ export const event = {
     eyebrow: "MAGISCHE DAG IN DE WIJK",
     heroTitle: "Sinterklaas komt naar Oosthoek!",
     intro:
-      "De Sint trekt met zijn huifkar en witte paarden door onze wijk. Kleur je tekening in, ontdek de cadeauactie en beleef een onvergetelijke dag!",
+      "De Sint trekt met zijn huifkar en paarden door onze wijk. Kleur je tekening in, ontdek de cadeauactie en beleef een onvergetelijke dag!",
     footer: "Samen maken we er een magische dag van!",
   },
   downloads: {

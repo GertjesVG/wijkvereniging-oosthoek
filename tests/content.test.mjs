@@ -279,7 +279,7 @@ test("route 2026: de 24 bevestigde straten in volgorde, vertrek met definitief a
   assert.deepEqual(event.route.stops, confirmed);
   assert.equal(event.date, "2026-11-28");
   assert.equal(event.departure, "Vertrek om 10.30 uur aan Wijkhuis Oosthoek, Opstal 5, 2340 Beerse.");
-  assert.equal(event.route.transport, "Huifkar met witte paarden");
+  assert.equal(event.route.transport, "Huifkar met paarden");
   assert.equal(
     event.route.turnNote,
     "In straten waar de huifkar moeilijk kan draaien, vragen we bewoners om aan het begin van de straat te komen.",

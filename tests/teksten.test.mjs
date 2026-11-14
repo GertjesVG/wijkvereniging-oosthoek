@@ -19,6 +19,18 @@ test("de gevraagde correctie onder Waar: huifkar en paarden, zonder 'witte'", ()
   assert.equal(event.route.stops.length, 24);
 });
 
+test("nergens nog 'witte paarden': teksten, Vervoer en beeldbeschrijvingen zeggen 'paarden' (Gert, 14 november 2026)", () => {
+  const walk = (dir) =>
+    readdirSync(new URL(dir, import.meta.url), { withFileTypes: true }).flatMap((entry) =>
+      entry.isDirectory() ? walk(`${dir}${entry.name}/`) : [`${dir}${entry.name}`],
+    );
+  const files = [...walk("../src/"), "../index.html", "../wijk/index.html"].filter((f) => /\.(tsx?|json|html)$/.test(f));
+  assert.ok(files.length > 30);
+  for (const file of files)
+    assert.doesNotMatch(readFileSync(new URL(file, import.meta.url), "utf8"), /witte paard/i, file);
+  assert.equal(event.route.transport, "Huifkar met paarden");
+});
+
 test("elke tekst: geldige sleutel, bestaand onderdeel, label en een oorspronkelijke tekst die het opslaan ongewijzigd overleeft", () => {
   const sections = new Set(textSections.map((s) => s.id));
   assert.ok(keys.length >= 60, `te weinig teksten: ${keys.length}`);

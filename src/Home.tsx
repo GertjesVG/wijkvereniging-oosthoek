@@ -142,7 +142,7 @@ export function Hero() {
         <div className="hero-illustration">
           <img
             src={asset("assets/hero.webp")}
-            alt="Sinterklaas zwaait vanuit een feestelijk verlichte huifkar, getrokken door twee witte paarden."
+            alt="Sinterklaas zwaait vanuit een feestelijk verlichte huifkar, getrokken door twee paarden."
             fetchPriority="high"
             width="1817"
             height="866"

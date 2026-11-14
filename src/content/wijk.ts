@@ -109,7 +109,7 @@ export const sinterklaas = {
   title: "Sinterklaas in Oosthoek",
   teaser: "De Sint komt naar Oosthoek. Alle informatie op zijn eigen website.",
   image: "assets/hero.webp",
-  imageAlt: "Sinterklaas zwaait vanuit een feestelijk verlichte huifkar, getrokken door twee witte paarden.",
+  imageAlt: "Sinterklaas zwaait vanuit een feestelijk verlichte huifkar, getrokken door twee paarden.",
   href: "/sinterklaas/#/home",
   registrationHref: "/sinterklaas/#/cadeauactie",
   privacyHref: "/sinterklaas/#/privacy",
