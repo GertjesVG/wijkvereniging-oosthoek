@@ -248,7 +248,10 @@ test("privacyverklaring: juiste rechtsgronden en verplichte informatie, geen bel
   // anderen" kloppen niet met de werking; de verwerkersrol staat pas vast als het mandaat bevestigd is.
   for (const never of ["Dat doen we met je toestemming", "anoniem", "onomkeerbaar", "sponsors of anderen", "als verwerker"])
     assert.ok(!privacy.includes(never), never);
-  assert.equal((privacy.match(/section-number/g) ?? []).length, 5);
+  assert.equal((privacy.match(/section-number/g) ?? []).length, 6);
+  // Tekeningen en lief en leed: beschreven zonder verzonnen bewaartermijn.
+  for (const must of ["Tekeningen en lief en leed", "geboortekaartje", "nog geen vaste bewaartermijn"])
+    assert.ok(privacy.includes(must), must);
   // Ook het beheer noemt de bewaarde cijfers niet anoniem: het inschrijvingsnummer blijft erbij staan.
   const dashboard = readFileSync(new URL("../src/beheer/Dashboard.tsx", import.meta.url), "utf8");
   assert.ok(!/anonieme/i.test(dashboard), "beheer: anonieme");

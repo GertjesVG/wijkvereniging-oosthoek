@@ -529,7 +529,8 @@ function PrivacyPage() {
         title="Privacy, helder uitgelegd."
       >
         Kort en duidelijk: welke gegevens we vragen als je kinderen inschrijft
-        voor de cadeauactie, waarvoor, en hoe lang we ze bewaren.
+        voor de cadeauactie, waarvoor, en hoe lang we ze bewaren. Ook de
+        tekeningen en lief en leed komen aan bod.
       </PageHeading>
       <div className="privacy-layout">
         <aside className="privacy-summary">
@@ -692,6 +693,35 @@ function PrivacyPage() {
           </section>
           <section>
             <span className="section-number">05</span>
+            <h2>Tekeningen en lief en leed</h2>
+            <p>
+              <strong>Kleurwedstrijd.</strong> Op de tekening die je kind aan
+              Sinterklaas geeft, staan de naam en de leeftijd van het kind. Die
+              gebruiken we alleen voor de kleurwedstrijd en de cadeauactie. Op
+              deze website publiceren we geen tekeningen en geen namen van
+              kinderen. We steunen hiervoor op ons gerechtvaardigd belang om
+              deze actie te organiseren (artikel 6.1.f AVG).
+            </p>
+            <p>
+              <strong>Lief en leed.</strong> Bezorg je ons een geboortekaartje
+              of een doodsbrief, dan gebruiken we de gegevens daarop alleen om
+              de attentie van de vereniging te bezorgen; bij een overlijden
+              loopt dat via de begrafenisondernemer. Een huwelijksjubileum
+              meld je bij de gemeente Beerse. Alleen als je daar zelf
+              toestemming voor geeft, bezorgt de gemeente je gegevens aan het
+              wijkbestuur. Alleen de bestuursleden die de attentie verzorgen,
+              zien deze gegevens. We steunen hiervoor op ons gerechtvaardigd
+              belang om mee te leven met de buurt (artikel 6.1.f AVG); online
+              bewaren we hiervan niets.
+            </p>
+            <p>
+              Voor deze papieren stukken is nog geen vaste bewaartermijn
+              vastgelegd. Je kunt altijd vragen wat we bewaren en het laten
+              verwijderen: zie onderdeel 06.
+            </p>
+          </section>
+          <section>
+            <span className="section-number">06</span>
             <h2>Jouw rechten en contact</h2>
             <p>
               Je mag altijd vragen welke gegevens we van je hebben, ze laten
