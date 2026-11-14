@@ -622,7 +622,9 @@ function PrivacyPage() {
               wijkhuis, of vanzelf op de routepagina terwijl de live GPS loopt. De
               live GPS toont alleen de huifkar tijdens de rondrit, nooit jouw
               locatie. Er zijn geen advertentie- of analysetrackers, en geen
-              cookies of browseropslag om bezoekers te volgen.
+              cookies of browseropslag om bezoekers te volgen. We tellen wel
+              hoe vaak een pagina geopend wordt: alleen een aantal per dag en
+              per pagina, zonder IP-adres of ander gegeven over jou.
             </p>
             <p>
               Klik je op een sponsoradres of op de routeknop bij het wijkhuis, dan

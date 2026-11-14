@@ -6,6 +6,7 @@ import type {
 } from "../inschrijving/api";
 import type { AdminGps } from "../gps/api";
 import type { AdminText } from "../content/teksten";
+import type { AdminStats } from "../bezoek/paginas";
 
 export class AdminError extends Error {
   status: number;
@@ -139,6 +140,7 @@ export const api = {
   gpsStart: (hours: number) => request<AdminGps>("POST", "/api/beheer/gps", { action: "start", hours }),
   gpsStop: () => request<AdminGps>("POST", "/api/beheer/gps", { action: "stop" }),
   // Teksten van de website: alleen de aangepaste; value null = terug naar de oorspronkelijke tekst.
+  stats: () => request<AdminStats>("GET", "/api/beheer/statistieken"),
   texts: () => request<AdminText[]>("GET", "/api/beheer/teksten"),
   saveText: (key: string, value: string | null) =>
     request<AdminText>("PATCH", `/api/beheer/teksten/${enc(key)}`, { value }),

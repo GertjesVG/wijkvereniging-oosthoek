@@ -63,6 +63,18 @@ Voor de beheerder: open `/beheer/`, log in met het bestaande beheerwachtwoord en
 - Wie een tekst in de code wijzigt: een in het beheer aangepaste versie blijft voorgaan tot "Oorspronkelijke tekst terugzetten".
 - Publiceren: eerst migratie 0009 op de online database, dan de code naar `main`. Omgekeerd kan ook: tot de migratie toont de site de oorspronkelijke teksten en meldt het beheer dat de opslag nog niet is ingesteld.
 
+## Bezoekersstatistieken in het beheer
+
+Voor de beheerder: open `/beheer/`, log in en kies **Bezoekersstatistieken**. Het scherm haalt de cijfers op bij het openen en met **Vernieuwen**: bezoeken vandaag, gisteren, de afgelopen 7 en 30 dagen, de totalen sinds het begin van de telling, een grafiek per dag (7, 30, 90 dagen of alles, met vergelijking met de periode ervoor zodra die volledig gemeten is) en de meest bekeken pagina's.
+
+- Eigen, anonieme teller in de bestaande D1-database: tabel `visit_days` (migratie `0010_bezoeken.sql`), één rij per dag (Belgische tijd) en per pagina met twee aantallen. Geen cookie, geen browseropslag, geen IP-adres of browsergegevens; geen externe dienst, geen sleutel of extra Cloudflare-instelling.
+- **Bezoek** = aankomst van buiten de website (link, QR-code, zoekmachine, getypt adres); verder klikken, vernieuwen of teruggaan is geen nieuw bezoek. **Paginaweergave** = elke geopende pagina. Unieke bezoekers bestaan bewust niet: daarvoor zou de site mensen moeten herkennen.
+- De website meldt een weergave aan `POST /api/bezoek` (`src/bezoek/teller.ts`, gestart in `src/main.tsx` en `src/wijk/main.tsx`; de doorverwijzingen in `index.html` en `src/wijk/main.tsx` tellen het bezoek bij de doelpagina). De server (`server/bezoek.ts`) aanvaardt alleen de pagina's uit `src/bezoek/paginas.ts`, alleen van de eigen site, en negeert zoekrobots en geautomatiseerde browsers. Het beheer zelf telt niet mee. Een nieuwe pagina op de site: voeg ze toe aan `bezoekPaginas` (`npm test` bewaakt dat de lijst klopt met de bestaande pagina's).
+- Het antwoord op een melding is altijd leeg (204), ook zonder database of tabel: een storing van de teller raakt de website niet. De cijfers lezen kan alleen via `GET /api/beheer/statistieken`, achter de bestaande beheerlogin.
+- Waarom niet Cloudflare Web Analytics: beide sites gebruiken #-routes (`/sinterklaas/#/route`). Cloudflare meet per pad en zou dus alleen `/` en `/sinterklaas/` onderscheiden, bewaart zes maanden en vraagt een API-sleutel plus een instelling in het dashboard. Niet tegelijk inschakelen: dan wordt dubbel gemeten.
+- Publiceren: eerst migratie 0010 op de online database (`npx wrangler d1 migrations apply oosthoek-inschrijvingen --remote`), dan de code naar `main`. Omgekeerd kan ook: tot de migratie telt de site niets en meldt het beheer dat de teller nog niet is ingesteld.
+- Testen: `npm test` (rekenwerk, dagen in Belgische tijd, paginalijst) en `npm run test:statistieken` (server met lokale database).
+
 ## Nog aan te sluiten
 
 1. Inschrijvingen en bevestigingsmails: actief sinds 3 november 2026. Werking, beveiliging en tests staan in [INSCHRIJVEN.md](INSCHRIJVEN.md).

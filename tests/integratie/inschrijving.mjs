@@ -56,6 +56,8 @@ function prepare(dir, edit = (source) => source) {
   mkdirSync(path.join(dir, "src/inschrijving"), { recursive: true });
   for (const file of ["api.ts", "evenementen.ts", "periode.ts", "bevestigingsmail.ts"])
     cpSync(path.join(repo, "src/inschrijving", file), path.join(dir, "src/inschrijving", file));
+  mkdirSync(path.join(dir, "src/bezoek"), { recursive: true });
+  cpSync(path.join(repo, "src/bezoek/paginas.ts"), path.join(dir, "src/bezoek/paginas.ts"));
   const serverFile = path.join(dir, "server/inschrijven.ts");
   const serverSource = readFileSync(serverFile, "utf8");
   const local = serverSource.replace("https://challenges.cloudflare.com/turnstile/v0/siteverify", `http://127.0.0.1:${VERIFY_PORT}/siteverify`);

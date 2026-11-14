@@ -22,6 +22,7 @@ import {
 } from "./basis.ts";
 import { handleGpsAdmin } from "./gps.ts";
 import { handleTextsAdmin } from "./teksten.ts";
+import { handleStatsAdmin } from "./bezoek.ts";
 import { CHILD_NAME_HINT, checkArea, cleanChildName, cleanEmail, cleanHouseNumber, cleanText } from "./validatie.ts";
 import { deleteByPassed, eraseExpired, eraseStatements } from "./wissen.ts";
 
@@ -665,6 +666,8 @@ export async function handleAdmin(request: Request, env: Env, path: string[]) {
   if (section === "gps" && !key) return handleGpsAdmin(request, env, db);
   // Teksten van de website (server/teksten.ts).
   if (section === "teksten") return handleTextsAdmin(request, db, path);
+  // Bezoekersstatistieken (server/bezoek.ts).
+  if (section === "statistieken") return handleStatsAdmin(request, db, path);
   if (section === "evenementen") {
     await ensureEvents(db);
     await eraseExpired(db);

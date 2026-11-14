@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
-import { ClipboardList, Download, LogOut, Mail, PenLine, RefreshCw, Trash2 } from "lucide-react";
+import { BarChart3, ClipboardList, Download, LogOut, Mail, PenLine, RefreshCw, Trash2 } from "lucide-react";
 import type { AdminEventSummary, AdminRegistration } from "../inschrijving/api";
 import { renderConfirmation, repliesInGmail } from "../inschrijving/bevestigingsmail";
 import { registrationNotice, toBrusselsInput } from "../inschrijving/periode";
 import { AdminError, api, describeError, exportUrl, setUnauthorizedHandler } from "./client";
 import { GpsPanel } from "./GpsPanel";
 import { RegistrationItem } from "./RegistrationItem";
+import { StatsPanel } from "./StatsPanel";
 import { TextsPanel } from "./TextsPanel";
 import { ErrorNote, formatDay, useAction } from "./ui";
 
@@ -716,9 +717,11 @@ function History({ events }: { events: AdminEventSummary[] }) {
 
 // ---------- Dashboard en app ----------
 
-// Twee onderdelen: inschrijvingen met GPS (zoals altijd), en de teksten van de website (#teksten).
-type View = "inschrijvingen" | "teksten";
-const viewOf = (hash: string): View => (hash === "#teksten" ? "teksten" : "inschrijvingen");
+// Drie onderdelen: inschrijvingen met GPS (zoals altijd), de teksten van de website (#teksten) en de
+// bezoekersstatistieken (#statistieken).
+type View = "inschrijvingen" | "teksten" | "statistieken";
+const viewOf = (hash: string): View =>
+  hash === "#teksten" ? "teksten" : hash === "#statistieken" ? "statistieken" : "inschrijvingen";
 
 function Dashboard({
   initialEvents,
@@ -778,6 +781,10 @@ function Dashboard({
               <PenLine size={16} aria-hidden="true" />
               Teksten van de website
             </a>
+            <a href="#statistieken" aria-current={view === "statistieken" ? "page" : undefined}>
+              <BarChart3 size={16} aria-hidden="true" />
+              Bezoekersstatistieken
+            </a>
           </nav>
           {view === "inschrijvingen" && events.length > 0 && (
             <label className="field event-pick">
@@ -803,6 +810,8 @@ function Dashboard({
             <TextsPanel />
           </div>
         )}
+        {/* Bij elk openen opnieuw opgebouwd: zo haalt het scherm meteen de actuele cijfers op. */}
+        {view === "statistieken" && <StatsPanel />}
         {view === "inschrijvingen" && (
           <>
             <GpsPanel />
