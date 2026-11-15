@@ -10,12 +10,15 @@
 // afmetingen van het bestand. `backdrop` = de egale achtergrondkleur van het logo zelf, zodat
 // de hele logozone die kleur krijgt (nodig bij een wit of licht logo, of een logo op een eigen vlak).
 // `maxWidth` = grootste weergave in css-pixels, voor een klein bestand dat anders wazig uitgerekt wordt.
+// `fill` = het logo krijgt de volle kaartbreedte en de logozone wordt daarvoor hoger (alleen met `backdrop`);
+// voor een bijna vierkant logo met kleine tekst, dat in de gewone zone van 5:2 onleesbaar klein wordt.
 export type SponsorLogo = {
   file: string;
   width: number;
   height: number;
   backdrop?: string;
   maxWidth?: number;
+  fill?: boolean;
 };
 
 export const sponsorLogos: Record<string, SponsorLogo> = {
@@ -103,9 +106,10 @@ export const sponsorLogos: Record<string, SponsorLogo> = {
   },
   "Jacko Sound": {
     file: "sponsor-jacko-sound.webp",
-    width: 809,
-    height: 560,
+    width: 1204,
+    height: 827,
     backdrop: "#000000",
+    fill: true,
   },
   "Traiteur Delaplace - De Open Keuken": {
     file: "sponsor-de-open-keuken.webp",

@@ -98,6 +98,8 @@
   grid-template: minmax(0, 1fr) / minmax(0, 1fr);
   place-items: center;
   aspect-ratio: 5 / 2;
+  /* naast een hogere logozone in dezelfde rij (logo op volle breedte) blijft deze zone even groot, in het midden */
+  align-self: center;
   min-width: 0;
   margin-bottom: 20px;
   border-radius: 12px;

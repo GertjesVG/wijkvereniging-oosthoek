@@ -37,7 +37,17 @@ function SponsorLogo({ sponsor, assetUrl }: { sponsor: Sponsor; assetUrl: AssetU
   return (
     <div
       className={`sponsor-logo${logo.backdrop ? " has-backdrop" : ""}`}
-      style={logo.backdrop ? { backgroundColor: logo.backdrop } : undefined}
+      style={
+        logo.backdrop
+          ? {
+              backgroundColor: logo.backdrop,
+              // volle breedte: de zone volgt de verhouding van het logo, plus de marge van .has-backdrop (3% en 4%)
+              aspectRatio: logo.fill
+                ? 1 / ((0.92 * logo.height) / logo.width + 0.06)
+                : undefined,
+            }
+          : undefined
+      }
     >
       <img
         src={assetUrl(`assets/${logo.file}`)}
