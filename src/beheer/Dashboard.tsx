@@ -183,10 +183,12 @@ function PeriodBlock({
 
 function EventPanel({
   event,
+  summaryError,
   onChange,
   onErased,
 }: {
   event: AdminEventSummary;
+  summaryError: string | null;
   onChange: (updated: AdminEventSummary) => void;
   onErased: () => void;
 }) {
@@ -292,6 +294,10 @@ function EventPanel({
           hint="wachtend / verstuurd / mislukt"
         />
       </dl>
+      <ErrorNote>
+        {summaryError &&
+          `De cijfers hierboven konden niet vernieuwd worden en zijn mogelijk verouderd. ${summaryError} Probeer "Vernieuwen" opnieuw.`}
+      </ErrorNote>
 
       <div className="controls">
         <form className="inline-form" onSubmit={saveCapacity}>
@@ -459,10 +465,13 @@ function matches(reg: AdminRegistration, f: Filters): boolean {
 function Registrations({
   eventId,
   reloadKey,
+  onReload,
   onMutated,
 }: {
   eventId: string;
   reloadKey: number;
+  // Haalt de kaarten bovenaan opnieuw op; faalt nooit (een fout toont het overzicht zelf).
+  onReload: () => Promise<void>;
   onMutated: () => void;
 }) {
   const [items, setItems] = useState<AdminRegistration[] | null>(null);
@@ -472,19 +481,23 @@ function Registrations({
   const [expanded, setExpanded] = useState<number | null>(null);
   const requestId = useRef(0);
 
+  // De lijst en de kaarten bovenaan altijd samen ophalen (ook bij "Vernieuwen" en bij terugkeer naar dit onderdeel),
+  // anders toont de lijst nieuwe inschrijvingen terwijl de kaarten nog de stand van bij het inloggen tonen.
   const load = useCallback(async () => {
     const mine = ++requestId.current;
     setLoading(true);
     setLoadError(null);
+    const cards = onReload();
     try {
       const list = await api.registrations(eventId);
       if (mine === requestId.current) setItems(list);
     } catch (e) {
       if (mine === requestId.current) setLoadError(describeError(e));
     } finally {
+      await cards;
       if (mine === requestId.current) setLoading(false);
     }
-  }, [eventId]);
+  }, [eventId, onReload]);
 
   useEffect(() => {
     setItems(null);
@@ -749,11 +762,20 @@ function Dashboard({
     return () => window.removeEventListener("hashchange", change);
   }, []);
 
+  // Alleen het laatste antwoord telt. Een mislukte verversing laat de laatst gekende cijfers staan, maar nooit stil:
+  // het overzicht toont dan een melding tot een volgende verversing lukt.
+  const [summaryError, setSummaryError] = useState<string | null>(null);
+  const summaryRequest = useRef(0);
   const refreshEvents = useCallback(async () => {
+    const mine = ++summaryRequest.current;
     try {
-      setEvents(await api.events());
-    } catch {
-      // Een mislukte verversing laat de bestaande cijfers staan.
+      const fresh = await api.events();
+      if (mine === summaryRequest.current) {
+        setEvents(fresh);
+        setSummaryError(null);
+      }
+    } catch (e) {
+      if (mine === summaryRequest.current) setSummaryError(describeError(e));
     }
   }, []);
   const event = events.find((e) => e.id === selected) ?? events[0];
@@ -821,12 +843,18 @@ function Dashboard({
               <>
                 <EventPanel
                   event={event}
+                  summaryError={summaryError}
                   onChange={(updated) =>
                     setEvents((list) => list.map((e) => (e.id === updated.id ? updated : e)))
                   }
                   onErased={() => setReloadKey((n) => n + 1)}
                 />
-                <Registrations eventId={event.id} reloadKey={reloadKey} onMutated={refreshEvents} />
+                <Registrations
+                  eventId={event.id}
+                  reloadKey={reloadKey}
+                  onReload={refreshEvents}
+                  onMutated={refreshEvents}
+                />
                 <History events={events} />
               </>
             )}
