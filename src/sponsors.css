@@ -98,13 +98,18 @@
   grid-template: minmax(0, 1fr) / minmax(0, 1fr);
   place-items: center;
   aspect-ratio: 5 / 2;
-  /* naast een hogere logozone in dezelfde rij (logo op volle breedte) blijft deze zone even groot, in het midden */
-  align-self: center;
   min-width: 0;
   margin-bottom: 20px;
   border-radius: 12px;
   overflow: hidden;
   container-type: inline-size;
+}
+/* Naast een hogere logozone in dezelfde rij (logo op volle breedte) blijft deze zone even groot, in het midden.
+   Alleen met subgrid: in de flex-terugval hierboven zou centreren de zone tot een smal blokje laten krimpen. */
+@supports (grid-template-rows: subgrid) {
+  .sponsor-logo {
+    align-self: center;
+  }
 }
 /* Logo met een eigen vlak (achtergrondkleur via backdrop): ademruimte binnen dat vlak. */
 .sponsor-logo.has-backdrop {
