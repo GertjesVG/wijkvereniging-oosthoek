@@ -4,6 +4,8 @@
 // Documentatie\Sponsors\Vervolgonderzoek-ontbrekende-logos.txt. De bestanden in public/assets/ zijn webversies:
 // alleen de lege rand weggesneden en verkleind, kleuren en vorm ongewijzigd.
 // Een sponsor zonder regel hier krijgt de naam als typografische plaat in de logozone.
+// 15 november 2026 (opdracht Gert): logo van ZEEPVENTJE weggehaald; nieuwe logo's van Walbers Zonweringen
+// en Jacko Sound uit de aangeleverde bestanden (ongewijzigde kopie in Documentatie\Sponsors\assets: walbers-zonweringen-2026-11-15.png, jacko-sound-2026-11-15.png).
 // Logo toevoegen: bestand als public/assets/sponsor-<naam>.webp, en hier één regel met de
 // afmetingen van het bestand. `backdrop` = de egale achtergrondkleur van het logo zelf, zodat
 // de hele logozone die kleur krijgt (nodig bij een wit of licht logo, of een logo op een eigen vlak).
@@ -17,7 +19,6 @@ export type SponsorLogo = {
 };
 
 export const sponsorLogos: Record<string, SponsorLogo> = {
-  ZEEPVENTJE: { file: "sponsor-zeepventje.webp", width: 840, height: 323 },
   "Delaplace Tuinen": {
     file: "sponsor-delaplace-tuinen.webp",
     width: 1002,
@@ -78,9 +79,8 @@ export const sponsorLogos: Record<string, SponsorLogo> = {
   },
   "Walbers Zonweringen": {
     file: "sponsor-walbers.webp",
-    width: 196,
-    height: 36,
-    maxWidth: 196,
+    width: 840,
+    height: 342,
   },
   "Brasserie De Sjokola": {
     file: "sponsor-de-sjokola.webp",
@@ -101,7 +101,12 @@ export const sponsorLogos: Record<string, SponsorLogo> = {
     height: 340,
     backdrop: "#242826",
   },
-  "Jacko Sound": { file: "sponsor-jacko-sound.webp", width: 457, height: 42 },
+  "Jacko Sound": {
+    file: "sponsor-jacko-sound.webp",
+    width: 809,
+    height: 560,
+    backdrop: "#000000",
+  },
   "Traiteur Delaplace - De Open Keuken": {
     file: "sponsor-de-open-keuken.webp",
     width: 417,

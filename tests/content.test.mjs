@@ -82,9 +82,11 @@ test("sponsoradressen: 33 gecodeerde Google Maps-links met het volledige gepubli
   for (const name of addressOnly) assert.ok(sponsors.some((s) => s.name === name), name);
 });
 
-test("25 sponsorlogo’s op naam gekoppeld en als eigen bestand aanwezig; 8 sponsors krijgen een naamplaat", () => {
+test("24 sponsorlogo’s op naam gekoppeld en als eigen bestand aanwezig; 9 sponsors krijgen een naamplaat", () => {
   const names = new Set(sponsors.map((s) => s.name));
-  assert.equal(Object.keys(sponsorLogos).length, 25);
+  assert.equal(Object.keys(sponsorLogos).length, 24);
+  // Het logo van ZEEPVENTJE is op 15 november 2026 offline gehaald: geen bestand meer in de publicatie.
+  assert.ok(!existsSync(new URL("../public/assets/sponsor-zeepventje.webp", import.meta.url)));
   for (const [name, logo] of Object.entries(sponsorLogos)) {
     assert.ok(names.has(name), name);
     assert.match(logo.file, /^sponsor-[a-z0-9-]+\.(webp|svg)$/);
@@ -105,6 +107,7 @@ test("25 sponsorlogo’s op naam gekoppeld en als eigen bestand aanwezig; 8 spon
   assert.deepEqual(
     sponsors.filter((s) => !sponsorLogos[s.name]).map((s) => s.name),
     [
+      "ZEEPVENTJE",
       "Taxi Adrienne EDLIH",
       "GNP",
       "Tegeldiscount",
