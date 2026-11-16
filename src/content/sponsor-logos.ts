@@ -6,6 +6,7 @@
 // Een sponsor zonder regel hier krijgt de naam als typografische plaat in de logozone.
 // 15 november 2026 (opdracht Gert): logo van ZEEPVENTJE weggehaald; nieuwe logo's van Walbers Zonweringen
 // en Jacko Sound uit de aangeleverde bestanden (ongewijzigde kopie in Documentatie\Sponsors\assets: walbers-zonweringen-2026-11-15.png, jacko-sound-2026-11-15.png).
+// 16 november 2026 (opdracht Gert, op vraag van de sponsor zelf): "Polyesterwerken Stevens J." heet nu "Zwembaden Stevens J."; het logo (Stevens J BV) is ongewijzigd.
 // Logo toevoegen: bestand als public/assets/sponsor-<naam>.webp, en hier één regel met de
 // afmetingen van het bestand. `backdrop` = de egale achtergrondkleur van het logo zelf, zodat
 // de hele logozone die kleur krijgt (nodig bij een wit of licht logo, of een logo op een eigen vlak).
@@ -118,7 +119,7 @@ export const sponsorLogos: Record<string, SponsorLogo> = {
   },
   "Color Nuance - Wim Stessens": { file: "sponsor-color-nuance.webp", width: 840, height: 213 },
   "David Neirynck": { file: "sponsor-neirynck.webp", width: 840, height: 245 },
-  "Polyesterwerken Stevens J.": {
+  "Zwembaden Stevens J.": {
     file: "sponsor-stevens-j.webp",
     width: 840,
     height: 286,

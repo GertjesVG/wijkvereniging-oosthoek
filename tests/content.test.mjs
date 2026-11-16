@@ -40,7 +40,12 @@ test("alleen de 20 bevestigde eigen sponsorwebsites worden aangeboden", () => {
   for (const line of report.split("\n")) {
     const cells = line.split("|").map((c) => c.trim());
     if (cells[3] !== "✅") continue;
-    const name = cells[2] === "Aerts (Grafzerken)" ? "Aerts" : cells[2];
+    // Het onderzoek van 1 november gebruikt de naam van toen; Stevens heet sinds 16 november "Zwembaden Stevens J.".
+    const renamed = {
+      "Aerts (Grafzerken)": "Aerts",
+      "Polyesterwerken Stevens J.": "Zwembaden Stevens J.",
+    };
+    const name = renamed[cells[2]] ?? cells[2];
     const url = cells[4].match(/\[Website\]\((https:\/\/[^)]+)\)/)?.[1];
     assert.ok(url);
     confirmed.set(name, url);
@@ -57,8 +62,16 @@ test("alleen de 20 bevestigde eigen sponsorwebsites worden aangeboden", () => {
     "Turnhoutsebaan 132, Oostmalle",
   );
   assert.equal(
-    sponsors.find((s) => s.name === "Polyesterwerken Stevens J.").address,
-    "Krikskensstraat 24, Beerse",
+    sponsors.find((s) => s.name === "Zwembaden Stevens J.").address,
+    "Steenbakkersdam 19B, 2340 Beerse",
+  );
+  assert.equal(
+    sponsors.find((s) => s.name === "Zwembaden Stevens J.").category,
+    "Zwembaden, zwemvijvers en vijvers",
+  );
+  assert.equal(
+    sponsors.find((s) => s.name === "Bouwwerken Rombouts").address,
+    "Ketelaarstraat 129, 2340 Beerse",
   );
   assert.equal(
     sponsors.find((s) => s.name === "Gipsmachinecenter G.M.C.").address,

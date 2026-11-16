@@ -15,7 +15,7 @@ export const addressOnly = new Set<string>([
   "VerZeker BV",
   "Wienerberger / Nova",
   "Tegeldiscount",
-  "Polyesterwerken Stevens J.",
+  "Zwembaden Stevens J.",
   "SIS",
   "Selouco",
   "Stef Nuyens",
