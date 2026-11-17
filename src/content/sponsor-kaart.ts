@@ -6,7 +6,6 @@ type MapSponsor = { name: string; address: string };
 // Bedrijven waarvoor Google op de naam een ander adres, een ander bedrijf of een keuzelijst toont (gemeten op 4 november
 // 2026). Daar zoekt de link alleen op het gepubliceerde adres, zodat de bezoeker niet op een verkeerde plaats uitkomt.
 export const addressOnly = new Set<string>([
-  "ZEEPVENTJE",
   "Strijkatelier Aerts Britt",
   "Gipsmachinecenter G.M.C.",
   "Taxi Adrienne EDLIH",

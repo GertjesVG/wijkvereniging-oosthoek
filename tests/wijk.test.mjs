@@ -191,7 +191,7 @@ test("het persoonlijke telefoonnummer staat nergens in de broncode of publieke t
       assert.notEqual(hash(digits), PERSONAL, file);
     }
   const sponsors = JSON.parse(text("../src/content/sponsors.json"));
-  assert.deepEqual(sponsors.filter((s) => s.phones.length === 0).map((s) => s.name), ["ZEEPVENTJE"]);
+  assert.deepEqual(sponsors.filter((s) => s.phones.length === 0).map((s) => s.name), []);
   assert.ok(text("../src/SponsorCards.tsx").includes("phoneHref(phone)"));
 });
 

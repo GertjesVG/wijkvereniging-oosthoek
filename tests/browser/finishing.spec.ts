@@ -4,7 +4,7 @@ import jsQR from "jsqr";
 import sponsors from "../../src/content/sponsors.json" with { type: "json" };
 import { sponsorLogos } from "../../src/content/sponsor-logos";
 
-test("geen diploma/flyeractie, 33 sponsors en uitsluitend bevestigde websiteknoppen", async ({
+test("geen diploma/flyeractie, 32 sponsors en uitsluitend bevestigde websiteknoppen", async ({
   page,
 }) => {
   for (const route of [
@@ -24,7 +24,7 @@ test("geen diploma/flyeractie, 33 sponsors en uitsluitend bevestigde websiteknop
     await expect(page.getByText("Voor echte hulp-Pieten")).toHaveCount(0);
   }
   await page.goto("/#/sponsors");
-  await expect(page.locator(".sponsor-card")).toHaveCount(33);
+  await expect(page.locator(".sponsor-card")).toHaveCount(32);
   await expect(page.locator(".sponsor-website")).toHaveCount(20);
   for (const sponsor of sponsors) {
     const card = page
@@ -56,7 +56,7 @@ test("geen diploma/flyeractie, 33 sponsors en uitsluitend bevestigde websiteknop
       );
     else await expect(card.locator(".sponsor-nameplate")).toHaveText(sponsor.name);
   }
-  await expect(page.locator(".sponsor-action")).toHaveCount(33);
+  await expect(page.locator(".sponsor-action")).toHaveCount(32);
   const publicUrl =
     "https://wijkvereniging-oosthoek.pages.dev/sinterklaas/";
   await page.goto("/#/contact");

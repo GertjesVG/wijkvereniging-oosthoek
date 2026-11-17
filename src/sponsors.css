@@ -61,7 +61,7 @@
   color: var(--muted);
   margin: 18px 0;
 }
-/* Sponsorkaarten: één kaart voor alle 33 sponsors (ontwerp: Zeepventje-kaart uit Documentatie\Sponsors).
+/* Sponsorkaarten: één kaart voor alle sponsors (ontwerp: Zeepventje-kaart uit Documentatie\Sponsors).
    Elke kaart is een subgrid van zes rijen, zodat logo, scheidingslijnen en knoppen in een rij op dezelfde
    hoogte staan, hoe lang de naam ook is en hoeveel contactgegevens er ook zijn. */
 .sponsor-grid {

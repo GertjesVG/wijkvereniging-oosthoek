@@ -113,7 +113,7 @@ export default function Home() {
         </section>
         <section
           className="sponsor-strip"
-          aria-label="Met dank aan onze 33 sponsors"
+          aria-label={`Met dank aan onze ${sponsors.length} sponsors`}
         >
           <p>
             MET DANK AAN
@@ -121,7 +121,7 @@ export default function Home() {
             ONZE SPONSORS
           </p>
           <div className="sponsor-names">
-            {[sponsors[0], sponsors[1], sponsors[7], sponsors[14]].map((s) => (
+            {[sponsors[0], sponsors[1], sponsors[6], sponsors[13]].map((s) => (
               <span key={s.name}>{s.name}</span>
             ))}
           </div>

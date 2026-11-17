@@ -64,7 +64,7 @@ test("mobiel menu, paginanavigatie, terugknop en toetsenbord", async ({
 });
 test("sponsors zoeken, geen resultaat en wissen", async ({ page }) => {
   await page.goto("/#/sponsors");
-  await expect(page.locator(".sponsor-card")).toHaveCount(33);
+  await expect(page.locator(".sponsor-card")).toHaveCount(32);
   const search = page.getByRole("searchbox");
   await search.fill("Stef Nuyens");
   await expect(page.locator(".sponsor-card")).toHaveCount(1);
@@ -74,7 +74,7 @@ test("sponsors zoeken, geen resultaat en wissen", async ({ page }) => {
   await search.fill("onbestaande sponsor");
   await expect(page.getByText("Geen sponsor gevonden")).toBeVisible();
   await page.getByRole("button", { name: "Toon alle sponsors" }).click();
-  await expect(page.locator(".sponsor-card")).toHaveCount(33);
+  await expect(page.locator(".sponsor-card")).toHaveCount(32);
 });
 test("geen nepinschrijving, geen ongevraagde externe kaart of kinderopslag", async ({
   page,

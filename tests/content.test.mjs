@@ -14,18 +14,20 @@ const sponsors = JSON.parse(
     "utf8",
   ),
 );
-test("33 unieke officiële sponsors met echte brongegevens", () => {
-  assert.equal(sponsors.length, 33);
-  assert.equal(new Set(sponsors.map((s) => s.name)).size, 33);
+// ZEEPVENTJE staat sinds 17 november 2026 niet meer op de sponsorlijst (opdracht Gert): 32 sponsors.
+test("32 unieke officiële sponsors met echte brongegevens", () => {
+  assert.equal(sponsors.length, 32);
+  assert.equal(new Set(sponsors.map((s) => s.name)).size, 32);
+  assert.ok(!sponsors.some((s) => /zeepventje/i.test(JSON.stringify(s))));
   for (const s of sponsors) {
     assert.ok(s.name.length);
     assert.ok(s.address.includes(","));
     assert.ok(Array.isArray(s.phones));
     assert.ok(s.email === null || /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(s.email));
   }
-  assert.equal(sponsors[0].name, "ZEEPVENTJE");
-  assert.equal(sponsors[32].name, "Stef Nuyens");
-  assert.equal(sponsors[5].name, "Herenkapsalon Dooley’s");
+  assert.equal(sponsors[0].name, "Delaplace Tuinen");
+  assert.equal(sponsors[31].name, "Stef Nuyens");
+  assert.equal(sponsors[4].name, "Herenkapsalon Dooley’s");
 });
 
 test("alleen de 20 bevestigde eigen sponsorwebsites worden aangeboden", () => {
@@ -79,7 +81,7 @@ test("alleen de 20 bevestigde eigen sponsorwebsites worden aangeboden", () => {
   );
 });
 
-test("sponsoradressen: 33 gecodeerde Google Maps-links met het volledige gepubliceerde adres", () => {
+test("sponsoradressen: 32 gecodeerde Google Maps-links met het volledige gepubliceerde adres", () => {
   const urls = new Set();
   for (const sponsor of sponsors) {
     const url = new URL(sponsorMapUrl(sponsor));
@@ -91,11 +93,11 @@ test("sponsoradressen: 33 gecodeerde Google Maps-links met het volledige gepubli
     assert.equal(query.includes(sponsor.name), !addressOnly.has(sponsor.name), sponsor.name);
     urls.add(url.href);
   }
-  assert.equal(urls.size, 33);
+  assert.equal(urls.size, 32);
   for (const name of addressOnly) assert.ok(sponsors.some((s) => s.name === name), name);
 });
 
-test("24 sponsorlogo’s op naam gekoppeld en als eigen bestand aanwezig; 9 sponsors krijgen een naamplaat", () => {
+test("24 sponsorlogo’s op naam gekoppeld en als eigen bestand aanwezig; 8 sponsors krijgen een naamplaat", () => {
   const names = new Set(sponsors.map((s) => s.name));
   assert.equal(Object.keys(sponsorLogos).length, 24);
   // Het logo van ZEEPVENTJE is op 15 november 2026 offline gehaald: geen bestand meer in de publicatie.
@@ -120,7 +122,6 @@ test("24 sponsorlogo’s op naam gekoppeld en als eigen bestand aanwezig; 9 spon
   assert.deepEqual(
     sponsors.filter((s) => !sponsorLogos[s.name]).map((s) => s.name),
     [
-      "ZEEPVENTJE",
       "Taxi Adrienne EDLIH",
       "GNP",
       "Tegeldiscount",
