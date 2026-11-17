@@ -9,9 +9,13 @@ import {
   infoPages,
   legacySinterklaasUrl,
   municipalityJubileeUrl,
+  privacyHref,
+  privacyPage,
+  privacyUpdated,
   readRoute,
   sinterklaasStatuses,
   smallImage,
+  sponsorTotal,
   statusLabels,
   todayInBrussels,
   wijkhuisLocation,
@@ -42,6 +46,8 @@ test("hoofdadres: oude Sinterklaasroutes gaan door met zoekdeel en #-route, wijk
     ["?bron=test", "#/sponsors", null],
     ["", "#/lief-en-leed", null],
     ["", "#/wijkhuis", null],
+    ["", "#/privacy", null],
+    ["", "#/privacy?sinterklaas", null],
     ["?fbclid=abc", "", null],
     ["", "#/home", "/sinterklaas/#/home"],
     ["", "#/", "/sinterklaas/#/"],
@@ -53,7 +59,7 @@ test("hoofdadres: oude Sinterklaasroutes gaan door met zoekdeel en #-route, wijk
     assert.equal(legacySinterklaasUrl(search, hash), expected, `${search}${hash}`);
 });
 
-test("de ingang op /sinterklaas/ stuurt alleen het kale QR-adres en de sponsors door, zonder lus", () => {
+test("de ingang op /sinterklaas/ stuurt alleen het kale QR-adres, de sponsors en de privacy door, zonder lus", () => {
   const html = text("../index.html");
   const script = html.match(/<script>([\s\S]*?)<\/script>/)?.[1];
   assert.ok(script, "inline script in index.html");
@@ -67,7 +73,12 @@ test("de ingang op /sinterklaas/ stuurt alleen het kale QR-adres en de sponsors 
   assert.equal(run("/sinterklaas/", "", "#/home"), null);
   assert.equal(run("/sinterklaas/", "", "#/route"), null);
   assert.equal(run("/sinterklaas/", "?x=1", ""), null);
-  assert.equal(run("/sinterklaas/", "?x=1", "#/privacy"), null);
+  // De privacyverklaring staat centraal op de wijkwebsite; het oude adres opent ze bij het onderdeel Sinterklaas.
+  assert.equal(run("/sinterklaas/", "", "#/privacy"), "/#/privacy?sinterklaas");
+  assert.equal(run("/sinterklaas/", "?x=1", "#/privacy"), "/?x=1#/privacy?sinterklaas");
+  assert.equal(run("/sinterklaas/", "", "#/privacy-iets"), null);
+  assert.equal(run("/", "", "#/privacy"), null);
+  assert.equal(legacySinterklaasUrl("", "#/privacy?sinterklaas"), null);
   // De sponsors staan op één algemene pagina; zoekdeel en anker gaan mee.
   assert.equal(run("/sinterklaas/", "", "#/sponsors"), "/#/sponsors");
   assert.equal(run("/sinterklaas/", "?x=1", "#/sponsors?y"), "/?x=1#/sponsors?y");
@@ -314,4 +325,43 @@ test("Lief en leed: juiste afspraken, geen bedragen en geen wijkformulier", asyn
   assert.match(lifeMoments[2].text, /waardebon voor een etentje en een bloemetje/);
   assert.match(lifeMoments[2].text, /officiële melding blijft via de gemeente Beerse verlopen/);
   assert.doesNotMatch(all, /€|euro|bedrag|bijdrage|premie|formulier/i);
+});
+
+test("sponsors: 33 sponsors bedankt, de 32 op de website voorgesteld; korte meldlink naar het contactadres", () => {
+  const sponsors = JSON.parse(text("../src/content/sponsors.json"));
+  assert.equal(sponsorTotal, 33);
+  assert.equal(sponsors.length, 32);
+  assert.ok(sponsors.length <= sponsorTotal);
+  const app = text("../src/wijk/WijkApp.tsx");
+  assert.ok(
+    app.includes("Met dank aan onze ${sponsorTotal} sponsors voor hun steun aan de wijk. Hieronder stellen we ${sponsors.length} van hen aan je voor."),
+  );
+  assert.ok(app.includes("Een onjuistheid opgemerkt? <a href={`mailto:${org.email}`}>Laat het ons gerust weten.</a>"));
+  // De sponsorstrook van Sinterklaas spreekt het aantal niet tegen.
+  const home = text("../src/Home.tsx");
+  assert.ok(home.includes("Met dank aan onze ${sponsorTotal} sponsors"));
+  assert.ok(!home.includes("Alle {sponsors.length} sponsors"));
+});
+
+test("privacy: één centrale verklaring op de wijkwebsite, met link in de voet en bij lief en leed en de wijkhuiskaart", () => {
+  assert.equal(privacyPage.slug, "privacy");
+  assert.equal(privacyPage.title, "Privacyverklaring – VZW Wijkvereniging Oosthoek");
+  assert.equal(privacyHref(), "#/privacy");
+  assert.equal(privacyHref("sinterklaas"), "#/privacy?sinterklaas");
+  assert.match(privacyUpdated, /^\d{4}-\d{2}-\d{2}$/);
+  assert.deepEqual(readRoute("#/privacy?sponsors"), { page: "privacy", anchor: "sponsors" });
+  const app = text("../src/wijk/WijkApp.tsx");
+  assert.match(app, /<a className="footer-privacy" href=\{privacyHref\(\)\}>\s*Privacy\s*<\/a>/);
+  assert.ok(app.includes('privacyHref("lief-en-leed")') && app.includes('privacyHref("website")'));
+  assert.doesNotMatch(app, /sinterklaas\/#\/privacy|privacyHref\}/);
+  // Elk anker uit de site bestaat in de verklaring.
+  const privacy = text("../src/wijk/Privacy.tsx");
+  for (const id of ["sinterklaas", "lief-en-leed", "website", "sponsors", "contact", "bewaring"])
+    assert.ok(privacy.includes(`["${id}", `), id);
+  // De Sinterklaaswebsite heeft geen eigen privacytekst meer: alleen het menu, de voet en het formulier verwijzen.
+  const pages = text("../src/Pages.tsx");
+  assert.doesNotMatch(pages, /artikel 6\.1|Gegevensbeschermingsautoriteit|geboortekaartje/);
+  assert.ok(text("../src/App.tsx").includes('<a href="#/privacy">Privacy</a>'));
+  assert.ok(text("../src/App.tsx").includes("#/privacy?sinterklaas"));
+  assert.equal(text("../src/inschrijving/RegistrationForm.tsx").match(/<a href="#\/privacy" target="_blank" rel="noopener">/g)?.length, 2);
 });

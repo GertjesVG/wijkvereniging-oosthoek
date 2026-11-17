@@ -516,7 +516,12 @@ function OpenPanel({
       <p className="registration-lead">
         Een ouder of voogd schrijft de {participant.plural} in. Per{" "}
         {participant.singular} is er maximaal één cadeautje. Na het verzenden
-        krijg je een bevestigingsmail met je inschrijvingsnummer.
+        krijg je een bevestigingsmail met je inschrijvingsnummer. Wat we met
+        je gegevens doen en hoe lang we ze bewaren, lees je in onze{" "}
+        <a href="#/privacy" target="_blank" rel="noopener">
+          privacyverklaring
+        </a>
+        .
       </p>
       <form
         className="registration-form"

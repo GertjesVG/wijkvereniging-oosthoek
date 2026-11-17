@@ -19,13 +19,13 @@ export const bezoekPaginas: Record<string, string> = {
   "wijk/sponsors": "Onze sponsors",
   "wijk/lief-en-leed": "Lief en leed",
   "wijk/wijkhuis": "Wijkhuis",
+  "wijk/privacy": "Privacyverklaring",
   "sinterklaas/home": "Sinterklaas: startpagina",
   "sinterklaas/cadeauactie": "Sinterklaas: cadeauactie en inschrijven",
   "sinterklaas/kleurwedstrijd": "Sinterklaas: kleurwedstrijd",
   "sinterklaas/route": "Sinterklaas: route",
   "sinterklaas/praktisch": "Sinterklaas: praktische informatie",
   "sinterklaas/contact": "Sinterklaas: contact",
-  "sinterklaas/privacy": "Sinterklaas: privacy",
 };
 
 export const isBezoekPagina = (page: unknown): page is string => typeof page === "string" && Object.hasOwn(bezoekPaginas, page);

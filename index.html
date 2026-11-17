@@ -28,8 +28,9 @@
     <title>Sinterklaas in Oosthoek</title>
     <script>
       // Het kale adres staat op de gedrukte QR-codes en opent de algemene wijkpagina; vandaar gaat de bezoeker naar
-      // /sinterklaas/#/home. Alles met een #-route of zoekdeel blijft hier, behalve de sponsors: die staan op de wijkpagina
-      // (bij een klik binnen de site regelt App.tsx dat). De server ziet het #-deel niet, dus dit kan alleen hier.
+      // /sinterklaas/#/home. Alles met een #-route of zoekdeel blijft hier, behalve de sponsors en de privacyverklaring:
+      // die staan op de wijkpagina, de privacy bij het onderdeel Sinterklaas (bij een klik binnen de site regelt App.tsx
+      // dat). De server ziet het #-deel niet, dus dit kan alleen hier.
       if (location.pathname === "/sinterklaas/") {
         // Anonieme bezoekersteller (src/bezoek/teller.ts): wie hier van buitenaf aankomt, telt als bezoek bij de pagina
         // waar hij uitkomt. Na het doorsturen is de herkomst niet meer te zien. Alleen een aantal, geen cookie of kenmerk.
@@ -53,6 +54,9 @@
         } else if (/^#\/sponsors(\?|$)/.test(location.hash)) {
           bezoek("wijk/sponsors");
           location.replace("/" + location.search + location.hash);
+        } else if (/^#\/privacy(\?|$)/.test(location.hash)) {
+          bezoek("wijk/privacy");
+          location.replace("/" + location.search + "#/privacy?sinterklaas");
         }
       }
     </script>

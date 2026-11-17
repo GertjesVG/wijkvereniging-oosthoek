@@ -17,6 +17,7 @@ import sponsors from "../content/sponsors.json";
 import { registrationNotice } from "../inschrijving/periode";
 import { useRegistrationStatus } from "../inschrijving/useRegistrationStatus";
 import { SponsorList } from "../SponsorCards";
+import PrivacyPage from "./Privacy";
 import { Lines, useTexts } from "../teksten";
 import { optionalKey, type TextKey } from "../content/teksten";
 import {
@@ -27,11 +28,14 @@ import {
   legacySinterklaasUrl,
   lifeMoments,
   municipalityJubileeUrl,
+  privacyHref,
+  privacyPage,
   publicFile,
   readRoute,
   sinterklaas,
   sinterklaasStatuses,
   smallImage,
+  sponsorTotal,
   statusLabels,
   todayInBrussels,
   wijkhuisLocation,
@@ -519,7 +523,12 @@ function SponsorsPage() {
       alt={page.imageAlt}
       eyebrow="Met dank aan onze sponsors"
       title={page.name}
-      lead={`Deze ${sponsors.length} lokale sponsors steunen Wijkvereniging Oosthoek. Koop lokaal en steun onze middenstand.`}
+      lead={`Met dank aan onze ${sponsorTotal} sponsors voor hun steun aan de wijk. Hieronder stellen we ${sponsors.length} van hen aan je voor. Koop lokaal en steun onze middenstand.`}
+      side={
+        <p className="sponsors-correction">
+          Een onjuistheid opgemerkt? <a href={`mailto:${org.email}`}>Laat het ons gerust weten.</a>
+        </p>
+      }
     >
       <section className="sponsors-page" aria-label="Alle sponsors">
         <SponsorList assetUrl={publicFile} />
@@ -582,7 +591,7 @@ function LifePage() {
           Deponeer het originele geboortekaartje of de originele doodsbrief in de brievenbus op <strong>{org.address}</strong>.
         </p>
         <p className="mailbox-privacy">
-          Wat we met de gegevens op die stukken doen, lees je in onze <a href={sinterklaas.privacyHref}>privacyverklaring</a>.
+          Wat we met de gegevens op die stukken doen, lees je in onze <a href={privacyHref("lief-en-leed")}>privacyverklaring</a>.
         </p>
       </section>
     </SubPage>
@@ -603,7 +612,7 @@ function WijkhuisMapBlock() {
         <div className="wijkhuis-map-start">
           <p>
             De kaart komt van OpenStreetMap en laadt pas na je klik. OpenStreetMap ontvangt dan technische gegevens zoals je
-            IP-adres. Meer lees je in onze <a href={sinterklaas.privacyHref}>privacyverklaring</a>.
+            IP-adres. Meer lees je in onze <a href={privacyHref("website")}>privacyverklaring</a>.
           </p>
           <button type="button" className="btn outline" onClick={() => setShown(true)}>
             Toon de kaart <MapPin size={17} aria-hidden="true" />
@@ -679,7 +688,7 @@ export default function WijkApp() {
   }, []);
 
   useEffect(() => {
-    const pageTitle = activity?.title ?? info?.name;
+    const pageTitle = activity?.title ?? info?.name ?? (route.page === privacyPage.slug ? "Privacyverklaring" : null);
     document.title = pageTitle ? `${pageTitle} · Wijkvereniging Oosthoek` : "Wijkvereniging Oosthoek · Beerse";
     if (previousPage.current !== route.page) {
       main.current?.focus({ preventScroll: true });
@@ -717,6 +726,8 @@ export default function WijkApp() {
           <LifePage />
         ) : route.page === "wijkhuis" ? (
           <WijkhuisPage today={today} />
+        ) : route.page === privacyPage.slug ? (
+          <PrivacyPage />
         ) : (
           <Home today={today} sinterklaasState={sinterklaasState} />
         )}
@@ -737,8 +748,8 @@ export default function WijkApp() {
               <li>Ondernemingsnummer: {org.enterprise}</li>
               <li>{org.register}</li>
             </ul>
-            <a className="footer-privacy" href={sinterklaas.privacyHref}>
-              Privacyverklaring
+            <a className="footer-privacy" href={privacyHref()}>
+              Privacy
             </a>
           </div>
           <div className="footer-row footer-bottom">

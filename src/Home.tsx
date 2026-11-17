@@ -1,6 +1,7 @@
 import { Gift, MapPin, Download, ArrowRight, Radio } from "lucide-react";
 import { event, asset } from "./content/event";
 import sponsors from "./content/sponsors.json";
+import { sponsorTotal } from "./content/wijk";
 import { ButtonLink, DateTag, FeatureCard } from "./components";
 import { useLiveGps } from "./gps/useLiveGps";
 import { Lines, useTexts } from "./teksten";
@@ -113,7 +114,7 @@ export default function Home() {
         </section>
         <section
           className="sponsor-strip"
-          aria-label={`Met dank aan onze ${sponsors.length} sponsors`}
+          aria-label={`Met dank aan onze ${sponsorTotal} sponsors`}
         >
           <p>
             MET DANK AAN
@@ -126,7 +127,7 @@ export default function Home() {
             ))}
           </div>
           <a className="sponsors-link" href="#/sponsors">
-            Alle {sponsors.length} sponsors <ArrowRight size={16} />
+            Bekijk onze sponsors <ArrowRight size={16} />
           </a>
         </section>
       </div>

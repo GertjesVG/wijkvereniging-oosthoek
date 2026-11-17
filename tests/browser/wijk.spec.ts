@@ -94,7 +94,12 @@ test("QR via GitHub en Cloudflare: de volledige keten eindigt op de wijkpagina; 
   await page.route(`${CLOUDFLARE}/**`, async (r) => {
     const url = new URL(r.request().url());
     if (url.pathname.startsWith("/api/")) return r.fallback();
-    return r.fulfill({ response: await r.fetch({ url: SITE + url.pathname + url.search }) });
+    // Een doorverwijzing kan de pagina verlaten terwijl een bestand nog onderweg is; dat verzoek is dan vervallen.
+    try {
+      return await r.fulfill({ response: await r.fetch({ url: SITE + url.pathname + url.search }) });
+    } catch (error) {
+      if (!String(error).includes("disposed")) throw error;
+    }
   });
   for (const [start, end] of [
     [`${GITHUB}/sinterklaas/`, `${CLOUDFLARE}/`],
@@ -107,7 +112,7 @@ test("QR via GitHub en Cloudflare: de volledige keten eindigt op de wijkpagina; 
   }
   for (const [start, end] of [
     [`${GITHUB}/#/route`, `${CLOUDFLARE}/sinterklaas/#/route`],
-    [`${GITHUB}/sinterklaas/#/privacy`, `${CLOUDFLARE}/sinterklaas/#/privacy`],
+    [`${GITHUB}/sinterklaas/#/privacy`, `${CLOUDFLARE}/#/privacy?sinterklaas`],
     [`${GITHUB}/sinterklaas/?bron=test#/sponsors`, `${CLOUDFLARE}/?bron=test#/sponsors`],
     [`${GITHUB}/#/sponsors`, `${CLOUDFLARE}/#/sponsors`],
   ]) {
@@ -127,7 +132,6 @@ test("bestaande directe links, hashes, zoekdelen en bestanden blijven werken", a
     ["/sinterklaas/#/route", /Waar is de Sint/],
     ["/sinterklaas/#/praktisch", /Goed om te weten/],
     ["/sinterklaas/#/contact", /horen graag van je/],
-    ["/sinterklaas/#/privacy", /Privacy/],
     ["/sinterklaas/?bron=test", /Sinterklaas/],
     ["/sinterklaas/?bron=test#/route", /Waar is de Sint/],
   ] as const) {
@@ -138,6 +142,17 @@ test("bestaande directe links, hashes, zoekdelen en bestanden blijven werken", a
     await page.reload();
     await expect(page.locator("h1"), `${path} na vernieuwen`).toContainText(h1);
     expect(page.url(), `${path} na vernieuwen`).toBe(SITE + path);
+  }
+  // Het oude Sinterklaasadres van de privacy opent de centrale verklaring bij het onderdeel Sinterklaas.
+  for (const [start, end] of [
+    ["/sinterklaas/#/privacy", "/#/privacy?sinterklaas"],
+    ["/sinterklaas/?bron=test#/privacy", "/?bron=test#/privacy?sinterklaas"],
+  ]) {
+    await page.goto("about:blank");
+    await page.goto(SITE + start);
+    await expect(page).toHaveURL(SITE + end);
+    await expect(page.locator("h1")).toHaveText("Privacyverklaring – VZW Wijkvereniging Oosthoek");
+    await expect(page.locator("#sinterklaas")).toBeInViewport();
   }
   // Oude link op het hoofdadres, met anker naar het reglement.
   await page.goto("about:blank");
@@ -279,7 +294,7 @@ test("hoofdpagina: zeven aanklikbare tegels, contact uit de bevestigde gegevens;
   await expect(footer).toContainText("BE0553.481.505");
   for (const legal of ["VZW Wijkvereniging Oosthoek", "Zetel: Opstal 5, 2340 Beerse", "Ondernemingsnummer: BE0553.481.505", "RPR Ondernemingsrechtbank Antwerpen"])
     await expect(footer).toContainText(legal);
-  await expect(footer.getByRole("link", { name: "Privacyverklaring" })).toHaveAttribute("href", "/sinterklaas/#/privacy");
+  await expect(footer.getByRole("link", { name: "Privacy", exact: true })).toHaveAttribute("href", "#/privacy");
   await expect(footer.getByRole("link")).toHaveCount(1);
   await expect(footer.locator(".footer-bottom")).toHaveText(/^© \d{4} VZW Wijkvereniging OosthoekWebsite ontwikkeld door GVG Digital Systems$/);
   await expect(footer).not.toContainText("Gert Van Genechten");
@@ -359,6 +374,10 @@ test("sponsors: één algemene pagina met de goedgekeurde kaarten, de centrale l
   const cards = page.locator(".sponsor-card");
   await expect(cards).toHaveCount(sponsors.length);
   expect(sponsors.length).toBe(32);
+  await expect(page.locator(".lead")).toContainText(
+    "Met dank aan onze 33 sponsors voor hun steun aan de wijk. Hieronder stellen we 32 van hen aan je voor.",
+  );
+  await expect(page.getByRole("link", { name: "Laat het ons gerust weten." })).toHaveAttribute("href", "mailto:vzwoosthoek@gmail.com");
   await expect(page.locator(".pill, .status")).toHaveCount(0);
   // Originele logo's; wie geen logo heeft, krijgt de naam als plaat.
   const logos = cards.locator(".sponsor-logo img");
@@ -581,8 +600,8 @@ test("elke Sinterklaaspagina heeft precies één knop terug naar de wijkpagina, 
   const back = page.getByRole("link", { name: "Terug naar Oosthoek" });
   for (const width of [1280, 768, 390, 320]) {
     await page.setViewportSize({ width, height: 800 });
-    // "sponsors" ontbreekt bewust: die link gaat naar de algemene sponsorpagina, en die heeft haar eigen weg terug.
-    for (const route of ["home", "cadeauactie", "kleurwedstrijd", "route", "praktisch", "contact", "privacy", "bestaat-niet"]) {
+    // "sponsors" en "privacy" ontbreken bewust: die gaan naar de algemene website, en die heeft haar eigen weg terug.
+    for (const route of ["home", "cadeauactie", "kleurwedstrijd", "route", "praktisch", "contact", "bestaat-niet"]) {
       await page.goto("about:blank");
       await page.goto(`${SITE}/sinterklaas/#/${route}`);
       await expect(back, `${width}px ${route}`).toHaveCount(1);
@@ -603,7 +622,7 @@ test("elke Sinterklaaspagina heeft precies één knop terug naar de wijkpagina, 
 });
 
 test("elke wijkpagina heeft een weg terug naar de hoofdpagina", async ({ page }) => {
-  for (const slug of ["pasen", "garageverkoop", "wijkfeest", "sponsors", "lief-en-leed", "wijkhuis"]) {
+  for (const slug of ["pasen", "garageverkoop", "wijkfeest", "sponsors", "lief-en-leed", "wijkhuis", "privacy"]) {
     await page.goto("about:blank");
     await page.goto(`${SITE}/#/${slug}`);
     await page.getByRole("link", { name: "Terug naar de hoofdpagina" }).click();

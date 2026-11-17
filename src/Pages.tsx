@@ -11,13 +11,12 @@ import {
   MapPinned,
   Printer,
   Radio,
-  ShieldCheck,
   Sparkles,
 } from "lucide-react";
 import { ButtonLink, PageHeading, Reglement, StatusNote } from "./components";
 import { asset, dateLabel, event } from "./content/event";
 import sponsors from "./content/sponsors.json";
-import { sinterklaasRegistration } from "./inschrijving/evenementen";
+import { sponsorTotal } from "./content/wijk";
 import { registrationNotice } from "./inschrijving/periode";
 import { RegistrationPanel } from "./inschrijving/RegistrationPanel";
 import { useRegistrationStatus } from "./inschrijving/useRegistrationStatus";
@@ -450,8 +449,9 @@ function SponsorsPage() {
         eyebrow="MET DANK AAN ONZE SPONSORS"
         title="Samen maken we de buurt sterker."
       >
-        Deze {sponsors.length} lokale sponsors steunen Wijkvereniging Oosthoek.
-        Koop lokaal en steun onze middenstand.
+        Met dank aan onze {sponsorTotal} sponsors voor hun steun aan de wijk.
+        Hieronder stellen we {sponsors.length} van hen aan je voor. Koop lokaal
+        en steun onze middenstand.
       </PageHeading>
       <SponsorList assetUrl={asset} />
     </>
@@ -512,274 +512,16 @@ function ContactPage() {
   );
 }
 
-const registration = sinterklaasRegistration;
-const deleteByLabel = new Intl.DateTimeFormat("nl-BE", {
-  day: "numeric",
-  month: "long",
-  year: "numeric",
-}).format(new Date(`${registration.deleteBy}T12:00:00`));
-
+// De privacyverklaring staat online op de wijkwebsite (src/wijk/Privacy.tsx); /sinterklaas/#/privacy stuurt daarheen
+// (index.html, App.tsx). Alleen lokaal met `npm run dev`, waar de wijkwebsite niet meedraait, verschijnt deze verwijzing.
 function PrivacyPage() {
-  const org = event.organisation;
-  const area = registration.area?.name ?? "de wijk";
+  const central = "https://wijkvereniging-oosthoek.pages.dev/#/privacy?sinterklaas";
   return (
     <>
-      <PageHeading
-        eyebrow="ZORGVULDIG MET JOUW GEGEVENS"
-        title="Privacy, helder uitgelegd."
-      >
-        Kort en duidelijk: welke gegevens we vragen als je kinderen inschrijft
-        voor de cadeauactie, waarvoor, en hoe lang we ze bewaren. Ook de
-        tekeningen, lief en leed en onze sponsors komen aan bod.
+      <PageHeading eyebrow="ZORGVULDIG MET JOUW GEGEVENS" title="Onze privacyverklaring">
+        De privacyverklaring van de vereniging staat op de algemene website, met een eigen onderdeel over Sinterklaas.
       </PageHeading>
-      <div className="privacy-layout">
-        <aside className="privacy-summary">
-          <ShieldCheck size={42} strokeWidth={1.4} aria-hidden="true" />
-          <h2>
-            Alleen wat nodig is
-            <br />
-            voor het cadeautje.
-          </h2>
-          <ul>
-            <li>
-              <Check size={17} aria-hidden="true" />
-              Per kind alleen voornaam en leeftijd
-            </li>
-            <li>
-              <Check size={17} aria-hidden="true" />
-              Nooit voor reclame of aan sponsors
-            </li>
-            <li>
-              <Check size={17} aria-hidden="true" />
-              Geen advertentie- of analysetrackers
-            </li>
-            <li>
-              <Check size={17} aria-hidden="true" />
-              Wissen uiterlijk {deleteByLabel}, zie onderdeel 04
-            </li>
-          </ul>
-        </aside>
-        <div className="privacy-articles">
-          <section>
-            <span className="section-number">01</span>
-            <h2>Welke gegevens?</h2>
-            <p>
-              Van de ouder of voogd: naam, e-mailadres en adres in {area}. Per
-              kind: alleen de voornaam en de leeftijd. Verder je
-              inschrijvingsnummer en je akkoord met het wedstrijdreglement
-              (versie en tijdstip). We noteren ook de status van je inschrijving,
-              zoals adres nagekeken, mail verstuurd en cadeautje afgehaald, en
-              soms een korte notitie van een beheerder. Bij co-ouderschap mag het
-              adres dat van de andere ouder zijn; over die ouder vragen we niets.
-            </p>
-          </section>
-          <section>
-            <span className="section-number">02</span>
-            <h2>Waarvoor en op welke grond?</h2>
-            <p>
-              Om de inschrijvingen te beheren, de cadeautjes te voorzien, je een
-              bevestigingsmail te sturen en je vragen te beantwoorden. Of het
-              adres in {area} ligt, kijken we na met de wijkindeling van de
-              gemeente Beerse; we letten ook op dubbele inschrijvingen. We
-              gebruiken niets voor commerciële doeleinden en geven niets aan
-              sponsors.
-            </p>
-            <p>
-              Voor je eigen gegevens steunen we op de uitvoering van de deelname
-              die je aanvraagt en volgens het wedstrijdreglement aanvaardt
-              (artikel 6.1.b AVG). Voor de gegevens van je kinderen, de adres- en
-              dubbelcontrole, het bewijs van je akkoord, de technische werking van
-              de website en de beveiliging steunen we op ons gerechtvaardigd belang
-              om deze gratis actie voor de kinderen van de wijk eerlijk en veilig
-              te organiseren, met een website die werkt (artikel 6.1.f AVG).
-            </p>
-            <p>
-              Inschrijven is vrijwillig, maar zonder deze gegevens kunnen we geen
-              cadeautje voorzien. Je kunt je inschrijving altijd laten annuleren
-              en je gegevens laten wissen. Schreef je in toen hier nog stond dat
-              we dit met je toestemming doen (artikel 6.1.a AVG)? Dan blijft dat
-              zo voor jouw inschrijving, en kun je die toestemming altijd
-              intrekken.
-            </p>
-          </section>
-          <section>
-            <span className="section-number">03</span>
-            <h2>Dienstverleners en beveiliging</h2>
-            <p>
-              De inschrijvingen staan in een afgeschermde database bij
-              Cloudflare, opgeslagen in de Europese Unie. Alleen bevoegde personen
-              beheren ze, met een beheerwachtwoord. Cloudflare host ook de
-              website. Bij het verzenden controleert Cloudflare Turnstile of er
-              een mens achter het formulier zit, met technische gegevens zoals je
-              IP-adres en browsertype; Cloudflare gebruikt die ook om deze
-              controle te verbeteren. Tegen misbruik bewaren we hoogstens een dag
-              een versluierde code van je internetverbinding.
-            </p>
-            <p>
-              De bevestigingsmail en onze antwoorden lopen via het gratis
-              Gmail-account van de vereniging. Voor Gmail is Google (Google
-              Ireland Limited) volgens zijn eigen privacybeleid zelf
-              verantwoordelijk.
-            </p>
-            <p>
-              Bij elk bezoek ontvangt Cloudflare technische verbindingsgegevens,
-              zoals je IP-adres. De kaart van OpenStreetMap ontvangt die pas als
-              ze laadt: na je klik op de kaartknop bij de route of bij het
-              wijkhuis, of vanzelf op de routepagina terwijl de live GPS loopt. De
-              live GPS toont alleen de huifkar tijdens de rondrit, nooit jouw
-              locatie. Er zijn geen advertentie- of analysetrackers, en geen
-              cookies of browseropslag om bezoekers te volgen. We tellen wel
-              hoe vaak de website bezocht en een pagina geopend wordt: alleen
-              aantallen per dag en per pagina, zonder IP-adres of ander gegeven
-              over jou. We kunnen dus niet zien wie de website bezoekt of hoe
-              vaak dezelfde persoon terugkomt.
-            </p>
-            <p>
-              Klik je op een sponsoradres of op de routeknop bij het wijkhuis, dan
-              opent Google Maps in een nieuw tabblad. Pas vanaf die klik ziet
-              Google dat bezoek en geldt zijn eigen privacybeleid. Onze website
-              vraagt nooit om je locatie.
-            </p>
-            <p>
-              Cloudflare en Google kunnen gegevens ook buiten de Europese Unie
-              verwerken, onder meer in de Verenigde Staten. Beide staan als actief
-              op de{" "}
-              <a
-                href="https://www.dataprivacyframework.gov/list"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                officiële lijst
-              </a>{" "}
-              van het EU-VS-gegevensprivacykader (nagekeken op 4 november 2026),
-              waarvoor een adequaatheidsbesluit van de Europese Commissie geldt.
-              Meer lees je in het privacybeleid van{" "}
-              <a
-                href="https://www.cloudflare.com/privacypolicy/"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Cloudflare
-              </a>{" "}
-              en{" "}
-              <a
-                href="https://policies.google.com/privacy/frameworks?hl=nl"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Google
-              </a>
-              .
-            </p>
-          </section>
-          <section>
-            <span className="section-number">04</span>
-            <h2>Bewaartermijn</h2>
-            <p>
-              Op {deleteByLabel} wist de website de namen, e-mailadressen en
-              adressen van Sinterklaas {event.year} automatisch uit de database.
-              Mails in Gmail, gedownloade lijsten en papieren kopieën ruimen we
-              apart op, ook uiterlijk die dag.
-            </p>
-            <p>
-              Technische kopieën verdwijnen daarna vanzelf: de reservekopie van de
-              database binnen 30 dagen. Bij Google duurt het volledig verwijderen
-              volgens zijn eigen beleid doorgaans ongeveer twee maanden, en
-              versleutelde reservekopieën kunnen tot zes maanden blijven bestaan.
-            </p>
-            <p>
-              Om volgende edities voor te bereiden, bewaren we alleen het
-              inschrijvingsnummer met cijfers zoals leeftijden, aantallen en
-              afgehaalde cadeautjes, zonder naam, e-mailadres of adres.
-            </p>
-          </section>
-          <section>
-            <span className="section-number">05</span>
-            <h2>Tekeningen, lief en leed en sponsors</h2>
-            <p>
-              <strong>Kleurwedstrijd.</strong> Op de tekening die je kind aan
-              Sinterklaas geeft, staan de naam en de leeftijd van het kind. Die
-              hebben we nodig om te weten van welk kind een tekening is, voor
-              de kleurwedstrijd en de cadeauactie; meer vragen we op de
-              tekening niet. Op deze website publiceren we geen tekeningen en
-              geen namen van kinderen. We steunen hiervoor op ons
-              gerechtvaardigd belang om deze gratis actie eerlijk te
-              organiseren (artikel 6.1.f AVG). Omdat het om kinderen gaat,
-              houden we het bij die twee gegevens en gebruiken we ze nergens
-              anders voor.
-            </p>
-            <p>
-              <strong>Lief en leed.</strong> Bezorg je ons een geboortekaartje
-              of een doodsbrief, dan gebruiken we de gegevens daarop alleen om
-              de attentie van de vereniging te bezorgen; bij een overlijden
-              loopt dat via de begrafenisondernemer. De privacyregels gelden
-              niet voor gegevens van overledenen, wel voor de nabestaanden die
-              op een doodsbrief staan.
-            </p>
-            <p>
-              Een huwelijksjubileum meld je bij de gemeente Beerse. Alleen als
-              je daar zelf toestemming voor geeft, bezorgt de gemeente je
-              gegevens aan het wijkbestuur. Die gegevens krijgen we dus niet
-              van jou, maar van de gemeente: het gaat om wat je op het
-              gemeentelijke formulier invulde. Alleen de bestuursleden die de
-              attentie verzorgen, zien deze gegevens.
-            </p>
-            <p>
-              Voor lief en leed steunen we op ons gerechtvaardigd belang om mee
-              te leven met de buurt (artikel 6.1.f AVG): je bezorgt ons de
-              stukken zelf of liet de gemeente je gegevens doorgeven, en we
-              gebruiken ze alleen voor de attentie. Online bewaren we hiervan
-              niets.
-            </p>
-            <p>
-              Voor de papieren tekeningen en de stukken van lief en leed is nog
-              geen vaste bewaartermijn vastgelegd; het bestuur beslist daar nog
-              over. Tot dan bewaren we ze niet langer dan nodig is voor de
-              wedstrijd, de actie of de attentie. Je kunt altijd vragen wat we
-              bewaren en het laten verwijderen: zie onderdeel 06.
-            </p>
-            <p>
-              <strong>Sponsors.</strong> Op de sponsorpagina staan de naam, het
-              logo, het adres en de zakelijke contactgegevens van de bedrijven
-              die de vereniging steunen. Bij een eenmanszaak of een zaak op
-              naam van een persoon zijn dat ook persoonsgegevens. We tonen ze
-              om onze sponsors te bedanken en hun zaak in de wijk bekend te
-              maken (gerechtvaardigd belang, artikel 6.1.f AVG). Ben je sponsor
-              en wil je iets laten aanpassen of weghalen? Mail ons, dan passen
-              we het aan.
-            </p>
-          </section>
-          <section>
-            <span className="section-number">06</span>
-            <h2>Jouw rechten en contact</h2>
-            <p>
-              Je mag altijd vragen welke gegevens we van je hebben, ze laten
-              verbeteren of verwijderen, de verwerking laten beperken of je
-              gegevens in een gangbare vorm krijgen om door te geven. Ouders en
-              voogden kunnen dat ook voor hun kinderen. Mail naar{" "}
-              <a href={`mailto:${org.email}`}>{org.email}</a> en vermeld je
-              inschrijvingsnummer als je er een hebt.
-            </p>
-            <p>
-              <strong>Recht van bezwaar:</strong> waar we steunen op ons
-              gerechtvaardigd belang, kun je bezwaar maken om redenen die met je
-              eigen situatie te maken hebben.
-            </p>
-            <p>
-              Verantwoordelijk: {org.name}, {org.address}, ondernemingsnummer{" "}
-              {org.enterprise}, {org.register}. Je kunt ook altijd een klacht indienen bij de{" "}
-              <a
-                href="https://www.gegevensbeschermingsautoriteit.be"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Gegevensbeschermingsautoriteit
-              </a>
-              .
-            </p>
-          </section>
-        </div>
-      </div>
+      <ButtonLink href={central}>Naar de privacyverklaring</ButtonLink>
     </>
   );
 }

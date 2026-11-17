@@ -868,6 +868,167 @@ main:focus {
   color: var(--green);
 }
 
+/* Sponsors: korte uitnodiging om een fout te melden, onder de introductie. */
+.sponsors-correction {
+  margin-top: 16px;
+  color: #56645a;
+  font-size: 0.95rem;
+}
+.sponsors-correction a {
+  color: var(--green);
+  font-weight: 600;
+  text-underline-offset: 3px;
+}
+
+/* Privacyverklaring: leesbare kolom met inhoudsopgave; op brede schermen staat de inhoud ernaast. */
+.privacy-page {
+  padding-block: 40px 76px;
+}
+.privacy-head {
+  max-width: 50rem;
+}
+.privacy-head h1 {
+  margin: 14px 0 18px;
+  font-size: clamp(2.2rem, 4.6vw, 3.8rem);
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+.privacy-head .lead {
+  font-size: 1.12rem;
+}
+.privacy-date {
+  margin-top: 14px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.privacy-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 17rem) minmax(0, 46rem);
+  gap: 56px;
+  align-items: start;
+  margin-top: 44px;
+}
+.privacy-toc {
+  position: sticky;
+  top: 116px;
+  padding: 22px 24px;
+  border-radius: 14px;
+  background: #e9eddf;
+}
+.privacy-toc h2 {
+  margin: 0 0 10px;
+  font-family: var(--sans);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--green);
+}
+.privacy-toc ol {
+  margin: 0;
+  padding-left: 1.4em;
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+.privacy-toc li + li {
+  margin-top: 6px;
+}
+.privacy-toc a {
+  color: var(--dark);
+  text-underline-offset: 3px;
+}
+.privacy-body section + section {
+  margin-top: 40px;
+  padding-top: 32px;
+  border-top: 1px solid var(--line);
+}
+.privacy-body h2 {
+  margin: 0 0 14px;
+  font-size: clamp(1.8rem, 3vw, 2.3rem);
+}
+.privacy-number {
+  color: var(--green);
+}
+.privacy-body h3 {
+  margin: 24px 0 8px;
+  font-family: var(--sans);
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+.privacy-body p + p,
+.privacy-body p + ul,
+.privacy-body ul + p,
+.privacy-body p + dl {
+  margin-top: 12px;
+}
+.privacy-body ul {
+  margin-bottom: 0;
+  padding-left: 1.3em;
+}
+.privacy-body li + li {
+  margin-top: 6px;
+}
+.privacy-body a {
+  color: var(--green);
+  font-weight: 600;
+  text-underline-offset: 3px;
+  overflow-wrap: anywhere;
+}
+.privacy-facts > div,
+.privacy-list > div {
+  padding-block: 10px;
+  border-bottom: 1px solid var(--line);
+}
+.privacy-facts dt,
+.privacy-list dt {
+  color: var(--dark);
+  font-weight: 700;
+}
+.privacy-list > div:first-child {
+  padding-top: 0;
+}
+.privacy-contact {
+  margin-bottom: 16px;
+  padding: 24px 26px;
+  border-radius: 14px;
+  background: #e9eddf;
+}
+.privacy-contact .btn {
+  margin-top: 16px;
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+.privacy-contact-note {
+  margin-top: 12px;
+  color: #56645a;
+  font-size: 0.9rem;
+}
+@media (max-width: 1040px) {
+  .privacy-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 32px;
+    margin-top: 32px;
+  }
+  .privacy-toc {
+    position: static;
+  }
+}
+@media (max-width: 760px) {
+  .privacy-page {
+    padding-block: 18px 54px;
+  }
+  .privacy-contact {
+    padding: 20px 18px;
+  }
+  .privacy-contact .btn {
+    width: 100%;
+    padding-inline: 14px;
+  }
+}
+
 /* Voet: drie rustige rijen (vereniging en slogan, wettelijke gegevens, auteursregel), alleen typografie en lijnen. */
 .site-footer {
   padding-block: 40px 26px;

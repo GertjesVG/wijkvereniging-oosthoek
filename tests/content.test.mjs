@@ -237,14 +237,22 @@ test("officieel wedstrijdreglement: verkorte tekst in vijf onderdelen letterlijk
   );
 });
 
-test("privacyverklaring: juiste rechtsgronden en verplichte informatie, geen beloftes die de werking niet waarmaakt", () => {
-  const pages = readFileSync(new URL("../src/Pages.tsx", import.meta.url), "utf8").replace(/\s+/g, " ");
-  const privacy = pages.slice(pages.indexOf("function PrivacyPage()"), pages.indexOf("export function ContentPage"));
+test("centrale privacyverklaring: juiste rechtsgronden en verplichte informatie, geen beloftes die de werking niet waarmaakt", () => {
+  const source = readFileSync(new URL("../src/wijk/Privacy.tsx", import.meta.url), "utf8");
+  const privacy = source.replace(/\s+/g, " ");
+  const part = (id) => {
+    const from = privacy.indexOf(`<Section id="${id}">`);
+    assert.ok(from > 0, id);
+    return privacy.slice(from, privacy.indexOf("</Section>", from));
+  };
+  // Twaalf onderdelen, elk met een anker voor de inhoudsopgave en de verwijzingen vanuit de site.
+  const ids = [...source.matchAll(/^\s*\["([a-z-]+)", "/gm)].map((m) => m[1]);
+  assert.deepEqual(ids, ["verantwoordelijke", "website", "sinterklaas", "activiteiten", "publicaties", "lief-en-leed", "sponsors", "ontvangers", "bewaring", "rechten", "contact", "wijzigingen"]);
+  for (const id of ids) part(id);
   for (const must of [
+    "We gaan zorgvuldig om met je gegevens. In deze verklaring lees je welke gegevens onze wijkvereniging gebruikt, waarvoor we die nodig hebben, hoe lang we ze bewaren en hoe je ons kunt bereiken met een vraag over je privacy.",
     "artikel 6.1.b AVG",
     "artikel 6.1.f AVG",
-    // Ook wie alleen de site bezoekt, moet de grond voor de verbindingsgegevens kunnen lezen.
-    "de technische werking van de website",
     "korte notitie van een beheerder",
     "Dan blijft dat zo voor jouw inschrijving",
     "opgeslagen in de Europese Unie",
@@ -256,22 +264,35 @@ test("privacyverklaring: juiste rechtsgronden en verplichte informatie, geen bel
     "binnen 30 dagen",
     "ongeveer twee maanden",
     "tot zes maanden",
-    "bezwaar",
-    "om door te geven",
-    "Gegevensbeschermingsautoriteit",
+    "Hoogstens een dag",
+    "nog geen vaste bewaartermijn vastgelegd",
+    "maar van de gemeente",
+    "niet voor gegevens van overledenen",
+    "in beginsel binnen één maand",
+    "met hoogstens twee maanden verlengd",
+    "Een verzoek is gratis",
   ])
     assert.ok(privacy.includes(must), must);
-  // Toestemming blijft alleen de grond van inschrijvingen van vóór deze tekst; "anoniem", "onomkeerbaar" en "niets aan
-  // anderen" kloppen niet met de werking; de verwerkersrol staat pas vast als het mandaat bevestigd is.
-  for (const never of ["Dat doen we met je toestemming", "anoniem", "onomkeerbaar", "sponsors of anderen", "als verwerker"])
+  // Contact: vriendelijke uitnodiging met werkende mailto; de klacht bij de GBA in één neutrale zin, geen voorwaarde.
+  const contact = part("contact");
+  assert.ok(contact.includes("Heb je een vraag over je gegevens, klopt er iets niet of merk je iets op aan onze website? Laat het ons gerust weten. We bekijken je bericht zorgvuldig en zoeken graag samen naar een passende oplossing."));
+  assert.ok(contact.includes("href={`mailto:${org.email}`}"));
+  assert.ok(contact.includes('Je hebt ook het recht om een klacht in te dienen bij de{" "} <External href="https://www.gegevensbeschermingsautoriteit.be">Gegevensbeschermingsautoriteit</External>.'));
+  // Rechten: alle zes, plus intrekken; bezwaar alleen waar gerechtvaardigd belang geldt.
+  const rights = part("rechten");
+  for (const must of ["inzage", "verbetering", "verwijdering", "beperking", "bezwaar", "overdraagbaarheid", "intrekken van je toestemming", "Ouders en voogden"])
+    assert.ok(rights.includes(must), must);
+  // Sponsors: openbare vermelding op toestemming, intrekken eenvoudig, geen terugwerkende kracht; geen tweede grond ernaast.
+  const sponsors = part("sponsors");
+  for (const must of ["openbare sponsorpagina", "persoonsgegevens", "artikel 6.1.a AVG", "altijd eenvoudig intrekken", "doet geen afbreuk", "eigen website van de sponsor"])
+    assert.ok(sponsors.includes(must), must);
+  assert.ok(!sponsors.includes("6.1.f") && !sponsors.includes("gerechtvaardigd belang"), "sponsors: één grond");
+  // Komende activiteiten: niets verzonnen; publicaties zijn een apart doel, niet inbegrepen in deelname.
+  assert.ok(part("activiteiten").includes("liggen de datum en de manier van inschrijven nog niet vast"));
+  assert.ok(part("publicaties").includes("Deelnemen aan een activiteit betekent niet dat we foto’s, tekeningen, uitslagen, namen of adressen mogen publiceren"));
+  // Toestemming blijft alleen de grond van oude inschrijvingen; geen beweringen die de werking niet waarmaakt.
+  for (const never of ["Dat doen we met je toestemming", "anoniem", "onomkeerbaar", "als verwerker", "GDPR-proof", "AVG-proof", "verzamelen geen", "binnen België", "delen nooit", "nooit gedeeld"])
     assert.ok(!privacy.includes(never), never);
-  assert.equal((privacy.match(/section-number/g) ?? []).length, 6);
-  // Tekeningen en lief en leed: beschreven zonder verzonnen bewaartermijn.
-  for (const must of ["Tekeningen, lief en leed en sponsors", "geboortekaartje", "geen vaste bewaartermijn vastgelegd"])
-    assert.ok(privacy.includes(must), must);
-  // Indirect verkregen gegevens (jubilea via de gemeente): de bron staat erbij. Sponsors: beschreven met rechtsgrond.
-  for (const must of ["maar van de gemeente", "niet voor gegevens van overledenen", "Sponsors.", "aanpassen of weghalen"])
-    assert.ok(privacy.includes(must), must);
   // Ook het beheer noemt de bewaarde cijfers niet anoniem: het inschrijvingsnummer blijft erbij staan.
   const dashboard = readFileSync(new URL("../src/beheer/Dashboard.tsx", import.meta.url), "utf8");
   assert.ok(!/anonieme/i.test(dashboard), "beheer: anonieme");

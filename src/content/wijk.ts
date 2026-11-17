@@ -112,8 +112,18 @@ export const sinterklaas = {
   imageAlt: "Sinterklaas zwaait vanuit een feestelijk verlichte huifkar, getrokken door twee paarden.",
   href: "/sinterklaas/#/home",
   registrationHref: "/sinterklaas/#/cadeauactie",
-  privacyHref: "/sinterklaas/#/privacy",
 };
+
+// De centrale privacyverklaring van de vereniging (src/wijk/Privacy.tsx), op de wijkwebsite. "#/privacy?sinterklaas"
+// opent ze bij dat onderdeel. Het oude adres /sinterklaas/#/privacy stuurt naar dat onderdeel (index.html, App.tsx).
+export const privacyPage = { slug: "privacy", title: "Privacyverklaring – VZW Wijkvereniging Oosthoek" };
+export const privacyHref = (section?: string) => `#/${privacyPage.slug}${section ? `?${section}` : ""}`;
+// Datum van de laatste inhoudelijke wijziging, bovenaan de verklaring. Pas aan bij elke inhoudelijke wijziging.
+export const privacyUpdated = "2026-11-17";
+
+// Aantal sponsors van de vereniging, bevestigd door de opdrachtgever (Gert, 17 november 2026). De website toont er
+// sponsors.json.length van; geen namen of redenen vermelden voor wie er niet bij staat.
+export const sponsorTotal = 33;
 
 // Naam en adres definitief bevestigd door Gert op 5 november 2026. Gebruik geen adreslabel van een kaartendienst.
 // De fysieke plaats is aangeleverd door Gert via de kaart "Afhaling prijzen" met de rode cirkel.
@@ -261,6 +271,6 @@ export function readRoute(hash: string): { page: string | null; anchor: string |
 export function legacySinterklaasUrl(search: string, hash: string) {
   if (!hash.startsWith("#/")) return null;
   const { page } = readRoute(hash);
-  const ownPage = [...activities, ...infoPages].some((item) => item.slug === page);
+  const ownPage = [...activities, ...infoPages, privacyPage].some((item) => item.slug === page);
   return ownPage ? null : `/sinterklaas/${search}${hash}`;
 }

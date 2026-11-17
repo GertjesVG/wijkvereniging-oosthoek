@@ -4,16 +4,16 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { bezoekPaginas, dagInBrussel, dagVerschuiven, isBezoekPagina, paginaVan } from "../src/bezoek/paginas.ts";
 import { aantalDagen, dagSom, dagenReeks, periodeSom, verschilTekst } from "../src/bezoek/statistiek.ts";
-import { activities, infoPages } from "../src/content/wijk.ts";
+import { activities, infoPages, privacyPage } from "../src/content/wijk.ts";
 import { recordVisit } from "../server/bezoek.ts";
 
 const text = (file) => readFileSync(new URL(file, import.meta.url), "utf8");
 
 test("de paginalijst is precies de bestaande pagina's van beide websites", () => {
-  const wijk = ["wijk", ...[...activities, ...infoPages].map((p) => `wijk/${p.slug}`)];
-  // De pagina's van de Sinterklaaswebsite (Pages.tsx); de sponsors staan online op de wijkwebsite.
+  const wijk = ["wijk", ...[...activities, ...infoPages, privacyPage].map((p) => `wijk/${p.slug}`)];
+  // De pagina's van de Sinterklaaswebsite (Pages.tsx); de sponsors en de privacy staan online op de wijkwebsite.
   const record = /const pages: Record<string, ComponentType> = \{([^}]+)\}/.exec(text("../src/Pages.tsx"))[1];
-  const sint = ["home", ...[...record.matchAll(/^\s*([a-z-]+):/gm)].map((m) => m[1]).filter((p) => p !== "sponsors")];
+  const sint = ["home", ...[...record.matchAll(/^\s*([a-z-]+):/gm)].map((m) => m[1]).filter((p) => p !== "sponsors" && p !== "privacy")];
   assert.deepEqual(Object.keys(bezoekPaginas).sort(), [...wijk, ...sint.map((p) => `sinterklaas/${p}`)].sort());
   for (const label of Object.values(bezoekPaginas)) assert.ok(label.length > 3);
 });
@@ -25,6 +25,7 @@ test("welk adres bij welke pagina telt", () => {
     ["wijk", "/", "", "#/sponsors", "wijk/sponsors"],
     ["wijk", "/", "", "#/sponsors?zeepventje", "wijk/sponsors"],
     ["wijk", "/", "", "#/lief-en-leed", "wijk/lief-en-leed"],
+    ["wijk", "/", "", "#/privacy?sinterklaas", "wijk/privacy"],
     // Oude Sinterklaaslink op het hoofdadres: stuurt door, telt hier niet.
     ["wijk", "/", "", "#/route", null],
     ["sinterklaas", "/sinterklaas/", "", "#/home", "sinterklaas/home"],
@@ -33,13 +34,14 @@ test("welk adres bij welke pagina telt", () => {
     // Het kale QR-adres en de sponsors sturen door naar de wijkwebsite.
     ["sinterklaas", "/sinterklaas/", "", "", null],
     ["sinterklaas", "/sinterklaas/", "", "#/sponsors", null],
+    ["sinterklaas", "/sinterklaas/", "", "#/privacy", null],
     ["sinterklaas", "/sinterklaas/", "", "#/bestaat-niet", null],
     // Lokaal (npm run dev) staat Sinterklaas op de hoofdmap.
     ["sinterklaas", "/", "", "", "sinterklaas/home"],
   ])
     assert.equal(paginaVan(site, pathname, search, hash), expected, `${site} ${pathname}${search}${hash}`);
   assert.equal(isBezoekPagina("wijk/pasen"), true);
-  for (const bad of ["", "toString", "wijk/", "WIJK", 5, null, undefined, "sinterklaas/sponsors"]) assert.equal(isBezoekPagina(bad), false, String(bad));
+  for (const bad of ["", "toString", "wijk/", "WIJK", 5, null, undefined, "sinterklaas/sponsors", "sinterklaas/privacy"]) assert.equal(isBezoekPagina(bad), false, String(bad));
 });
 
 test("de dag wisselt in Belgische tijd, ook in de zomer; dagen optellen over maand- en uurwissel", () => {
