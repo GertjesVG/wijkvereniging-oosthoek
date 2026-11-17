@@ -250,7 +250,9 @@ test("centrale privacyverklaring: juiste rechtsgronden en verplichte informatie,
   assert.deepEqual(ids, ["verantwoordelijke", "website", "sinterklaas", "activiteiten", "publicaties", "lief-en-leed", "sponsors", "ontvangers", "bewaring", "rechten", "contact", "wijzigingen"]);
   for (const id of ids) part(id);
   for (const must of [
-    "Bij onze wijkvereniging willen we dat iedereen zich welkom en gerespecteerd voelt. Dat geldt ook voor je privacy: we gaan zorgvuldig om met je gegevens.",
+    "Bij Wijkvereniging Oosthoek vinden we het belangrijk dat iedereen zich welkom en gerespecteerd voelt. Daarom gaan we ook zorgvuldig om met je persoonsgegevens.",
+    "Op deze pagina leggen we eenvoudig uit welke gegevens we gebruiken, waarom we dat doen en welke rechten je hebt.",
+    "Voor onze website, activiteiten en sponsors",
     "artikel 6.1.b AVG",
     "artikel 6.1.c AVG",
     "versluierde code",

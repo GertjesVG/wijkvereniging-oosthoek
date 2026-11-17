@@ -17,6 +17,7 @@ const longDate = (day: string) =>
     new Date(`${day}T12:00:00Z`),
   );
 const deleteByLabel = longDate(registration.deleteBy);
+const [titleMain, titleOrg] = privacyPage.title.split(" – ");
 
 // Volgorde van de onderdelen; het id is ook het anker ("#/privacy?sinterklaas").
 const sections = [
@@ -72,23 +73,29 @@ export default function PrivacyPage() {
         </a>
         <header className="privacy-head">
           <p className="eyebrow">Samen maken we onze wijk mooier</p>
-          <h1>{privacyPage.title}</h1>
+          {/* Twee regels in beeld; voorgelezen en als tekst blijft het de volledige titel uit privacyPage. */}
+          <h1 className="privacy-title">
+            <span className="privacy-title-main">{titleMain}</span>
+            <span className="visually-hidden"> – </span>
+            <span className="privacy-title-org">{titleOrg}</span>
+          </h1>
           <p className="lead">
-            Bij onze wijkvereniging willen we dat iedereen zich welkom en gerespecteerd voelt. Dat geldt ook voor je
-            privacy: we gaan zorgvuldig om met je gegevens.
+            Bij Wijkvereniging Oosthoek vinden we het belangrijk dat iedereen zich welkom en gerespecteerd voelt. Daarom
+            gaan we ook zorgvuldig om met je persoonsgegevens.
           </p>
           <p>
-            Bezoek je onze website, doe je mee aan een activiteit of neem je contact met ons op? Dan gebruiken we soms
-            gegevens van jou. Hieronder lees je in gewone taal welke gegevens dat zijn, waarvoor we ze nodig hebben, hoe
-            lang we ze bewaren en wat je rechten zijn.
+            Op deze pagina leggen we eenvoudig uit welke gegevens we gebruiken, waarom we dat doen en welke rechten je
+            hebt.
           </p>
-          <p className="privacy-ask">
-            Heb je een vraag, of klopt er iets niet? <To id="contact">Laat het ons gerust weten</To>. We helpen je graag
-            verder.
-          </p>
+          <div className="privacy-ask">
+            <p className="privacy-ask-title">Heb je een vraag of klopt er iets niet?</p>
+            <p>
+              <To id="contact">Laat het ons gerust weten</To>. We helpen je graag verder.
+            </p>
+          </div>
           <p className="privacy-date">
-            Geldt voor de website, de activiteiten en de sponsors van de vereniging. Laatste inhoudelijke wijziging:{" "}
-            {longDate(privacyUpdated)}.
+            <span>Voor onze website, activiteiten en sponsors</span>
+            <span>Laatste inhoudelijke wijziging: {longDate(privacyUpdated)}</span>
           </p>
         </header>
         <div className="privacy-grid">

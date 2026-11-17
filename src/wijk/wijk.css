@@ -888,10 +888,23 @@ main:focus {
   max-width: 50rem;
 }
 .privacy-head h1 {
-  margin: 14px 0 18px;
-  font-size: clamp(2.2rem, 4.6vw, 3.8rem);
-  overflow-wrap: break-word;
-  hyphens: auto;
+  margin: 14px 0 20px;
+}
+.privacy-title-main {
+  display: block;
+  font-size: clamp(2.3rem, 10vw, 3.8rem);
+  line-height: 1.05;
+  hyphens: none;
+  overflow-wrap: normal;
+  word-break: keep-all;
+}
+.privacy-title-org {
+  display: block;
+  margin-top: 8px;
+  color: var(--green);
+  font-size: clamp(1.15rem, 3.2vw, 1.55rem);
+  line-height: 1.25;
+  hyphens: none;
 }
 .privacy-head .lead {
   font-size: 1.12rem;
@@ -900,11 +913,23 @@ main:focus {
   margin-top: 12px;
 }
 .privacy-ask {
-  margin-top: 16px;
-  font-weight: 600;
+  max-width: 38rem;
+  margin-top: 20px;
+  padding: 16px 20px;
+  border-left: 3px solid var(--green);
+  border-radius: 0 12px 12px 0;
+  background: #e9eddf;
+}
+.privacy-ask-title {
+  color: var(--dark);
+  font-weight: 700;
+}
+.privacy-ask p + p {
+  margin-top: 4px;
 }
 .privacy-ask a {
   color: var(--green);
+  font-weight: 600;
   text-underline-offset: 3px;
 }
 .privacy-basis {
@@ -918,8 +943,11 @@ main:focus {
 .privacy-body .privacy-basis {
   margin-top: 14px;
 }
+.privacy-date span {
+  display: block;
+}
 .privacy-date {
-  margin-top: 14px;
+  margin-top: 16px;
   color: var(--muted);
   font-size: 0.9rem;
 }
