@@ -6,8 +6,8 @@ import { privacyHref, privacyPage, privacyUpdated } from "../content/wijk";
 
 // De centrale privacyverklaring van de vereniging: website, activiteiten, lief en leed en sponsors. Eén tekst; het oude
 // adres /sinterklaas/#/privacy stuurt hierheen (index.html, App.tsx). Basis: de tekst van Gert (17-11-2026), getoetst
-// aan de werkelijke werking. Beschrijf alleen wat werkelijk gebeurt; wat het bestuur nog niet besliste, staat er eerlijk
-// als "nog niet vastgelegd". Onderbouwing: Project dossier\AVG-VERANTWOORDING.md.
+// aan de werkelijke werking. Beschrijf alleen wat werkelijk gebeurt. Bewaartermijnen: alleen boekhoudstukken hebben een
+// wettelijke termijn; de andere koos de vereniging zelf (GO Gert 17-11). Onderbouwing: Project dossier\AVG-VERANTWOORDING.md.
 
 const org = event.organisation;
 const registration = sinterklaasRegistration;
@@ -356,15 +356,17 @@ export default function PrivacyPage() {
 
             <Section id="bewaring">
               <p>
-                We bewaren gegevens niet langer dan nodig voor het doel waarvoor we ze gebruiken. Waar het bestuur nog geen
-                vaste termijn koos, zeggen we dat eerlijk en geldt tot dan: niet langer dan nodig voor dat doel.
+                We bewaren gegevens niet langer dan nodig voor het doel waarvoor we ze gebruiken. Alleen voor
+                boekhoudstukken schrijft de wet zelf een bewaartermijn voor. De andere termijnen hieronder kozen we zelf,
+                zo kort als het doel toelaat.
               </p>
               <dl className="privacy-list">
                 <div>
                   <dt>Inschrijvingen Sinterklaas {event.year}</dt>
                   <dd>
-                    Op {deleteByLabel} wist de website de namen, e-mailadressen en adressen automatisch uit de database.
-                    Mails in Gmail, gedownloade lijsten en papieren kopieën ruimen we apart op, ook uiterlijk die dag.
+                    Op {deleteByLabel} wist de website automatisch de namen van ouders en kinderen, de e-mailadressen,
+                    de adressen en de notities uit de database. Mails in Gmail, gedownloade lijsten en papieren kopieën
+                    ruimen we apart op, ook uiterlijk die dag.
                   </dd>
                 </div>
                 <div>
@@ -380,8 +382,8 @@ export default function PrivacyPage() {
                   <dd>
                     Om volgende edities voor te bereiden, houden we het inschrijvingsnummer met cijfers zoals leeftijden,
                     aantallen en afgehaalde cadeautjes, zonder naam, e-mailadres of adres. Omdat het inschrijvingsnummer
-                    erbij blijft, behandelen we ook deze cijfers als persoonsgegevens. Voor deze cijfers is nog geen vaste
-                    bewaartermijn vastgelegd.
+                    erbij blijft, behandelen we ook deze cijfers als persoonsgegevens. We bewaren ze tot de volgende
+                    Sinterklaasactie voorbereid is, en uiterlijk tot 31 januari 2028.
                   </dd>
                 </div>
                 <div>
@@ -390,25 +392,45 @@ export default function PrivacyPage() {
                 </div>
                 <div>
                   <dt>Tekeningen</dt>
-                  <dd>
-                    Nog geen vaste termijn; niet langer dan nodig voor de kleurwedstrijd en de cadeauactie.
-                  </dd>
+                  <dd>Tot na de kleurwedstrijd, en uiterlijk tot {deleteByLabel}.</dd>
                 </div>
                 <div>
                   <dt>Lief en leed</dt>
-                  <dd>Nog geen vaste termijn; niet langer dan nodig om de attentie te bezorgen.</dd>
+                  <dd>
+                    Tot de attentie bezorgd is, en uiterlijk drie maanden na ontvangst. Daarna ruimen we het kaartje, de
+                    doodsbrief of de gegevens van de gemeente op.
+                  </dd>
                 </div>
                 <div>
                   <dt>Mails met een vraag</dt>
-                  <dd>Nog geen vaste termijn; niet langer dan nodig om je vraag af te handelen.</dd>
+                  <dd>
+                    Uiterlijk zes maanden nadat je vraag is afgehandeld. Een verzoek over je privacyrechten bewaren we één
+                    jaar na de afhandeling, zodat we kunnen tonen hoe we het behandelden. Mails over de inschrijvingen van
+                    Sinterklaas {event.year} ruimen we al op {deleteByLabel} op.
+                  </dd>
                 </div>
                 <div>
-                  <dt>Stukken van vroegere activiteiten</dt>
-                  <dd>Nog geen vaste termijn; het bestuur kijkt na welke stukken nog nodig zijn.</dd>
+                  <dt>Deelnemerslijsten van activiteiten</dt>
+                  <dd>
+                    Na afloop van een activiteit hebben we ze niet meer nodig: we ruimen ze op binnen drie maanden na de
+                    activiteit. Lijsten van vroegere activiteiten die nog bestaan, kijkt het bestuur na volgens dezelfde
+                    regel.
+                  </dd>
+                </div>
+                <div>
+                  <dt>Boekhoudstukken</dt>
+                  <dd>
+                    Moet de vereniging een stuk bewaren voor haar boekhouding, zoals een factuur of een rekeninguittreksel,
+                    dan bewaren we het zo lang als de boekhoudwetgeving voorschrijft. Dat is een wettelijke bewaarplicht.
+                    Zulke stukken houden we apart van de inschrijvingen; in de inschrijvingen staan geen betaalgegevens.
+                  </dd>
                 </div>
                 <div>
                   <dt>Sponsorvermeldingen</dt>
-                  <dd>Zolang de sponsor met de vermelding akkoord is.</dd>
+                  <dd>
+                    Zolang de sponsor met de vermelding akkoord is. Trekt een sponsor zijn toestemming in, dan halen we de
+                    vermelding zo snel mogelijk weg.
+                  </dd>
                 </div>
               </dl>
             </Section>

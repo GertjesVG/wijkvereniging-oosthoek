@@ -270,7 +270,12 @@ test("centrale privacyverklaring: juiste rechtsgronden en verplichte informatie,
     "ongeveer twee maanden",
     "tot zes maanden",
     "Hoogstens een dag",
-    "nog geen vaste bewaartermijn vastgelegd",
+    "Alleen voor boekhoudstukken schrijft de wet zelf een bewaartermijn voor. De andere termijnen hieronder kozen we zelf",
+    "uiterlijk tot 31 januari 2028",
+    "uiterlijk drie maanden na ontvangst",
+    "Uiterlijk zes maanden nadat je vraag is afgehandeld",
+    "binnen drie maanden na de activiteit",
+    "zo lang als de boekhoudwetgeving voorschrijft",
     "maar van de gemeente",
     "niet voor gegevens van overledenen",
     "in beginsel binnen één maand",
@@ -297,7 +302,7 @@ test("centrale privacyverklaring: juiste rechtsgronden en verplichte informatie,
   assert.ok(part("publicaties").includes("Deelnemen aan een activiteit betekent niet dat we foto’s, tekeningen, uitslagen, namen of adressen mogen publiceren"));
   // Toestemming blijft alleen de grond van oude inschrijvingen; geen beweringen die de werking niet waarmaakt.
   // Niets wat de vereniging niet bevestigde: geen betalingen, geen Facebook, geen versleuteling die er niet is.
-  for (const never of ["Dat doen we met je toestemming", "anoniem", "onomkeerbaar", "als verwerker", "GDPR-proof", "AVG-proof", "verzamelen geen", "binnen België", "delen nooit", "nooit gedeeld", "betaling", "Facebook", "versleuteld afgeleid", "waar dat nodig is"])
+  for (const never of ["Dat doen we met je toestemming", "anoniem", "onomkeerbaar", "als verwerker", "GDPR-proof", "AVG-proof", "verzamelen geen", "binnen België", "delen nooit", "nooit gedeeld", "betaling", "Facebook", "versleuteld afgeleid", "waar dat nodig is", "nog geen vaste"])
     assert.ok(!privacy.includes(never), never);
   // Ook het beheer noemt de bewaarde cijfers niet anoniem: het inschrijvingsnummer blijft erbij staan.
   const dashboard = readFileSync(new URL("../src/beheer/Dashboard.tsx", import.meta.url), "utf8");
