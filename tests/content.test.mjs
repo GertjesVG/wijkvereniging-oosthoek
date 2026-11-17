@@ -250,8 +250,13 @@ test("centrale privacyverklaring: juiste rechtsgronden en verplichte informatie,
   assert.deepEqual(ids, ["verantwoordelijke", "website", "sinterklaas", "activiteiten", "publicaties", "lief-en-leed", "sponsors", "ontvangers", "bewaring", "rechten", "contact", "wijzigingen"]);
   for (const id of ids) part(id);
   for (const must of [
-    "We gaan zorgvuldig om met je gegevens. In deze verklaring lees je welke gegevens onze wijkvereniging gebruikt, waarvoor we die nodig hebben, hoe lang we ze bewaren en hoe je ons kunt bereiken met een vraag over je privacy.",
+    "Bij onze wijkvereniging willen we dat iedereen zich welkom en gerespecteerd voelt. Dat geldt ook voor je privacy: we gaan zorgvuldig om met je gegevens.",
     "artikel 6.1.b AVG",
+    "artikel 6.1.c AVG",
+    "versluierde code",
+    "huwelijksjubileum",
+    "behandelen we ook deze cijfers als persoonsgegevens",
+    "duidelijk ongegrond of buitensporig",
     "artikel 6.1.f AVG",
     "korte notitie van een beheerder",
     "Dan blijft dat zo voor jouw inschrijving",
@@ -284,14 +289,15 @@ test("centrale privacyverklaring: juiste rechtsgronden en verplichte informatie,
     assert.ok(rights.includes(must), must);
   // Sponsors: openbare vermelding op toestemming, intrekken eenvoudig, geen terugwerkende kracht; geen tweede grond ernaast.
   const sponsors = part("sponsors");
-  for (const must of ["openbare sponsorpagina", "persoonsgegevens", "artikel 6.1.a AVG", "altijd eenvoudig intrekken", "doet geen afbreuk", "eigen website van de sponsor"])
+  for (const must of ["openbare sponsorpagina", "persoonsgegevens", "artikel 6.1.a AVG", "altijd eenvoudig intrekken, zonder een reden te geven", "doet geen afbreuk", "eigen website van de sponsor"])
     assert.ok(sponsors.includes(must), must);
   assert.ok(!sponsors.includes("6.1.f") && !sponsors.includes("gerechtvaardigd belang"), "sponsors: één grond");
   // Komende activiteiten: niets verzonnen; publicaties zijn een apart doel, niet inbegrepen in deelname.
   assert.ok(part("activiteiten").includes("liggen de datum en de manier van inschrijven nog niet vast"));
   assert.ok(part("publicaties").includes("Deelnemen aan een activiteit betekent niet dat we foto’s, tekeningen, uitslagen, namen of adressen mogen publiceren"));
   // Toestemming blijft alleen de grond van oude inschrijvingen; geen beweringen die de werking niet waarmaakt.
-  for (const never of ["Dat doen we met je toestemming", "anoniem", "onomkeerbaar", "als verwerker", "GDPR-proof", "AVG-proof", "verzamelen geen", "binnen België", "delen nooit", "nooit gedeeld"])
+  // Niets wat de vereniging niet bevestigde: geen betalingen, geen Facebook, geen versleuteling die er niet is.
+  for (const never of ["Dat doen we met je toestemming", "anoniem", "onomkeerbaar", "als verwerker", "GDPR-proof", "AVG-proof", "verzamelen geen", "binnen België", "delen nooit", "nooit gedeeld", "betaling", "Facebook", "versleuteld afgeleid", "waar dat nodig is"])
     assert.ok(!privacy.includes(never), never);
   // Ook het beheer noemt de bewaarde cijfers niet anoniem: het inschrijvingsnummer blijft erbij staan.
   const dashboard = readFileSync(new URL("../src/beheer/Dashboard.tsx", import.meta.url), "utf8");

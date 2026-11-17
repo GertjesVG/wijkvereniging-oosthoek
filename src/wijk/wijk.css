@@ -896,6 +896,28 @@ main:focus {
 .privacy-head .lead {
   font-size: 1.12rem;
 }
+.privacy-head .lead + p {
+  margin-top: 12px;
+}
+.privacy-ask {
+  margin-top: 16px;
+  font-weight: 600;
+}
+.privacy-ask a {
+  color: var(--green);
+  text-underline-offset: 3px;
+}
+.privacy-basis {
+  padding: 10px 14px;
+  border-left: 3px solid var(--green);
+  border-radius: 0 8px 8px 0;
+  background: #f1f4ea;
+  color: #3d4a40;
+  font-size: 0.95rem;
+}
+.privacy-body .privacy-basis {
+  margin-top: 14px;
+}
 .privacy-date {
   margin-top: 14px;
   color: var(--muted);
