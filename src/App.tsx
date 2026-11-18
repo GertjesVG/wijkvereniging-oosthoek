@@ -49,6 +49,7 @@ function Village() {
     </div>
   );
 }
+const menuLinks = pageLinks.filter(([key]) => key !== "privacy");
 export default function App() {
   const [page, setPage] = useState(readPage);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -161,7 +162,8 @@ export default function App() {
             className={menuOpen ? "navigation is-open" : "navigation"}
             aria-label="Hoofdnavigatie"
           >
-            {pageLinks.map(([key, label]) => (
+            {/* Privacy staat in het menu van de wijkwebsite; hier alleen in de voet en bij het formulier. */}
+            {menuLinks.map(([key, label]) => (
               <a
                 key={key}
                 href={`#/${key}`}

@@ -132,6 +132,7 @@ function Header({ page }: { page: string | null }) {
           {pageLink("sponsors", "Onze sponsors")}
           {pageLink("lief-en-leed", "Lief en leed")}
           {pageLink("wijkhuis", "Wijkhuis")}
+          {pageLink(privacyPage.slug, "Privacy")}
           <a className="nav-contact" href="#contact" onClick={close}>Contact</a>
         </nav>
       </div>

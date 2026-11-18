@@ -217,6 +217,18 @@ main:focus {
   border: 1px solid var(--green);
   border-radius: 6px;
 }
+/* Net boven het gsm-menu is de ruimte krap: iets minder tussenruimte, zodat het menu het logo niet raakt. */
+@media (min-width: 1041px) and (max-width: 1180px) {
+  #navigation {
+    gap: 4px;
+  }
+  #navigation a {
+    padding-inline: 8px;
+  }
+  #navigation .nav-contact {
+    padding-inline: 14px;
+  }
+}
 .menu {
   display: none;
   width: 46px;

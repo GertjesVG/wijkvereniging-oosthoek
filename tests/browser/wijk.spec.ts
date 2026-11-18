@@ -578,7 +578,7 @@ test("desktop en gsm: evenwichtige tegels, geen overloop, beelden 3:2, menu en t
   expect(Math.min(size.width, size.height)).toBeGreaterThanOrEqual(44);
   await toggle.click();
   const nav = page.getByRole("navigation", { name: "Hoofdnavigatie" });
-  for (const name of ["Activiteiten", "Sinterklaas", "Onze sponsors", "Lief en leed", "Wijkhuis", "Contact"])
+  for (const name of ["Activiteiten", "Sinterklaas", "Onze sponsors", "Lief en leed", "Wijkhuis", "Privacy", "Contact"])
     await expect(nav.getByRole("link", { name, exact: true })).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(toggle).toBeFocused();
