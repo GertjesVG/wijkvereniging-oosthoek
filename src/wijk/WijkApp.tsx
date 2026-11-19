@@ -35,7 +35,7 @@ import {
   sinterklaas,
   sinterklaasStatuses,
   smallImage,
-  sponsorTotal,
+  sponsorIntro,
   statusLabels,
   todayInBrussels,
   wijkhuisLocation,
@@ -524,7 +524,7 @@ function SponsorsPage() {
       alt={page.imageAlt}
       eyebrow="Met dank aan onze sponsors"
       title={page.name}
-      lead={`Met dank aan onze ${sponsorTotal} sponsors voor hun steun aan de wijk. Hieronder stellen we ${sponsors.length} van hen aan je voor. Koop lokaal en steun onze middenstand.`}
+      lead={`${sponsorIntro(sponsors.length)} Koop lokaal en steun onze middenstand.`}
       side={
         <p className="sponsors-correction">
           Een onjuistheid opgemerkt? <a href={`mailto:${org.email}`}>Laat het ons gerust weten.</a>

@@ -373,9 +373,9 @@ test("sponsors: één algemene pagina met de goedgekeurde kaarten, de centrale l
   await expect(page.locator(".activity-hero img")).toHaveAttribute("src", "/sinterklaas/assets/oosthoek-sponsors.webp");
   const cards = page.locator(".sponsor-card");
   await expect(cards).toHaveCount(sponsors.length);
-  expect(sponsors.length).toBe(32);
+  expect(sponsors.length).toBe(33);
   await expect(page.locator(".lead")).toContainText(
-    "Met dank aan onze 33 sponsors voor hun steun aan de wijk. Hieronder stellen we 32 van hen aan je voor.",
+    "Met dank aan onze 33 sponsors voor hun steun aan de wijk. Hieronder stellen we ze aan je voor.",
   );
   await expect(page.getByRole("link", { name: "Laat het ons gerust weten." })).toHaveAttribute("href", "mailto:vzwoosthoek@gmail.com");
   await expect(page.locator(".pill, .status")).toHaveCount(0);
@@ -386,7 +386,7 @@ test("sponsors: één algemene pagina met de goedgekeurde kaarten, de centrale l
     await img.scrollIntoViewIfNeeded();
     await expect.poll(() => img.evaluate((i: HTMLImageElement) => i.naturalWidth)).toBeGreaterThan(0);
   }
-  await expect(cards.locator(".sponsor-nameplate")).toHaveCount(32 - Object.keys(sponsorLogos).length);
+  await expect(cards.locator(".sponsor-nameplate")).toHaveCount(33 - Object.keys(sponsorLogos).length);
   // De goedgekeurde vormgeving, ook in de stijl van de wijkwebsite: kaarten op een rij delen hun rijen, dus titel,
   // gegevens, knop en dankwoord staan op dezelfde hoogte, hoe lang de naam ook is.
   const firstRow = await cards.evaluateAll((all) => {
@@ -422,14 +422,14 @@ test("sponsors: één algemene pagina met de goedgekeurde kaarten, de centrale l
   await search.fill("onbestaande sponsor");
   await expect(page.getByText("Geen sponsor gevonden")).toBeVisible();
   await page.getByRole("button", { name: "Toon alle sponsors" }).click();
-  await expect(cards).toHaveCount(32);
+  await expect(cards).toHaveCount(33);
 });
 
 test("sponsorlinks vanuit Sinterklaas komen op de algemene pagina, zonder kapotte oude links", async ({ page }) => {
   const atSponsors = async (url: string) => {
     await expect(page).toHaveURL(url);
     await expect(page.locator("h1")).toHaveText("Onze sponsors");
-    await expect(page.locator(".sponsor-card")).toHaveCount(32);
+    await expect(page.locator(".sponsor-card")).toHaveCount(33);
   };
   // Oude directe links, ook met zoekdeel en na vernieuwen.
   for (const [start, end] of [

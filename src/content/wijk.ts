@@ -124,6 +124,9 @@ export const privacyUpdated = "2026-11-17";
 // Aantal sponsors van de vereniging, bevestigd door de opdrachtgever (Gert, 17 november 2026). De website toont er
 // sponsors.json.length van; geen namen of redenen vermelden voor wie er niet bij staat.
 export const sponsorTotal = 33;
+// Inleiding van de sponsorpagina (wijk en Sinterklaas). Staan ze allemaal op de website, dan "ze" in plaats van "33 van hen".
+export const sponsorIntro = (shown: number) =>
+  `Met dank aan onze ${sponsorTotal} sponsors voor hun steun aan de wijk. Hieronder stellen we ${shown < sponsorTotal ? `${shown} van hen` : "ze"} aan je voor.`;
 
 // Naam en adres definitief bevestigd door Gert op 5 november 2026. Gebruik geen adreslabel van een kaartendienst.
 // De fysieke plaats is aangeleverd door Gert via de kaart "Afhaling prijzen" met de rode cirkel.

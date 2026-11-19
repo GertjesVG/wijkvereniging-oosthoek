@@ -16,7 +16,7 @@ import {
 import { ButtonLink, PageHeading, Reglement, StatusNote } from "./components";
 import { asset, dateLabel, event } from "./content/event";
 import sponsors from "./content/sponsors.json";
-import { sponsorTotal } from "./content/wijk";
+import { sponsorIntro } from "./content/wijk";
 import { registrationNotice } from "./inschrijving/periode";
 import { RegistrationPanel } from "./inschrijving/RegistrationPanel";
 import { useRegistrationStatus } from "./inschrijving/useRegistrationStatus";
@@ -449,9 +449,7 @@ function SponsorsPage() {
         eyebrow="MET DANK AAN ONZE SPONSORS"
         title="Samen maken we de buurt sterker."
       >
-        Met dank aan onze {sponsorTotal} sponsors voor hun steun aan de wijk.
-        Hieronder stellen we {sponsors.length} van hen aan je voor. Koop lokaal
-        en steun onze middenstand.
+        {sponsorIntro(sponsors.length)} Koop lokaal en steun onze middenstand.
       </PageHeading>
       <SponsorList assetUrl={asset} />
     </>

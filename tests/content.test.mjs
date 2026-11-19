@@ -14,20 +14,34 @@ const sponsors = JSON.parse(
     "utf8",
   ),
 );
-// ZEEPVENTJE staat sinds 17 november 2026 niet meer op de sponsorlijst (opdracht Gert): 32 sponsors.
-test("32 unieke officiële sponsors met echte brongegevens", () => {
-  assert.equal(sponsors.length, 32);
-  assert.equal(new Set(sponsors.map((s) => s.name)).size, 32);
-  assert.ok(!sponsors.some((s) => /zeepventje/i.test(JSON.stringify(s))));
+// ZEEPVENTJE stond van 17 tot 19 november 2026 niet op de sponsorlijst; sinds 19 november weer (opdracht Gert): 33 sponsors.
+test("33 unieke officiële sponsors met echte brongegevens", () => {
+  assert.equal(sponsors.length, 33);
+  assert.equal(new Set(sponsors.map((s) => s.name)).size, 33);
+  // Eén keer, met dezelfde gegevens als vóór 17 november.
+  assert.deepEqual(
+    sponsors.filter((s) => /zeepventje/i.test(s.name)),
+    [
+      {
+        name: "ZEEPVENTJE",
+        category: "Onderhouds- en schoonmaakproducten",
+        address: "Opstal 7, Beerse",
+        phones: [],
+        email: "zeepventje@skynet.be",
+        website: null,
+      },
+    ],
+  );
   for (const s of sponsors) {
     assert.ok(s.name.length);
     assert.ok(s.address.includes(","));
     assert.ok(Array.isArray(s.phones));
     assert.ok(s.email === null || /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(s.email));
   }
-  assert.equal(sponsors[0].name, "Delaplace Tuinen");
-  assert.equal(sponsors[31].name, "Stef Nuyens");
-  assert.equal(sponsors[4].name, "Herenkapsalon Dooley’s");
+  assert.equal(sponsors[0].name, "ZEEPVENTJE");
+  assert.equal(sponsors[1].name, "Delaplace Tuinen");
+  assert.equal(sponsors[32].name, "Stef Nuyens");
+  assert.equal(sponsors[5].name, "Herenkapsalon Dooley’s");
 });
 
 test("alleen de 20 bevestigde eigen sponsorwebsites worden aangeboden", () => {
@@ -81,7 +95,7 @@ test("alleen de 20 bevestigde eigen sponsorwebsites worden aangeboden", () => {
   );
 });
 
-test("sponsoradressen: 32 gecodeerde Google Maps-links met het volledige gepubliceerde adres", () => {
+test("sponsoradressen: 33 gecodeerde Google Maps-links met het volledige gepubliceerde adres", () => {
   const urls = new Set();
   for (const sponsor of sponsors) {
     const url = new URL(sponsorMapUrl(sponsor));
@@ -93,15 +107,20 @@ test("sponsoradressen: 32 gecodeerde Google Maps-links met het volledige gepubli
     assert.equal(query.includes(sponsor.name), !addressOnly.has(sponsor.name), sponsor.name);
     urls.add(url.href);
   }
-  assert.equal(urls.size, 32);
+  assert.equal(urls.size, 33);
   for (const name of addressOnly) assert.ok(sponsors.some((s) => s.name === name), name);
 });
 
-test("24 sponsorlogo’s op naam gekoppeld en als eigen bestand aanwezig; 8 sponsors krijgen een naamplaat", () => {
+test("25 sponsorlogo’s op naam gekoppeld en als eigen bestand aanwezig; 8 sponsors krijgen een naamplaat", () => {
   const names = new Set(sponsors.map((s) => s.name));
-  assert.equal(Object.keys(sponsorLogos).length, 24);
-  // Het logo van ZEEPVENTJE is op 15 november 2026 offline gehaald: geen bestand meer in de publicatie.
-  assert.ok(!existsSync(new URL("../public/assets/sponsor-zeepventje.webp", import.meta.url)));
+  assert.equal(Object.keys(sponsorLogos).length, 25);
+  // Het logo van ZEEPVENTJE is sinds 19 november 2026 terug: byte-gelijk aan het bestand van vóór 15 november.
+  assert.equal(
+    createHash("sha256")
+      .update(readFileSync(new URL("../public/assets/sponsor-zeepventje.webp", import.meta.url)))
+      .digest("hex"),
+    "6151c577a17e5951800169523c7ab143eb78cfb3ad938c2cf335c2dd5170aa3f",
+  );
   for (const [name, logo] of Object.entries(sponsorLogos)) {
     assert.ok(names.has(name), name);
     assert.match(logo.file, /^sponsor-[a-z0-9-]+\.(webp|svg)$/);

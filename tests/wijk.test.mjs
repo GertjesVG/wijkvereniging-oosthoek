@@ -15,6 +15,7 @@ import {
   readRoute,
   sinterklaasStatuses,
   smallImage,
+  sponsorIntro,
   sponsorTotal,
   statusLabels,
   todayInBrussels,
@@ -202,7 +203,7 @@ test("het persoonlijke telefoonnummer staat nergens in de broncode of publieke t
       assert.notEqual(hash(digits), PERSONAL, file);
     }
   const sponsors = JSON.parse(text("../src/content/sponsors.json"));
-  assert.deepEqual(sponsors.filter((s) => s.phones.length === 0).map((s) => s.name), []);
+  assert.deepEqual(sponsors.filter((s) => s.phones.length === 0).map((s) => s.name), ["ZEEPVENTJE"]);
   assert.ok(text("../src/SponsorCards.tsx").includes("phoneHref(phone)"));
 });
 
@@ -327,15 +328,23 @@ test("Lief en leed: juiste afspraken, geen bedragen en geen wijkformulier", asyn
   assert.doesNotMatch(all, /€|euro|bedrag|bijdrage|premie|formulier/i);
 });
 
-test("sponsors: 33 sponsors bedankt, de 32 op de website voorgesteld; korte meldlink naar het contactadres", () => {
+test("sponsors: 33 sponsors bedankt en alle 33 op de website voorgesteld; korte meldlink naar het contactadres", () => {
   const sponsors = JSON.parse(text("../src/content/sponsors.json"));
   assert.equal(sponsorTotal, 33);
-  assert.equal(sponsors.length, 32);
+  assert.equal(sponsors.length, 33);
   assert.ok(sponsors.length <= sponsorTotal);
-  const app = text("../src/wijk/WijkApp.tsx");
-  assert.ok(
-    app.includes("Met dank aan onze ${sponsorTotal} sponsors voor hun steun aan de wijk. Hieronder stellen we ${sponsors.length} van hen aan je voor."),
+  assert.equal(
+    sponsorIntro(sponsors.length),
+    "Met dank aan onze 33 sponsors voor hun steun aan de wijk. Hieronder stellen we ze aan je voor.",
   );
+  // Staat er ooit één niet bij, dan blijft de oorspronkelijke zin.
+  assert.equal(
+    sponsorIntro(32),
+    "Met dank aan onze 33 sponsors voor hun steun aan de wijk. Hieronder stellen we 32 van hen aan je voor.",
+  );
+  const app = text("../src/wijk/WijkApp.tsx");
+  assert.ok(app.includes("lead={`${sponsorIntro(sponsors.length)} Koop lokaal en steun onze middenstand.`}"));
+  assert.ok(text("../src/Pages.tsx").includes("{sponsorIntro(sponsors.length)} Koop lokaal en steun onze middenstand."));
   assert.ok(app.includes("Een onjuistheid opgemerkt? <a href={`mailto:${org.email}`}>Laat het ons gerust weten.</a>"));
   // De sponsorstrook van Sinterklaas spreekt het aantal niet tegen.
   const home = text("../src/Home.tsx");

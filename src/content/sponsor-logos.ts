@@ -7,6 +7,8 @@
 // 15 november 2026 (opdracht Gert): logo van ZEEPVENTJE weggehaald; nieuwe logo's van Walbers Zonweringen
 // en Jacko Sound uit de aangeleverde bestanden (ongewijzigde kopie in Documentatie\Sponsors\assets: walbers-zonweringen-2026-11-15.png, jacko-sound-2026-11-15.png).
 // 16 november 2026 (opdracht Gert, op vraag van de sponsor zelf): "Polyesterwerken Stevens J." heet nu "Zwembaden Stevens J."; het logo (Stevens J BV) is ongewijzigd.
+// 19 november 2026 (opdracht Gert): ZEEPVENTJE terug op de sponsorlijst, met hetzelfde logobestand als vóór 15 november
+// (byte-gelijk teruggezet uit Git; bron Documentatie\Sponsors\assets\zeepventje.png).
 // Logo toevoegen: bestand als public/assets/sponsor-<naam>.webp, en hier één regel met de
 // afmetingen van het bestand. `backdrop` = de egale achtergrondkleur van het logo zelf, zodat
 // de hele logozone die kleur krijgt (nodig bij een wit of licht logo, of een logo op een eigen vlak).
@@ -23,6 +25,7 @@ export type SponsorLogo = {
 };
 
 export const sponsorLogos: Record<string, SponsorLogo> = {
+  ZEEPVENTJE: { file: "sponsor-zeepventje.webp", width: 840, height: 323 },
   "Delaplace Tuinen": {
     file: "sponsor-delaplace-tuinen.webp",
     width: 1002,
