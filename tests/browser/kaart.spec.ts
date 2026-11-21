@@ -40,7 +40,7 @@ const map = {
 let pageErrors: string[] = [];
 test.afterEach(() => expect(pageErrors).toEqual([]));
 
-async function open(page: Page) {
+async function open(page: Page, data: typeof map = map) {
   pageErrors = [];
   page.on("pageerror", (e) => pageErrors.push(e.message));
   const lookups: unknown[] = [];
@@ -49,7 +49,7 @@ async function open(page: Page) {
   await page.route("**/api/beheer/evenementen/*/inschrijvingen", (r) => r.fulfill({ json: [] }));
   await page.route("**/api/beheer/gps", (r) => r.fulfill({ status: 503, json: { error: "ONBEKEND", message: "Niet in deze test." } }));
   await page.route("**/api/beheer/statistieken", (r) => r.fulfill({ status: 503, json: { error: "ONBEKEND", message: "Niet in deze test." } }));
-  await page.route("**/api/beheer/evenementen/*/kaart", (r) => r.fulfill({ json: map }));
+  await page.route("**/api/beheer/evenementen/*/kaart", (r) => r.fulfill({ json: data }));
   await page.route("**/api/beheer/evenementen/*/kaart/opzoeken", (r) => {
     lookups.push(r.request().postDataJSON());
     return r.fulfill({ json: { checked: 0, failed: 0, remaining: 0 } });
@@ -100,6 +100,40 @@ test("kaart: markers met aantallen, totalen, filters, route aan/uit en lijst ope
   await expect(page.getByRole("button", { name: "Adres verbeteren (SINT26-0003)" })).toBeVisible();
 });
 
+test("gsm (390 px): kaart, filters en lijst passen zonder zijwaarts schuiven", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await open(page);
+  await expect(page.locator(".kid-map .kid-marker")).toHaveCount(3);
+  await expect(page.locator(".address-list > li")).toHaveCount(4);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+  const box = await page.locator(".kid-map").boundingBox();
+  expect(box!.width).toBeGreaterThan(300);
+  expect(box!.height).toBeGreaterThan(250);
+});
+
+test("afdrukken: buren op een paar meter krijgen elk een leesbaar nummer met een stip op de echte plaats", async ({ page }) => {
+  // Opstal 5 en 7: naast elkaar, op de A3-kaart minder dan een marker uit elkaar.
+  const close = {
+    ...map,
+    addresses: [...map.addresses, address(5, "Opstal", "7", ["Kind F"], located("gevonden", 51.32795, 4.86828))],
+  };
+  await open(page, close);
+  await page.getByLabel("Officiële Sinterklaasroute tonen").uncheck();
+  await page.getByRole("button", { name: "PDF A3 liggend (wijkkaart)" }).click();
+  const sheet = page.getByRole("dialog");
+  await expect(sheet.getByRole("button", { name: "Afdrukken of opslaan als PDF" })).toBeEnabled({ timeout: 25000 });
+  const boxes = await sheet.locator(".print-map .print-marker span").evaluateAll((els) =>
+    els.map((e) => ({ nr: e.textContent, ...e.getBoundingClientRect().toJSON() })),
+  );
+  const four = boxes.find((b) => b.nr === "4")!;
+  const five = boxes.find((b) => b.nr === "5")!;
+  // Niet over elkaar: de middelpunten liggen minstens een markerbreedte uit elkaar.
+  expect(Math.hypot(four.x - five.x, four.y - five.y)).toBeGreaterThanOrEqual(four.width * 0.95);
+  // Zonder route: alleen de twee lijntjes en twee stippen van de verschoven nummers.
+  await expect(sheet.locator(".print-map path")).toHaveCount(4);
+  await expect(sheet).toContainText("stip = echte plaats");
+});
+
 test("afdrukken: kaartnummers = lijstnummers, namen alleen in de vertrouwelijke lijst, OSM-bronvermelding", async ({ page }) => {
   await open(page);
   const sheet = page.getByRole("dialog");
@@ -110,6 +144,7 @@ test("afdrukken: kaartnummers = lijstnummers, namen alleen in de vertrouwelijke 
   await expect(sheet.locator(".print-page")).toHaveCount(1);
   await expect(sheet.locator(".print-map .print-marker span")).toHaveText(["1", "2", "4"]);
   await expect(sheet).toContainText("© OpenStreetMap-bijdragers");
+  await expect(sheet).toContainText("bron: Digitaal Vlaanderen");
   await sheet.getByRole("button", { name: "Sluiten" }).click();
 
   await page.getByRole("button", { name: "PDF A4 (overzicht en detailkaarten)" }).click();

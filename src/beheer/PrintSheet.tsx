@@ -14,7 +14,7 @@ export type PrintJob = { kind: "a3" | "a4" | "list" | "confidential"; showRoute:
 
 const MARGIN = 10; // mm
 const HEADER = 15; // mm
-const FOOTER = 13; // mm
+const FOOTER = 16; // mm: legende (soms op twee regels) en bronvermelding
 const sizes = {
   a3: { w: 420, h: 297, css: "A3 landscape" },
   a4: { w: 297, h: 210, css: "A4 landscape" },
@@ -59,6 +59,34 @@ export function numberRanges(numbers: number[]) {
 
 const printedAt = () =>
   new Intl.DateTimeFormat("nl-BE", { dateStyle: "long", timeStyle: "short", timeZone: "Europe/Brussels" }).format(new Date());
+
+// Markers die op papier (bijna) over elkaar zouden liggen, komen in een kleine cirkel rond hun gezamenlijke plaats, zodat
+// elk nummer leesbaar blijft. Een groep groeit mee zolang een volgend adres dicht bij het midden ervan ligt.
+export function spread(map: L.Map, addresses: AdminMapAddress[], size: number) {
+  const groups: { center: L.Point; members: { address: AdminMapAddress; point: L.Point }[] }[] = [];
+  for (const address of addresses) {
+    const point = map.latLngToLayerPoint(latLng(address));
+    const group = groups.find((g) => g.center.distanceTo(point) < size * 1.15);
+    if (!group) {
+      groups.push({ center: point, members: [{ address, point }] });
+      continue;
+    }
+    group.members.push({ address, point });
+    const n = group.members.length;
+    group.center = group.members.reduce((sum, m) => sum.add(m.point), L.point(0, 0)).divideBy(n);
+  }
+  return groups.flatMap(({ center, members }) => {
+    if (members.length === 1) return [{ address: members[0].address, at: latLng(members[0].address), moved: false }];
+    const n = members.length;
+    // Straal zo dat de nummers elkaar net niet raken, en minstens één markergrootte.
+    const radius = Math.max(size * 1.05, (n * size * 1.15) / (2 * Math.PI));
+    return members.map((m, i) => {
+      const angle = -Math.PI / 2 + (2 * Math.PI * i) / n;
+      const at = map.layerPointToLatLng(center.add(L.point(Math.cos(angle) * radius, Math.sin(angle) * radius)));
+      return { address: m.address, at, moved: true };
+    });
+  });
+}
 
 function PrintMap({
   addresses,
@@ -117,8 +145,14 @@ function PrintMap({
         .bindTooltip(`Deel ${i + 1}`, { permanent: true, direction: "center", className: "print-part-label" })
         .addTo(map);
     });
-    for (const a of addresses)
-      L.marker(latLng(a), { icon: printIcon(a, markerSize), interactive: false, keyboard: false, zIndexOffset: 1000 - a.nr }).addTo(map);
+    for (const { address: a, at, moved } of spread(map, addresses, markerSize)) {
+      if (moved) {
+        // Verschoven om overlap te vermijden: een stip op de echte plaats en een lijntje naar het nummer.
+        L.polyline([latLng(a), at], { color: "#0c293d", weight: 1, interactive: false }).addTo(map);
+        L.circleMarker(latLng(a), { radius: 2.5, color: "#0c293d", weight: 1, fillColor: "#0c293d", fillOpacity: 1, interactive: false }).addTo(map);
+      }
+      L.marker(at, { icon: printIcon(a, markerSize), interactive: false, keyboard: false, zIndexOffset: 1000 - a.nr }).addTo(map);
+    }
     return () => {
       clearTimeout(timer);
       tiles.off();
@@ -136,13 +170,17 @@ function Legend({ showRoute }: { showRoute: boolean }) {
           <span>12</span>
           <b>2</b>
         </i>
-        Nummer van het adres in de adressenlijst · klein: aantal kinderen
+        Nummer in de adressenlijst · klein: aantal kinderen
       </span>
       <span>
         <i className="print-marker is-onzeker" aria-hidden="true">
           <span>7</span>
         </i>
         Locatie onzeker
+      </span>
+      <span>
+        <i className="legend-moved" aria-hidden="true" />
+        Opzij gezet nummer: stip = echte plaats
       </span>
       {showRoute && (
         <span>
@@ -155,7 +193,7 @@ function Legend({ showRoute }: { showRoute: boolean }) {
 }
 
 const SOURCES =
-  "Kaart © OpenStreetMap-bijdragers (openstreetmap.org/copyright) · Locaties: Adressenregister, Digitaal Vlaanderen · Alleen voor intern gebruik door de vereniging.";
+  "Kaart © OpenStreetMap-bijdragers (openstreetmap.org/copyright) · Locaties: Adressenregister via de Geolocation Service, bron: Digitaal Vlaanderen · Alleen voor intern gebruik door de vereniging.";
 
 export function PrintSheet({ job, data, title, onClose }: { job: PrintJob; data: AdminMap; title: string; onClose: () => void }) {
   const size = sizes[job.kind];

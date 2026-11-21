@@ -197,6 +197,15 @@ export default function PrivacyPage() {
                 we na of het adres in {area} ligt, en we letten op dubbele inschrijvingen. Staat een adres niet op die
                 lijst, dan kijkt een beheerder het na: het wordt niet automatisch geweigerd.
               </p>
+              <p>
+                Om de rondrit van Sinterklaas voor te bereiden, zetten we de adressen van de ingeschreven kinderen op
+                een kaart, met per adres het aantal kinderen. Daarvoor sturen we alleen de straat, het huisnummer, het
+                busnummer, de postcode en de gemeente naar de geolocatiedienst van Digitaal Vlaanderen (Vlaamse
+                overheid), die er de plaats op de kaart bij zoekt in het officiële Adressenregister. Namen, e-mailadressen
+                en inschrijvingsnummers gaan niet mee. De gevonden plaats bewaren we bij de inschrijvingen. Die kaart, de
+                adressenlijsten en de namen zien alleen de bevoegde organisatoren in het afgeschermde beheer; ze worden
+                nergens gepubliceerd.
+              </p>
               <p>We gebruiken deze gegevens niet voor reclame en geven ze niet aan sponsors.</p>
               <p>
                 Inschrijven is vrijwillig, maar zonder deze gegevens kunnen we geen cadeautje voorzien. Je kunt je
@@ -204,7 +213,7 @@ export default function PrivacyPage() {
               </p>
               <Basis>
                 Voor je eigen gegevens: de deelname die je aanvraagt en volgens het wedstrijdreglement aanvaardt (artikel
-                6.1.b AVG). Voor de gegevens van je kinderen, de adres- en dubbelcontrole, het bewijs van je akkoord en de
+                6.1.b AVG). Voor de gegevens van je kinderen, de adres- en dubbelcontrole, de kaart voor de rondrit, het bewijs van je akkoord en de
                 beveiliging van het formulier: ons gerechtvaardigd belang om deze gratis actie voor de kinderen van de
                 wijk eerlijk en veilig te organiseren (artikel 6.1.f AVG). Schreef je in toen hier nog stond dat we dit
                 met je toestemming doen (artikel 6.1.a AVG)? Dan blijft dat zo voor jouw inschrijving, en kun je die
@@ -349,6 +358,18 @@ export default function PrivacyPage() {
                   <strong>OpenStreetMap</strong> levert de kaarten, alleen als die laden (zie{" "}
                   <To id="website">Onze website</To>).
                 </li>
+                <li>
+                  <strong>Digitaal Vlaanderen</strong> (agentschap van de Vlaamse overheid) zoekt voor de rondrit van
+                  Sinterklaas de plaats van een adres op (zie <To id="sinterklaas">Sinterklaas</To>). Het krijgt alleen
+                  het adres, zonder naam, vanaf de server van de website. Zoals bij elke bezoeker houdt Digitaal
+                  Vlaanderen het IP-adres van de aanvrager (de server van de website, niet jouw toestel) en technische
+                  gegevens van het verzoek hoogstens 90 dagen bij, ter beveiliging van de dienst; Digitaal Vlaanderen is
+                  daarvoor zelf verantwoordelijk (
+                  <External href="https://www.vlaanderen.be/digitaal-vlaanderen/onze-diensten-en-platformen/geografische-webdiensten/gebruiksrecht-en-privacyverklaring-geografische-webdiensten">
+                    privacyverklaring geografische webdiensten
+                  </External>
+                  ).
+                </li>
               </ul>
               <p>
                 Cloudflare en Google kunnen gegevens ook buiten de Europese Unie verwerken, onder meer in de Verenigde
@@ -372,7 +393,7 @@ export default function PrivacyPage() {
                   <dt>Inschrijvingen Sinterklaas {event.year}</dt>
                   <dd>
                     Op {deleteByLabel} wist de website automatisch de namen van ouders en kinderen, de e-mailadressen,
-                    de adressen en de notities uit de database. Mails in Gmail, gedownloade lijsten en papieren kopieën
+                    de adressen, de plaatsen op de kaart en de notities uit de database. Mails in Gmail, gedownloade lijsten en papieren kopieën
                     ruimen we apart op, ook uiterlijk die dag.
                   </dd>
                 </div>

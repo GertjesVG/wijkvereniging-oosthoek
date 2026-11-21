@@ -373,6 +373,22 @@
   display: inline-block;
   font-style: normal;
 }
+.print-legend .legend-moved {
+  position: relative;
+  width: 7mm;
+  height: 1px;
+  background: var(--navy);
+}
+.print-legend .legend-moved::before {
+  content: "";
+  position: absolute;
+  left: -1px;
+  top: -2px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--navy);
+}
 .print-legend .print-marker span {
   width: 6mm;
   height: 6mm;

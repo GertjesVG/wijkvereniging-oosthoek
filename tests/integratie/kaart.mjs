@@ -316,9 +316,17 @@ try {
     const map = await kaart();
     assert.equal(byStreet(map, "Asterstraat", "1"), undefined);
     assert.deepEqual(byStreet(map, "Opstal", "5").children.map((c) => c.name), ["Noor", "Milan", "Jules", "Fien"]);
+    const stored = () => sql(dir, `SELECT address_key FROM address_locations WHERE event_id = '${EVENT}' ORDER BY address_key`).map((r) => r.address_key);
+    // Alleen de kaart openen ruimt de locatie van het oude adres al op.
+    assert.ok(!stored().some((k) => k.startsWith("asterstraat|")));
+    // Een verwijderde inschrijving: haar locatie verdwijnt bij het volgende openen van de kaart.
+    const reg7 = (await call("GET", `/evenementen/${EVENT}/inschrijvingen`)).data.find((r) => r.reference === "SINT26-0007");
+    assert.equal((await call("DELETE", `/inschrijvingen/${reg7.id}`, { confirm: "SINT26-0007" })).status, 200);
+    assert.ok(stored().some((k) => k.startsWith("veldstraat|")));
+    await kaart();
+    assert.ok(!stored().some((k) => k.startsWith("veldstraat|")));
     await lookupAll();
-    const keys = sql(dir, `SELECT address_key FROM address_locations WHERE event_id = '${EVENT}' ORDER BY address_key`).map((r) => r.address_key);
-    assert.deepEqual(keys, (await kaart()).addresses.map((a) => a.key).sort());
+    assert.deepEqual(stored(), (await kaart()).addresses.map((a) => a.key).sort());
   });
 
   await step("wissen: kaartlocaties mee gewist, kaart en opzoeken daarna dicht", async () => {

@@ -215,13 +215,18 @@ const saveLocation = (db: D1Database, eventId: string, key: string, f: Found) =>
 
 // Zoekt de adressen zonder locatie op (of de gevraagde sleutels opnieuw) en ruimt locaties op van adressen die niet meer
 // voorkomen (verbeterd adres, geannuleerde inschrijving).
-async function lookupMissing(db: D1Database, env: Env, config: RegistrationEvent, area: Area, again: string[]) {
-  const map = await loadMap(db, config);
-  const current = map.addresses.map((a) => a.key);
+// Locaties van adressen die niet meer bij een actief kind horen (verbeterd adres, geannuleerde of verwijderde inschrijving)
+// blijven niet bewaard: opgeruimd telkens de kaart opent of opzoekt.
+async function pruneLocations(db: D1Database, config: RegistrationEvent, map: AdminMap) {
   await db
     .prepare("DELETE FROM address_locations WHERE event_id = ?1 AND address_key NOT IN (SELECT value FROM json_each(?2))")
-    .bind(config.id, JSON.stringify(current))
+    .bind(config.id, JSON.stringify(map.addresses.map((a) => a.key)))
     .run();
+}
+
+async function lookupMissing(db: D1Database, env: Env, config: RegistrationEvent, area: Area, again: string[]) {
+  const map = await loadMap(db, config);
+  await pruneLocations(db, config, map);
   const todo = map.addresses.filter((a) => (again.length ? again.includes(a.key) && a.location?.status !== "handmatig" : !a.location));
   const batch = todo.slice(0, LOOKUPS_PER_REQUEST);
   let failed = 0;
@@ -242,7 +247,11 @@ export async function handleMapAdmin(request: Request, env: Env, db: D1Database,
   const erased = await db.prepare("SELECT personal_data_erased_at AS erased FROM events WHERE id = ?1").bind(config.id).first<{ erased: string | null }>();
   if (erased?.erased) return fail(409, "VERBODEN", "De gegevens van dit evenement zijn gewist.");
   const method = request.method;
-  if (!sub && method === "GET") return json(await loadMap(db, config));
+  if (!sub && method === "GET") {
+    const map = await loadMap(db, config);
+    await pruneLocations(db, config, map);
+    return json(map);
+  }
   if (sub === "opzoeken" && method === "POST") {
     const body = (await readJson(request)) ?? {};
     const again = Array.isArray(body.keys) ? body.keys.filter((k): k is string => typeof k === "string").slice(0, LOOKUPS_PER_REQUEST) : [];
