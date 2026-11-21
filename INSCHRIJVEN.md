@@ -113,7 +113,7 @@ Al gedaan: het Cloudflare Pages-project `wijkvereniging-oosthoek` (Git-koppeling
 
 **Inschrijvingsperiode (migratie 0008):** kijk vooraf in `/beheer/` of de schakelaar op open staat: de migratie raakt die niet, en op gesloten opent de site op 10 november niet. Noteer dan een herstelpunt (`npx wrangler d1 time-travel info oosthoek-inschrijvingen`), dan `npx wrangler d1 migrations apply oosthoek-inschrijvingen --remote` (alleen 0008), tellingen vergelijken en meteen daarna de code pushen. Vanaf de migratie weigert de database inschrijvingen buiten de periode, ook al toont de oude pagina nog even het formulier. Let op: een publicatie vóór 10 november 2026 sluit dus een inschrijving die nu open staat, tot 10 november. Omgekeerde volgorde kan niet: de nieuwe code leest de nieuwe kolommen.
 
-**Kinderen op kaart (migratie 0011):** eerst `npx wrangler d1 migrations apply oosthoek-inschrijvingen --remote` (alleen 0011; voegt één nieuwe tabel toe, inschrijvingen blijven ongemoeid), pas daarna de code pushen. Omgekeerd geeft de kaart een fout en faalt "Persoonsgegevens wissen" zolang de tabel ontbreekt.
+**Kinderen op kaart (migratie 0011, gedaan op 21 november 2026: herstelpunt genoteerd, 0011 toegepast, tellingen van inschrijvingen, kinderen en mails voor en na gelijk, daarna de code gepubliceerd):** eerst `npx wrangler d1 migrations apply oosthoek-inschrijvingen --remote` (alleen 0011; voegt één nieuwe tabel toe, inschrijvingen blijven ongemoeid), pas daarna de code pushen. Omgekeerd geeft de kaart een fout en faalt "Persoonsgegevens wissen" zolang de tabel ontbreekt.
 
 **Na het evenement:** volg "Opruimen Sinterklaas 2026" onder Bewaartermijn.
 
