@@ -1,0 +1,22 @@
+/* Volgnummer van een straat op de rondritkaart (gelijk aan het nummer in de lijst). Gedeeld door de publieke routekaart
+   en het beheer (src/gps/routeLagen.ts); --red, --gold en --navy komen uit de stijl van de pagina. */
+.route-number span {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--red);
+  border-radius: 50%;
+  background: #fff;
+  color: var(--red);
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1;
+  box-shadow: 0 1px 4px #0c293d55;
+  cursor: pointer;
+}
+.route-number.is-active span {
+  border-color: #fff;
+  background: var(--gold);
+  color: var(--navy);
+}

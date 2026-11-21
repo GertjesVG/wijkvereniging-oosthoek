@@ -1,5 +1,5 @@
 // Snelle controles van het inschrijfsysteem zonder database of netwerk: validatie, bevestigingsmail,
-// beheersessie, CSV en het Apps Script (met nagebootste Google-diensten). De volledige keten met database
+// beheersessie en het Apps Script (met nagebootste Google-diensten). De volledige keten met database
 // staat in tests/integratie/inschrijving.mjs (npm run test:inschrijving).
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -11,7 +11,7 @@ import { confirmationTemplates, joinNames, renderConfirmation, repliesInGmail } 
 import { checkArea, cleanChildName, validateRegistration } from "../server/validatie.ts";
 import { deleteByPassed, dueForAutoErase, todayInBelgium } from "../server/wissen.ts";
 import { addressKey, connectionOf } from "../server/basis.ts";
-import { createSession, csvCell, validSession } from "../server/beheer.ts";
+import { createSession, validSession } from "../server/beheer.ts";
 import { backoffMs } from "../server/mail.ts";
 
 const doc = (name) => readFileSync(new URL(`../../../Documentatie/${name}`, import.meta.url), "utf8");
@@ -275,13 +275,6 @@ test("beheersessie: alleen geldig met het juiste wachtwoord en binnen 8 uur", as
   assert.equal(await validSession(env, `oosthoek_beheer=${Number(expires) + 3600}.${signed}`, now), false);
   assert.equal(await validSession(env, null, now), false);
   assert.equal(await validSession(env, "oosthoek_beheer=", now), false);
-});
-
-test("CSV-cellen maken formules onschadelijk", () => {
-  assert.equal(csvCell("=HYPERLINK(1)"), `"'=HYPERLINK(1)"`);
-  assert.equal(csvCell("+32"), `"'+32"`);
-  assert.equal(csvCell('Jan "Piet"'), `"Jan ""Piet"""`);
-  assert.equal(csvCell(null), `""`);
 });
 
 test("herpogingen wachten steeds langer, tot een dag", () => {

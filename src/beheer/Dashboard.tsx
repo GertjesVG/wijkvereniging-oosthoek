@@ -1,14 +1,17 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
-import { BarChart3, ClipboardList, Download, LogOut, Mail, PenLine, RefreshCw, Trash2 } from "lucide-react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { BarChart3, ClipboardList, Download, LogOut, Mail, Map as MapIcon, PenLine, RefreshCw, Trash2 } from "lucide-react";
 import type { AdminEventSummary, AdminRegistration } from "../inschrijving/api";
 import { renderConfirmation, repliesInGmail } from "../inschrijving/bevestigingsmail";
 import { registrationNotice, toBrusselsInput } from "../inschrijving/periode";
-import { AdminError, api, describeError, exportUrl, setUnauthorizedHandler } from "./client";
+import { AdminError, api, describeError, downloadExport, setUnauthorizedHandler } from "./client";
 import { GpsPanel } from "./GpsPanel";
 import { RegistrationItem } from "./RegistrationItem";
 import { StatsPanel } from "./StatsPanel";
 import { TextsPanel } from "./TextsPanel";
 import { ErrorNote, formatDay, useAction } from "./ui";
+
+// Leaflet en de kaart pas laden als het onderdeel "Kinderen op kaart" geopend wordt.
+const MapPanel = lazy(() => import("./MapPanel"));
 
 // ---------- Inloggen ----------
 
@@ -196,6 +199,7 @@ function EventPanel({
   const toggle = useAction();
   const cap = useAction();
   const erase = useAction();
+  const download = useAction();
   // Leeg veld = geen maximum.
   const capacityText = (value: number | null) => (value === null ? "" : String(value));
   const [capacity, setCapacity] = useState(capacityText(event.capacity));
@@ -322,10 +326,10 @@ function EventPanel({
             Maximum opslaan
           </button>
         </form>
-        <a className="btn btn-small" href={exportUrl(event.id)} download>
+        <button type="button" className="btn btn-small" onClick={() => void download.run(() => downloadExport(event.id))} disabled={download.busy}>
           <Download size={15} aria-hidden="true" />
-          CSV-export (Excel)
-        </a>
+          {download.busy ? "Export maken…" : "Excel-export (.xlsx)"}
+        </button>
         {gmail && (
           <a className="btn btn-small" href={gmail} target="_blank" rel="noopener noreferrer">
             <Mail size={15} aria-hidden="true" />
@@ -334,6 +338,7 @@ function EventPanel({
         )}
       </div>
       <ErrorNote>{cap.error}</ErrorNote>
+      <ErrorNote>{download.error}</ErrorNote>
 
       <MailPreview eventId={event.id} />
 
@@ -353,7 +358,7 @@ function EventPanel({
           <form className="erase-confirm" onSubmit={doErase}>
             <p>
               Hiermee worden alle namen, e-mailadressen en adressen van dit evenement definitief
-              gewist. Dit kan niet ongedaan gemaakt worden. Mails in Gmail en gedownloade CSV-bestanden
+              gewist. Dit kan niet ongedaan gemaakt worden. Mails in Gmail, gedownloade Excel-bestanden en afdrukken
               wist dit niet: die verwijder je zelf (opruimprocedure in INSCHRIJVEN.md).
             </p>
             <label className="field">
@@ -465,11 +470,14 @@ function matches(reg: AdminRegistration, f: Filters): boolean {
 function Registrations({
   eventId,
   reloadKey,
+  preset,
   onReload,
   onMutated,
 }: {
   eventId: string;
   reloadKey: number;
+  // Inschrijvingsnummer vanuit "Kinderen op kaart": die inschrijving zoeken en openklappen.
+  preset: { reference: string } | null;
   // Haalt de kaarten bovenaan opnieuw op; faalt nooit (een fout toont het overzicht zelf).
   onReload: () => Promise<void>;
   onMutated: () => void;
@@ -504,6 +512,14 @@ function Registrations({
     setExpanded(null);
     void load();
   }, [load, reloadKey]);
+
+  useEffect(() => {
+    if (preset) setFilters({ ...emptyFilters, query: preset.reference });
+  }, [preset]);
+  useEffect(() => {
+    const found = preset && items?.find((r) => r.reference === preset.reference);
+    if (found) setExpanded(found.id);
+  }, [preset, items]);
 
   const visible = useMemo(
     () => (items ? items.filter((r) => matches(r, filters)) : []),
@@ -730,11 +746,11 @@ function History({ events }: { events: AdminEventSummary[] }) {
 
 // ---------- Dashboard en app ----------
 
-// Drie onderdelen: inschrijvingen met GPS (zoals altijd), de teksten van de website (#teksten) en de
-// bezoekersstatistieken (#statistieken).
-type View = "inschrijvingen" | "teksten" | "statistieken";
+// Vier onderdelen: inschrijvingen met GPS (zoals altijd), de kinderen op de kaart (#kaart), de teksten van de website
+// (#teksten) en de bezoekersstatistieken (#statistieken).
+type View = "inschrijvingen" | "kaart" | "teksten" | "statistieken";
 const viewOf = (hash: string): View =>
-  hash === "#teksten" ? "teksten" : hash === "#statistieken" ? "statistieken" : "inschrijvingen";
+  hash === "#teksten" ? "teksten" : hash === "#statistieken" ? "statistieken" : hash === "#kaart" ? "kaart" : "inschrijvingen";
 
 function Dashboard({
   initialEvents,
@@ -749,7 +765,12 @@ function Dashboard({
   const [view, setView] = useState<View>(() => viewOf(window.location.hash));
   // Eenmaal geopend blijft het tekstenscherm bestaan, zodat een niet-opgeslagen tekst niet verloren gaat bij het wisselen.
   const [textsOpened, setTextsOpened] = useState(view === "teksten");
+  const [preset, setPreset] = useState<{ reference: string } | null>(null);
   const logout = useAction();
+  const openRegistration = useCallback((reference: string) => {
+    setPreset({ reference });
+    window.location.hash = "#inschrijvingen";
+  }, []);
 
   useEffect(() => {
     const change = () => {
@@ -799,6 +820,10 @@ function Dashboard({
               <ClipboardList size={16} aria-hidden="true" />
               Inschrijvingen en GPS
             </a>
+            <a href="#kaart" aria-current={view === "kaart" ? "page" : undefined}>
+              <MapIcon size={16} aria-hidden="true" />
+              Kinderen op kaart
+            </a>
             <a href="#teksten" aria-current={view === "teksten" ? "page" : undefined}>
               <PenLine size={16} aria-hidden="true" />
               Teksten van de website
@@ -808,7 +833,7 @@ function Dashboard({
               Bezoekersstatistieken
             </a>
           </nav>
-          {view === "inschrijvingen" && events.length > 0 && (
+          {(view === "inschrijvingen" || view === "kaart") && events.length > 0 && (
             <label className="field event-pick">
               <span>Evenement</span>
               <select value={event?.id ?? ""} onChange={(e) => setSelected(e.target.value)}>
@@ -834,6 +859,17 @@ function Dashboard({
         )}
         {/* Bij elk openen opnieuw opgebouwd: zo haalt het scherm meteen de actuele cijfers op. */}
         {view === "statistieken" && <StatsPanel />}
+        {/* Bij elk openen opnieuw opgebouwd: zo komen verbeterde adressen en nieuwe inschrijvingen meteen mee. */}
+        {view === "kaart" &&
+          (!event ? (
+            <p className="empty">Er zijn geen evenementen.</p>
+          ) : event.personalDataErased ? (
+            <p className="note">De persoonsgegevens van dit evenement zijn gewist; er staan geen adressen meer op de kaart.</p>
+          ) : (
+            <Suspense fallback={<p className="muted">Kaart laden…</p>}>
+              <MapPanel key={event.id} eventId={event.id} eventTitle={event.title} onOpenRegistration={openRegistration} />
+            </Suspense>
+          ))}
         {view === "inschrijvingen" && (
           <>
             <GpsPanel />
@@ -852,6 +888,7 @@ function Dashboard({
                 <Registrations
                   eventId={event.id}
                   reloadKey={reloadKey}
+                  preset={preset}
                   onReload={refreshEvents}
                   onMutated={refreshEvents}
                 />

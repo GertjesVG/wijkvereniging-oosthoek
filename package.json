@@ -16,7 +16,8 @@
     "test:inschrijving": "node tests/integratie/inschrijving.mjs",
     "test:gps": "node tests/integratie/gps.mjs",
     "test:teksten": "node tests/integratie/teksten.mjs",
-    "test:statistieken": "node tests/integratie/statistieken.mjs"
+    "test:statistieken": "node tests/integratie/statistieken.mjs",
+    "test:kaart": "node tests/integratie/kaart.mjs"
   },
   "dependencies": {
     "@fontsource/cormorant-garamond": "^5.2.8",

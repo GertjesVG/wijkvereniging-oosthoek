@@ -13,6 +13,8 @@ export type Env = {
   GPS_DEVICE_TOKEN?: string;
   // Alleen voor tests: schaalt de wachttijd tussen mailpogingen (standaard 1).
   MAIL_BACKOFF_FACTOR?: string;
+  // Alleen voor tests: een nagebootste geolocatiedienst in plaats van die van Digitaal Vlaanderen (server/locaties.ts).
+  GEOLOCATIE_URL?: string;
 };
 
 export type Ctx = { waitUntil(promise: Promise<unknown>): void };

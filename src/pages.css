@@ -437,27 +437,6 @@
 .sint-marker.is-stale .sint-pin {
   background: #858b90;
 }
-/* Volgnummer van een straat op de kaart (gelijk aan het nummer in de lijst). */
-.route-number span {
-  display: grid;
-  place-items: center;
-  width: 24px;
-  height: 24px;
-  border: 2px solid var(--red);
-  border-radius: 50%;
-  background: #fff;
-  color: var(--red);
-  font-size: 0.68rem;
-  font-weight: 700;
-  line-height: 1;
-  box-shadow: 0 1px 4px #0c293d55;
-  cursor: pointer;
-}
-.route-number.is-active span {
-  border-color: #fff;
-  background: var(--gold);
-  color: var(--navy);
-}
 .route-legend {
   display: flex;
   flex-wrap: wrap;

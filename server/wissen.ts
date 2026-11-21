@@ -39,6 +39,8 @@ export function eraseStatements(db: D1Database, eventId: string, now: string) {
            address_key = NULL, note = NULL, updated_at = ?2 WHERE event_id = ?1`,
       )
       .bind(eventId, now),
+    // De kaartlocaties van de adressen (beheer → "Kinderen op kaart", migratie 0011).
+    db.prepare("DELETE FROM address_locations WHERE event_id = ?1").bind(eventId),
     // In dezelfde batch dicht: een gewist evenement kan nooit open blijven, ook niet bij een gelijktijdige wijziging.
     db.prepare("UPDATE events SET status = 'closed', personal_data_erased_at = ?2, updated_at = ?2 WHERE id = ?1").bind(eventId, now),
     // Ook de kortlopende misbruiklogboeken (gehashte internetadressen).

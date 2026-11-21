@@ -25,6 +25,8 @@ import { handleTextsAdmin } from "./teksten.ts";
 import { handleStatsAdmin } from "./bezoek.ts";
 import { CHILD_NAME_HINT, checkArea, cleanChildName, cleanEmail, cleanHouseNumber, cleanText } from "./validatie.ts";
 import { deleteByPassed, eraseExpired, eraseStatements } from "./wissen.ts";
+import { handleMapAdmin, loadMap, mapKey } from "./locaties.ts";
+import { xlsx, type Sheet } from "./xlsx.ts";
 
 const COOKIE = "oosthoek_beheer";
 const SESSION_SECONDS = 8 * 3600;
@@ -564,24 +566,46 @@ async function deleteRegistration(request: Request, db: D1Database, id: number) 
 
 // ---------- Export en wissen ----------
 
-// Excel (Belgische instellingen): UTF-8 met BOM en puntkomma's. Formules worden onschadelijk gemaakt.
-export function csvCell(value: unknown) {
-  let text = value === null || value === undefined ? "" : String(value);
-  if (/^[=+\-@\t\r]/.test(text)) text = `'${text}`;
-  return `"${text.replace(/"/g, '""')}"`;
+// Tijdstip uit de database (UTC) in Belgische tijd, zoals in het beheer: "2026-11-03 14:05".
+export function belgianTime(iso: unknown) {
+  if (typeof iso !== "string" || !iso) return "";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  const parts = new Intl.DateTimeFormat("en", {
+    timeZone: "Europe/Brussels",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(date);
+  const part = (type: string) => parts.find((p) => p.type === type)?.value;
+  return `${part("year")}-${part("month")}-${part("day")} ${part("hour")}:${part("minute")}`;
 }
 
-async function exportCsv(db: D1Database, config: RegistrationEvent) {
+const LOCATION_LABEL: Record<string, string> = {
+  gevonden: "gevonden",
+  handmatig: "handmatig aangeduid",
+  onzeker: "onzeker",
+  niet_gevonden: "niet gevonden",
+};
+
+// Excel-bestand met twee bladen: "Kinderen" (één regel per kind, ook geannuleerde, plus inschrijvingen zonder kind) en
+// "Adressen" (unieke adressen met hun actieve kinderen, met dezelfde nummers als de kaart en de afdruk).
+async function exportXlsx(db: D1Database, config: RegistrationEvent) {
   const { results } = await db
     .prepare(
       `SELECT r.reference, r.status AS registration_status, r.parent_name, r.email, r.street, r.house_number, r.address_review,
          p.name, p.age, p.status, p.picked_up_at, o.status AS mail_status, r.suspected_duplicate, r.note, r.created_at,
          r.co_parent, r.rules_version, r.rules_accepted_at
-       FROM participants p JOIN registrations r ON r.id = p.registration_id LEFT JOIN mail_outbox o ON o.registration_id = r.id
+       FROM registrations r LEFT JOIN participants p ON p.registration_id = r.id LEFT JOIN mail_outbox o ON o.registration_id = r.id
        WHERE r.event_id = ?1 ORDER BY r.seq, p.id`,
     )
     .bind(config.id)
     .all<Record<string, unknown>>();
+  const map = config.area ? await loadMap(db, config) : null;
+  const numberOf = new Map(map?.addresses.map((a) => [a.key, a.nr]) ?? []);
   const header = [
     "Inschrijvingsnummer",
     "Status inschrijving",
@@ -601,35 +625,76 @@ async function exportCsv(db: D1Database, config: RegistrationEvent) {
     "Adres van andere ouder (co-ouderschap)",
     "Reglementversie",
     "Reglement aanvaard op",
+    "Adresnummer op de kaart",
   ];
-  const rows = results.map((r) =>
-    [
-      r.reference,
+  const rows = results.map((r) => {
+    const active = r.registration_status === "active" && r.status === "active";
+    const address = typeof r.street === "string" && typeof r.house_number === "string" ? mapKey(r.street, r.house_number) : null;
+    return [
+      r.reference as string,
       r.registration_status === "active" ? "actief" : "geannuleerd",
-      r.parent_name,
-      r.email,
-      r.street,
-      r.house_number,
+      r.parent_name as string,
+      r.email as string,
+      r.street as string | null,
+      r.house_number as string | null,
       r.address_review ? "ja" : "nee",
-      r.name,
-      r.age,
-      r.status === "active" ? "actief" : "geannuleerd",
-      r.picked_up_at ? "ja" : "nee",
-      r.mail_status,
+      // Een inschrijving zonder kind (bv. alle kinderen apart verwijderd) staat er ook in, met lege kindvelden.
+      (r.name as string | null) ?? "(geen kind)",
+      r.age as number | null,
+      r.status === null ? "" : r.status === "active" ? "actief" : "geannuleerd",
+      r.status === null ? "" : r.picked_up_at ? "ja" : "nee",
+      r.mail_status as string | null,
       r.suspected_duplicate ? "ja" : "nee",
-      r.note,
-      r.created_at,
+      r.note as string | null,
+      belgianTime(r.created_at),
       r.co_parent ? "ja" : "nee",
-      r.rules_version,
-      r.rules_accepted_at,
-    ]
-      .map(csvCell)
-      .join(";"),
-  );
-  return new Response(`﻿${[header.map(csvCell).join(";"), ...rows].join("\r\n")}\r\n`, {
+      r.rules_version as string | null,
+      belgianTime(r.rules_accepted_at),
+      active && address ? numberOf.get(address) : null,
+    ];
+  });
+  const sheets: Sheet[] = [{ name: "Kinderen", header, rows }];
+  if (map)
+    sheets.push({
+      name: "Adressen",
+      header: [
+        "Nr",
+        "Straat",
+        "Huisnummer",
+        "Bus",
+        "Postcode",
+        "Gemeente",
+        "Aantal kinderen",
+        "Kinderen",
+        "Inschrijvingen",
+        "Adres nakijken",
+        "Kaartlocatie",
+        "Adres volgens Adressenregister",
+        "Breedtegraad",
+        "Lengtegraad",
+      ],
+      rows: map.addresses.map((a) => [
+        a.nr,
+        a.street,
+        a.number,
+        a.box,
+        // Alleen als het Adressenregister het adres exact zo kent; anders leeg (niets verzinnen).
+        a.location?.matched ? map.postcode : null,
+        a.location?.matched ? map.municipality : null,
+        a.children.length,
+        a.children.map((c) => (c.age === null ? c.name : `${c.name} (${c.age})`)).join(", "),
+        a.registrations.map((r) => r.reference).join(", "),
+        a.addressReview ? "ja" : "nee",
+        a.location ? LOCATION_LABEL[a.location.status] : "nog niet opgezocht",
+        a.location?.matched ?? null,
+        a.location?.lat ?? null,
+        a.location?.lon ?? null,
+      ]),
+    });
+  return new Response(xlsx(sheets), {
     headers: {
-      "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="${config.id}-inschrijvingen.csv"`,
+      "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "Content-Disposition": `attachment; filename="${config.id}-inschrijvingen.xlsx"`,
       "Cache-Control": "no-store",
       "X-Content-Type-Options": "nosniff",
     },
@@ -676,8 +741,10 @@ export async function handleAdmin(request: Request, env: Env, path: string[]) {
     if (!config) return fail(404, "NIET_GEVONDEN", "Onbekend evenement.");
     if (!action && method === "PATCH") return updateEvent(request, db, config.id);
     if (action === "inschrijvingen" && method === "GET") return json(await listRegistrations(db, config.id));
-    if (action === "export" && method === "GET") return exportCsv(db, config);
+    if (action === "export" && method === "GET" && path.length === 3) return exportXlsx(db, config);
     if (action === "wissen" && method === "POST") return erase(request, db, config.id);
+    // Kinderen op kaart (server/locaties.ts).
+    if (action === "kaart" && path.length <= 4) return handleMapAdmin(request, env, db, config, path[3]);
   }
   const id = Number(key);
   if (Number.isInteger(id) && id > 0 && path.length <= 3) {

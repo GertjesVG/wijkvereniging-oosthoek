@@ -12,6 +12,7 @@ import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { readXlsx } from "../xlsx-lezen.mjs";
 
 const VERIFY_PORT = 8798;
 const verified = { calls: 0, withoutAnswer: 0 };
@@ -58,6 +59,8 @@ function prepare(dir, edit = (source) => source) {
     cpSync(path.join(repo, "src/inschrijving", file), path.join(dir, "src/inschrijving", file));
   mkdirSync(path.join(dir, "src/bezoek"), { recursive: true });
   cpSync(path.join(repo, "src/bezoek/paginas.ts"), path.join(dir, "src/bezoek/paginas.ts"));
+  mkdirSync(path.join(dir, "src/content"), { recursive: true });
+  cpSync(path.join(repo, "src/content/event.ts"), path.join(dir, "src/content/event.ts"));
   const serverFile = path.join(dir, "server/inschrijven.ts");
   const serverSource = readFileSync(serverFile, "utf8");
   const local = serverSource.replace("https://challenges.cloudflare.com/turnstile/v0/siteverify", `http://127.0.0.1:${VERIFY_PORT}/siteverify`);
@@ -128,6 +131,10 @@ async function call(method, url, body, headers = {}) {
   return { status: res.status, data, headers: res.headers, text };
 }
 const admin = (method, url, body) => call(method, `/api/beheer${url}`, body);
+const exportBook = async () => {
+  const res = await fetch(`${BASE}/api/beheer/evenementen/${EVENT}/export`, { headers: { Cookie: cookie } });
+  return { res, book: readXlsx(new Uint8Array(await res.arrayBuffer())) };
+};
 const mailApi = (url, body, sleutel = mailSleutel) =>
   call("POST", `/api/mail/${url}`, body, sleutel === null ? {} : { Authorization: `Bearer ${sleutel}` });
 
@@ -211,8 +218,10 @@ try {
 
   await step("privé-API's weigeren zonder geldige sessie of mailsleutel", async () => {
     cookie = "";
-    for (const url of ["/evenementen", `/evenementen/${EVENT}/inschrijvingen`, `/evenementen/${EVENT}/export`])
+    for (const url of ["/evenementen", `/evenementen/${EVENT}/inschrijvingen`, `/evenementen/${EVENT}/export`, `/evenementen/${EVENT}/kaart`])
       assert.equal((await admin("GET", url)).status, 401, url);
+    assert.equal((await admin("POST", `/evenementen/${EVENT}/kaart/opzoeken`, {})).status, 401);
+    assert.equal((await admin("POST", `/evenementen/${EVENT}/kaart/locatie`, { key: "opstal|5|", lat: 51.33, lon: 4.87 })).status, 401);
     assert.equal((await admin("PATCH", "/inschrijvingen/1", { status: "cancelled" })).status, 401);
     cookie = `oosthoek_beheer=${Math.floor(Date.now() / 1000) + 3600}.vervalst`;
     assert.equal((await admin("GET", "/evenementen")).status, 401);
@@ -415,18 +424,30 @@ try {
     assert.equal((await summary()).active, activeNow + 8);
   });
 
-  await step("CSV-export voor Excel: BOM, puntkomma's, formules onschadelijk", async () => {
+  await step("Excel-export: geldig .xlsx, elk kind precies één keer, adressen met aantallen, formules blijven tekst", async () => {
     assert.equal((await register(family({ parent: "=HYPERLINK(\"http://x\")", kids: 1 }))).status, 201);
-    const csv = await admin("GET", `/evenementen/${EVENT}/export`);
-    assert.equal(csv.status, 200);
-    assert.match(csv.headers.get("content-disposition"), /attachment; filename="sinterklaas-2026-inschrijvingen.csv"/);
-    // response.text() laat de BOM weg; daarom de ruwe bytes.
-    const raw = new Uint8Array(await (await fetch(`${BASE}/api/beheer/evenementen/${EVENT}/export`, { headers: { Cookie: cookie } })).arrayBuffer());
-    assert.deepEqual([...raw.slice(0, 3)], [0xef, 0xbb, 0xbf]);
-    const lines = csv.text.trim().split("\r\n");
-    assert.match(lines[0], /^"Inschrijvingsnummer";"Status inschrijving";/);
-    assert.ok(lines.some((l) => l.includes(`"'=HYPERLINK(""http://x"")"`)));
-    assert.ok(!lines.some((l) => l.includes(`;"=HYPERLINK`)));
+    const { res, book } = await exportBook();
+    assert.equal(res.status, 200);
+    assert.equal(res.headers.get("content-type"), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    assert.match(res.headers.get("content-disposition"), /attachment; filename="sinterklaas-2026-inschrijvingen.xlsx"/);
+    assert.match(res.headers.get("cache-control"), /no-store/);
+    assert.deepEqual(Object.keys(book), ["Kinderen", "Adressen"]);
+    const [head, ...rows] = book.Kinderen.rows;
+    assert.deepEqual(head.slice(0, 2), ["Inschrijvingsnummer", "Status inschrijving"]);
+    assert.ok(rows.some((r) => r[2] === '=HYPERLINK("http://x")'));
+    assert.ok(!book.Kinderen.xml.includes("<f>"));
+    assert.match(book.Kinderen.xml, /<autoFilter ref="A1:S\d+"\/>/);
+    // Actieve kinderen: evenveel regels als de teller in het beheer, en evenveel als op het blad met adressen.
+    const s = await summary();
+    const active = rows.filter((r) => r[1] === "actief" && r[9] === "actief");
+    assert.equal(active.length, s.active);
+    const [addressHead, ...addresses] = book.Adressen.rows;
+    assert.deepEqual(addressHead.slice(0, 7), ["Nr", "Straat", "Huisnummer", "Bus", "Postcode", "Gemeente", "Aantal kinderen"]);
+    assert.equal(addresses.reduce((n, a) => n + Number(a[6]), 0), s.active);
+    assert.deepEqual(addresses.map((a) => Number(a[0])), addresses.map((_, i) => i + 1));
+    // Elk actief kind verwijst naar een bestaand adresnummer; de adressen zijn uniek.
+    assert.ok(active.every((r) => Number(r[18]) >= 1 && Number(r[18]) <= addresses.length));
+    assert.equal(new Set(addresses.map((a) => `${a[1]}|${a[2]}|${a[3]}`)).size, addresses.length);
   });
 
   await step("mailwachtrij: ophalen met juiste velden, nooit dubbel, fouten opnieuw, verstuurd blijft verstuurd", async () => {
@@ -574,10 +595,9 @@ try {
     assert.equal(approved.data.addressReview, null);
     assert.equal((await summary()).addressReview, 1);
     assert.deepEqual(await mailRound(), [outside.data.reference, unknown.data.reference].sort());
-    const csv = await admin("GET", `/evenementen/${EVENT}/export`);
-    const [head, ...rows] = csv.text.trim().split("\r\n");
-    assert.match(head, /"Huisnummer";"Adres nakijken";"Naam";"Leeftijd op evenementdag"/);
-    assert.ok(rows.some((l) => l.includes(`"Anjerstraat";"5";"ja";"Anna";"3"`)), rows.join("\n"));
+    const [head, ...rows] = (await exportBook()).book.Kinderen.rows;
+    assert.deepEqual(head.slice(5, 9), ["Huisnummer", "Adres nakijken", "Naam", "Leeftijd op evenementdag"]);
+    assert.ok(rows.some((r) => r.slice(4, 9).join("|") === "Anjerstraat|5|ja|Anna|3"), rows.join("\n"));
   });
 
   await step("historiek: inschrijvingen, kinderen, leeftijdsverdeling, afgehaald en geannuleerd per editie", async () => {
@@ -655,9 +675,9 @@ try {
     const jobs = (await mailApi("wachtrij", { max: 50 })).data.jobs;
     assert.deepEqual(jobs.map((j) => j.id.split(":")[0]), [mum.data.reference]);
     await mailApi("resultaat", { results: jobs.map((j) => ({ outboxId: j.outboxId, generation: j.generation, ok: true })) });
-    const csv = (await admin("GET", `/evenementen/${EVENT}/export`)).text.trim().split("\r\n");
-    assert.match(csv[0], /"Adres van andere ouder \(co-ouderschap\)";"Reglementversie";"Reglement aanvaard op"$/);
-    assert.ok(csv.some((l) => l.startsWith(`"${mum.data.reference}"`) && l.includes(`"ja";"${rulesVersion}";"`)), csv.join("\n"));
+    const [head, ...rows] = (await exportBook()).book.Kinderen.rows;
+    assert.deepEqual(head.slice(15), ["Adres van andere ouder (co-ouderschap)", "Reglementversie", "Reglement aanvaard op", "Adresnummer op de kaart"]);
+    assert.ok(rows.some((r) => r[0] === mum.data.reference && r[15] === "ja" && r[16] === rulesVersion && /^\d{4}-\d\d-\d\d \d\d:\d\d$/.test(r[17])), rows.join("\n"));
   });
   stop(server);
 
@@ -767,9 +787,12 @@ try {
     assert.deepEqual(erased.map((r) => r.reference).sort(), ["SINT26-0001", "SINT26-0002"]);
     assert.ok(erased.every((r) => r.parentName === "[gewist]" && r.email === "[gewist]" && r.street === null && r.houseNumber === null && r.note === null));
     assert.ok(erased.every((r) => r.participants.every((p) => p.name === "[gewist]" && p.age !== null)));
-    // Ook de CSV-export bevat daarna geen namen of e-mailadressen meer.
-    const csv = (await admin("GET", `/evenementen/${EVENT}/export`)).text;
-    for (const word of ["Fien", "Jules", "Lotte", "wis.test@example.org", "Wis Testouder", "Zandstraat"]) assert.ok(!csv.includes(word), word);
+    // Ook de Excel-export bevat daarna geen namen, e-mailadressen of adressen meer, en de kaart is dicht.
+    const { book } = await exportBook();
+    const all = JSON.stringify(book.Kinderen.rows) + JSON.stringify(book.Adressen.rows);
+    for (const word of ["Fien", "Jules", "Lotte", "wis.test@example.org", "Wis Testouder", "Zandstraat"]) assert.ok(!all.includes(word), word);
+    assert.equal(book.Adressen.rows.length, 1);
+    assert.equal((await admin("GET", `/evenementen/${EVENT}/kaart`)).status, 409);
     // Wachtende mails van het gewiste evenement vertrekken nooit meer; die van het andere evenement wel.
     assert.deepEqual([sint.mail.pending, sint.mail.failed], [0, 2]);
     const other = await byId(OTHER);

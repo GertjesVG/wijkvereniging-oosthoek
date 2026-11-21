@@ -33,6 +33,12 @@ export type RegistrationEvent = {
   // Het adres is dat van een ouder of voogd die in de wijk woont: bij co-ouderschap mag dat de andere ouder zijn.
   area: {
     name: string;
+    // Postcode en gemeente van alle straten van de wijk: samen met straat en huisnummer het adres dat het beheer
+    // bij de geolocatiedienst opzoekt (server/locaties.ts). Het formulier vraagt ze daarom niet.
+    postcode: string;
+    municipality: string;
+    // Rechthoek rond de wijk (graden WGS84). Een gevonden locatie daarbuiten krijgt op de kaart "onzeker".
+    bounds: { south: number; west: number; north: number; east: number };
     // Straten die volledig in de wijk liggen.
     streets: string[];
     // Straten die maar voor een deel in de wijk liggen, met de huisnummers die erbij horen.
@@ -77,6 +83,11 @@ export const registrationEvents: Record<string, RegistrationEvent> = {
     // 57/68 staan bij geen enkele wijk. De Nief Bloemenwijk ligt midden in Oosthoek maar is een aparte wijk.
     area: {
       name: "Wijk Oosthoek",
+      // Gemeente Beerse (één postcode, 2340), zelfde bron als de stratenlijst hieronder.
+      postcode: "2340",
+      municipality: "Beerse",
+      // Het vak waarin de routekaart uit OpenStreetMap werd gemaakt (README, "Routekaart"); omvat alle straten van de rondrit.
+      bounds: { south: 51.314, west: 4.852, north: 51.342, east: 4.89 },
       streets: [
         "Asterstraat",
         "Beukenlaan",

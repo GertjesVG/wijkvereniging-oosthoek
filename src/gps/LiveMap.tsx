@@ -7,7 +7,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { LocateFixed, Maximize2 } from "lucide-react";
 import { event } from "../content/event";
-import routeMap from "../content/route-kaart.json";
+import { addRoute, links, numberIcon, OSM_ATTRIBUTION, OSM_TILES, RED, routeBounds, streetStyle } from "./routeLagen";
 
 export type Position = { lat: number; lon: number; accuracy: number | null; stale: boolean };
 type Props = {
@@ -17,11 +17,7 @@ type Props = {
   focus: number | null;
   onFocus: (index: number) => void;
 };
-type LatLon = [number, number];
-
 const ZOOM = 16;
-const RED = "#a8002b";
-const GOLD = "#dca341";
 const icon = (stale: boolean) =>
   L.divIcon({
     className: `sint-marker${stale ? " is-stale" : ""}`,
@@ -30,25 +26,6 @@ const icon = (stale: boolean) =>
     // Punt van de gedraaide speld (zie .sint-pin in pages.css).
     iconAnchor: [23, 56],
   });
-const numberIcon = (n: number, active: boolean) =>
-  L.divIcon({
-    className: `route-number${active ? " is-active" : ""}`,
-    html: `<span>${n}</span>`,
-    iconSize: [24, 24],
-    iconAnchor: [12, 12],
-  });
-const streetStyle = (active: boolean): L.PolylineOptions => ({
-  color: active ? GOLD : RED,
-  weight: active ? 7 : 5,
-  opacity: 0.95,
-  lineCap: "round",
-  lineJoin: "round",
-});
-
-const streets = routeMap.straten as { naam: string; lijnen: LatLon[][]; label: LatLon }[];
-const links = routeMap.verbindingen as { na: number; via: string[]; lijnen: LatLon[][] }[];
-const routeBounds = L.latLngBounds(streets.flatMap((s) => s.lijnen.flat()));
-
 export default function LiveMap({ position, focus, onFocus }: Props) {
   const box = useRef<HTMLDivElement>(null);
   const map = useRef<L.Map | null>(null);
@@ -61,28 +38,10 @@ export default function LiveMap({ position, focus, onFocus }: Props) {
 
   useEffect(() => {
     const created = L.map(box.current!, { scrollWheelZoom: false, zoomSnap: 0.5 });
-    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      maxZoom: 19,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>-bijdragers',
-    }).addTo(created);
-    // Verbindingen tussen twee straten die elkaar niet raken (alleen de stukken buiten de route): gestreept.
-    for (const link of links)
-      L.polyline(link.lijnen, { color: "#0c293d", weight: 3, opacity: 0.75, dashArray: "2 8", lineCap: "round" })
-        .bindTooltip(`Verbinding van ${link.na} naar ${link.na + 1} via ${link.via.join(", ")}`, { sticky: true })
-        .addTo(created);
-    lines.current = streets.map((street, i) => {
-      // Witte rand onder de lijn: leesbaar op elke achtergrond.
-      L.polyline(street.lijnen, { color: "#fff", weight: 9, opacity: 0.9, lineCap: "round", interactive: false }).addTo(created);
-      return L.polyline(street.lijnen, streetStyle(false))
-        .bindTooltip(`${i + 1}. ${street.naam}`, { sticky: true })
-        .on("click", () => selectRef.current(i))
-        .addTo(created);
-    });
-    numbers.current = streets.map((street, i) =>
-      L.marker(street.label, { icon: numberIcon(i + 1, false), keyboard: false, title: `${i + 1}. ${street.naam}`, riseOnHover: true })
-        .on("click", () => selectRef.current(i))
-        .addTo(created),
-    );
+    L.tileLayer(OSM_TILES, { maxZoom: 19, attribution: OSM_ATTRIBUTION }).addTo(created);
+    const route = addRoute(created, (i) => selectRef.current(i));
+    lines.current = route.lines;
+    numbers.current = route.numbers;
     if (position) created.setView([position.lat, position.lon], ZOOM);
     else created.fitBounds(routeBounds, { padding: [18, 18] });
     map.current = created;

@@ -1,5 +1,6 @@
 import type {
   AdminEventSummary,
+  AdminMap,
   AdminRegistration,
   ApiError,
   ApiErrorCode,
@@ -145,10 +146,38 @@ export const api = {
   saveText: (key: string, value: string | null) =>
     request<AdminText>("PATCH", `/api/beheer/teksten/${enc(key)}`, { value }),
   previousText: (key: string) => request<AdminText>("POST", `/api/beheer/teksten/${enc(key)}/vorige`),
+  // Kinderen op kaart: unieke adressen met kinderen en locatie; opzoeken bij de geolocatiedienst (server/locaties.ts).
+  map: (id: string) => request<AdminMap>("GET", `/api/beheer/evenementen/${enc(id)}/kaart`),
+  lookup: (id: string, keys: string[] = []) =>
+    request<{ checked: number; failed: number; remaining: number }>("POST", `/api/beheer/evenementen/${enc(id)}/kaart/opzoeken`, { keys }),
+  setLocation: (id: string, key: string, lat: number, lon: number) =>
+    request<void>("POST", `/api/beheer/evenementen/${enc(id)}/kaart/locatie`, { key, lat, lon }),
+  resetLocation: (id: string, key: string) =>
+    request<void>("POST", `/api/beheer/evenementen/${enc(id)}/kaart/locatie`, { key, reset: true }),
 };
 
-export const exportUrl = (eventId: string) =>
-  `/api/beheer/evenementen/${enc(eventId)}/export`;
+const XLSX_TYPE = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
+// Downloadt de Excel-export. Via fetch in plaats van een gewone link: zo wordt een verlopen sessie of een fout als
+// melding getoond, en nooit een foutbericht opgeslagen onder een .xlsx-naam.
+export async function downloadExport(eventId: string) {
+  let response: Response;
+  try {
+    response = await fetch(`/api/beheer/evenementen/${enc(eventId)}/export`, { credentials: "same-origin" });
+  } catch {
+    throw new AdminError(0, "ONBEKEND", "Geen verbinding met de server. Probeer het opnieuw.");
+  }
+  if (response.status === 401) onUnauthorized?.();
+  if (!response.ok || !(response.headers.get("Content-Type") ?? "").startsWith(XLSX_TYPE))
+    throw new AdminError(response.status, response.status === 401 ? "NIET_INGELOGD" : "ONBEKEND", "De export kon niet gemaakt worden. Probeer het opnieuw.");
+  const name = /filename="([^"]+)"/.exec(response.headers.get("Content-Disposition") ?? "")?.[1] ?? `${eventId}-inschrijvingen.xlsx`;
+  const url = URL.createObjectURL(new Blob([await response.arrayBuffer()], { type: XLSX_TYPE }));
+  const link = Object.assign(document.createElement("a"), { href: url, download: name });
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 30_000);
+}
 
 export function describeError(error: unknown): string {
   if (error instanceof AdminError) {

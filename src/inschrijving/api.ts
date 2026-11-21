@@ -95,6 +95,45 @@ export type AdminEventSummary = {
   deleteByPassed: boolean;
 };
 
+// ---------- Beheer → "Kinderen op kaart" (server/locaties.ts) ----------
+
+// gevonden/handmatig = betrouwbaar; onzeker = geschatte positie of buiten de wijk; niet_gevonden = geen plaats.
+export type LocationStatus = "gevonden" | "onzeker" | "niet_gevonden" | "handmatig";
+
+export type AdminMapAddress = {
+  // Volgnummer: straten in de volgorde van de rondrit, daarna huisnummer. Zelfde nummer op kaart, lijst, afdruk en Excel.
+  nr: number;
+  // Genormaliseerd adres (straat|huisnummer|bus): bepaalt wat "hetzelfde adres" is.
+  key: string;
+  street: string;
+  // Huisnummer met eventuele letter ("12A") en bus apart.
+  number: string;
+  box: string | null;
+  // Actief ingeschreven kinderen op dit adres, met hun inschrijving.
+  children: { name: string; age: number | null; reference: string }[];
+  registrations: { id: number; reference: string }[];
+  // Minstens één inschrijving op dit adres staat op "Adres nakijken".
+  addressReview: boolean;
+  // null = nog niet opgezocht.
+  location: {
+    status: LocationStatus;
+    lat: number | null;
+    lon: number | null;
+    precision: string | null;
+    matched: string | null;
+    detail: string | null;
+    checkedAt: string;
+  } | null;
+};
+
+export type AdminMap = {
+  postcode: string;
+  municipality: string;
+  addresses: AdminMapAddress[];
+  // Actieve kinderen zonder adres (normaal 0).
+  withoutAddress: number;
+};
+
 export type AdminParticipant = {
   id: number;
   name: string;
