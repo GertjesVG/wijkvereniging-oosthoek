@@ -72,8 +72,11 @@ test("kaart: markers met aantallen, totalen, filters, route aan/uit en lijst ope
   await expect(page.locator(".kid-map .kid-marker")).toHaveText(["1", "2", "1"]);
   await expect(page.locator(".kid-map .kid-marker.is-onzeker")).toHaveCount(1);
   await expect(page.locator(".kid-map .route-number")).toHaveCount(24);
+  // Zelfde vertrek als de publieke routekaart: het wijkhuis in Oosteneinde bij de kanaalbrug.
+  await expect(page.locator(".kid-map .route-start")).toHaveAttribute("title", /Wijkhuis Oosthoek, Oosteneinde, bij de kanaalbrug/);
   await page.getByLabel("Officiële Sinterklaasroute tonen").uncheck();
   await expect(page.locator(".kid-map .route-number")).toHaveCount(0);
+  await expect(page.locator(".kid-map .route-start")).toHaveCount(0);
   await page.getByLabel("Officiële Sinterklaasroute tonen").check();
   await expect(page.locator(".kid-map .route-number")).toHaveCount(24);
 
@@ -143,6 +146,8 @@ test("afdrukken: kaartnummers = lijstnummers, namen alleen in de vertrouwelijke 
   await ready();
   await expect(sheet.locator(".print-page")).toHaveCount(1);
   await expect(sheet.locator(".print-map .print-marker span")).toHaveText(["1", "2", "4"]);
+  // De afdruk tekent dezelfde route, met hetzelfde vertrek aan het wijkhuis.
+  await expect(sheet.locator(".print-map .route-start")).toHaveCount(1);
   await expect(sheet).toContainText("© OpenStreetMap-bijdragers");
   await expect(sheet).toContainText("bron: Digitaal Vlaanderen");
   await sheet.getByRole("button", { name: "Sluiten" }).click();

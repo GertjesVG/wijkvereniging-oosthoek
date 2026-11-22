@@ -343,10 +343,11 @@ test("wijkhuis: beeld, locatie en route; kaarttegels pas na de klik, zonder loca
   const image = main.locator('.activity-hero img[src$="oosthoek-wijkhuis.webp"]');
   await expect(image).toBeVisible();
   await expect.poll(() => image.evaluate((i: HTMLImageElement) => i.naturalWidth)).toBe(1536);
-  await expect(main).toContainText("Vertrek om 10.30 uur aan Wijkhuis Oosthoek, Oosteneinde, ter hoogte van de brug over het kanaal, 2340 Beerse.");
+  await expect(main).toContainText("Vertrek om 10.30 uur aan Wijkhuis Oosthoek, Oosteneinde, bij de kanaalbrug, 2340 Beerse.");
   await expect(main).not.toContainText("zodra ze bevestigd zijn");
-  await expect(main).toContainText("Opstal 5, 2340 Beerse");
-  await expect(main).not.toContainText("Opstal 7");
+  // Het wijkhuis ligt in Oosteneinde bij de kanaalbrug, niet op het zeteladres Opstal 5 en nooit op Opstal 7.
+  await expect(main).toContainText("Oosteneinde, bij de kanaalbrug, 2340 Beerse");
+  await expect(main).not.toContainText("Opstal");
   await expect(main.locator(".activity-hero .event-art-note")).toHaveText("Illustratie");
   await expect(main.getByRole("link", { name: /Route naar het wijkhuis/ })).toHaveAttribute("href", "https://www.google.com/maps/dir/?api=1&destination=51.32974%2C4.86997");
   await expect(main.locator(".leaflet-container, iframe")).toHaveCount(0);
@@ -358,8 +359,8 @@ test("wijkhuis: beeld, locatie en route; kaarttegels pas na de klik, zonder loca
   await expect(main.locator(".leaflet-container")).toHaveCount(1);
   await expect(main.locator(".wijkhuis-pin")).toHaveCount(1);
   await expect(main.locator(".wijkhuis-tooltip")).toContainText("Wijkhuis Oosthoek");
-  await expect(main.locator(".wijkhuis-tooltip")).toContainText("Opstal 5, 2340 Beerse");
-  await expect(main.locator(".wijkhuis-marker")).toHaveAttribute("title", "Wijkhuis Oosthoek, Opstal 5, 2340 Beerse");
+  await expect(main.locator(".wijkhuis-tooltip")).toContainText("Oosteneinde, bij de kanaalbrug, 2340 Beerse");
+  await expect(main.locator(".wijkhuis-marker")).toHaveAttribute("title", "Wijkhuis Oosthoek, Oosteneinde, bij de kanaalbrug, 2340 Beerse");
   await expect(main.locator(".leaflet-control-zoom-in")).toBeVisible();
   await expect(main.locator(".leaflet-control-attribution")).toContainText("OpenStreetMap");
   await expect.poll(() => tiles.length).toBeGreaterThan(0);

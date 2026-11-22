@@ -42,11 +42,11 @@ test("zonder actieve sessie: geen kaart en geen positie, wel het vertrek", async
   await fakeGps(page, off);
   await page.goto("/#/route");
   await expect(page.getByText("De live GPS is nu niet actief.")).toBeVisible();
-  await expect(page.getByText("Vertrek om 10.30 uur aan Wijkhuis Oosthoek, Oosteneinde, ter hoogte van de brug over het kanaal, 2340 Beerse.")).toBeVisible();
+  await expect(page.getByText("Vertrek om 10.30 uur aan Wijkhuis Oosthoek, Oosteneinde, bij de kanaalbrug, 2340 Beerse.")).toBeVisible();
   await expect(page.locator(".leaflet-container")).toHaveCount(0);
   await expect(page.locator(".route-list button")).toHaveCount(24);
   await page.goto("/#/praktisch");
-  await expect(page.getByText("Vertrek om 10.30 uur aan Wijkhuis Oosthoek, Oosteneinde, ter hoogte van de brug over het kanaal, 2340 Beerse.")).toBeVisible();
+  await expect(page.getByText("Vertrek om 10.30 uur aan Wijkhuis Oosthoek, Oosteneinde, bij de kanaalbrug, 2340 Beerse.")).toBeVisible();
   await page.goto("/#/");
   await expect(page.locator(".live-tag")).toContainText("nog niet actief");
 });

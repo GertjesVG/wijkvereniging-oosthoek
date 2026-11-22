@@ -357,7 +357,7 @@ test("route 2026: de 24 bevestigde straten in volgorde, vertrek met definitief a
   // Vertrekplaats van Gert, 22 november 2026: het wijkhuis in Oosteneinde bij de brug, niet het zeteladres Opstal 5.
   assert.equal(
     event.departure,
-    "Vertrek om 10.30 uur aan Wijkhuis Oosthoek, Oosteneinde, ter hoogte van de brug over het kanaal, 2340 Beerse.",
+    "Vertrek om 10.30 uur aan Wijkhuis Oosthoek, Oosteneinde, bij de kanaalbrug, 2340 Beerse.",
   );
   assert.doesNotMatch(event.departure, /Opstal/);
   assert.equal(event.route.transport, "Huifkar met paarden");

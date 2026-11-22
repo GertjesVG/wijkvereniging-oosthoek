@@ -1,6 +1,9 @@
 import type { PublicWebsite } from "./public-website";
-// Definitief adres van vereniging én wijkhuis, bevestigd door Gert op 5 november 2026.
+// Zetel- en correspondentieadres van de vereniging (Kruispuntbank, brievenbus). NIET het wijkhuis.
 const oosthoekAddress = "Opstal 5, 2340 Beerse";
+// Plaats van het wijkhuis en vertrek van Sinterklaas (Gert, 22 november 2026). Geen huisnummer: het gebouw heeft er
+// geen. Eén bron voor de wijkhuispagina, de Sinterklaaspagina's en de kaarten (wijk.ts, route-kaart.json).
+export const wijkhuisAddress = "Oosteneinde, bij de kanaalbrug, 2340 Beerse";
 // Maker van de website; staat onderaan de wijkpagina ("Website ontwikkeld door …"). Alleen de bedrijfsnaam: naam en
 // adres van de maker zijn op de site van de vereniging geen verplichte vermelding (Gert, 14 november 2026).
 export const websiteMaker = "GVG Digital Systems";
@@ -34,9 +37,9 @@ export const event = {
     dayMessage: "Tijdens de rondrit volg je de huifkar live op de routepagina.",
   },
   // Vertrektijd van 3 november. Vertrekplaats gecorrigeerd door Gert op 22 november 2026: het wijkhuis in Oosteneinde
-  // bij de brug over het kanaal, niet het zeteladres Opstal 5 (dat ligt ± 230 m verder, aan de overkant van het kanaal).
-  // Geen huisnummer: het gebouw heeft er geen. Plaats en aanloop op de kaart: route-kaart.json, "vertrek".
-  departure: "Vertrek om 10.30 uur aan Wijkhuis Oosthoek, Oosteneinde, ter hoogte van de brug over het kanaal, 2340 Beerse.",
+  // bij de kanaalbrug, niet het zeteladres Opstal 5 (dat ligt ± 230 m verder, aan de overkant van het kanaal).
+  // Plaats en aanloop op de kaart: route-kaart.json, "vertrek".
+  departure: `Vertrek om 10.30 uur aan Wijkhuis Oosthoek, ${wijkhuisAddress}.`,
   programme: [
     {
       title: "Sinterklaas in de wijk",

@@ -22,6 +22,7 @@ import {
   wijkhuisLocation,
 } from "../src/content/wijk.ts";
 import { renderConfirmation } from "../src/inschrijving/bevestigingsmail.ts";
+import { event } from "../src/content/event.ts";
 
 const read = (file) => readFileSync(new URL(file, import.meta.url));
 const text = (file) => read(file).toString("utf8");
@@ -168,9 +169,10 @@ test("wijkinformatie: de nieuwste beelden als eigen WebP, met kleine versie; de 
   assert.equal(smallImage("assets/hero.webp"), null);
 });
 
-test("wijkhuis: definitief adres Opstal 5 met de bestaande fysieke locatie, los van de live GPS", () => {
+test("wijkhuis: Oosteneinde bij de kanaalbrug (niet het zeteladres Opstal 5) met de bestaande fysieke locatie, los van de live GPS", () => {
   assert.equal(wijkhuisLocation.name, "Wijkhuis Oosthoek");
-  assert.equal(wijkhuisLocation.address, "Opstal 5, 2340 Beerse");
+  assert.equal(wijkhuisLocation.address, "Oosteneinde, bij de kanaalbrug, 2340 Beerse");
+  assert.notEqual(wijkhuisLocation.address, event.organisation.address);
   assert.equal(wijkhuisLocation.lat, 51.32974);
   assert.equal(wijkhuisLocation.lon, 4.86997);
   assert.equal(new URL(wijkhuisLocation.routeUrl).searchParams.get("destination"), `${wijkhuisLocation.lat},${wijkhuisLocation.lon}`);

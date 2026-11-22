@@ -1,7 +1,7 @@
 // Inhoud van de algemene wijkwebsite op het hoofdadres. Verenigingsgegevens en de datum van Sinterklaas komen uit
 // event.ts, sponsors uit sponsors.json en sponsor-logos.ts: hier staat daarvan geen tweede kopie.
 // Verzin hier niets: zonder bevestigde datum of locatie blijft het veld null en toont de site "Datum volgt".
-import { event } from "./event.ts";
+import { wijkhuisAddress } from "./event.ts";
 
 // De melding bij een activiteit. Ze staat alleen op de website: ze opent of sluit niets op de server.
 // Voor Sinterklaas komen status en zin van de server; de periode en de schakelaar staan in het beheer.
@@ -128,13 +128,14 @@ export const sponsorTotal = 33;
 export const sponsorIntro = (shown: number) =>
   `Met dank aan onze ${sponsorTotal} sponsors voor hun steun aan de wijk. Hieronder stellen we ${shown < sponsorTotal ? `${shown} van hen` : "ze"} aan je voor.`;
 
-// Naam en adres definitief bevestigd door Gert op 5 november 2026. Gebruik geen adreslabel van een kaartendienst.
-// De fysieke plaats is aangeleverd door Gert via de kaart "Afhaling prijzen" met de rode cirkel.
+// Adres gecorrigeerd door Gert op 22 november 2026: het wijkhuis ligt in Oosteneinde bij de kanaalbrug, NIET op het
+// zetel- en correspondentieadres (event.organisation). Gebruik geen adreslabel van een kaartendienst (Google toont
+// "Opstal 7"). De fysieke plaats is aangeleverd door Gert via de kaart "Afhaling prijzen" met de rode cirkel.
 // De coördinaten zijn het midden van het gebouw binnen de rode cirkel, afgeleid uit luchtfoto en GRB (Digitaal Vlaanderen)
 // en OpenStreetMap; de berekening staat in Project dossier\ONTWERP-EN-BOUWPLAN.md.
 export const wijkhuisLocation = {
   name: "Wijkhuis Oosthoek",
-  address: event.organisation.address,
+  address: wijkhuisAddress,
   lat: 51.32974,
   lon: 4.86997,
   zoom: 17,
