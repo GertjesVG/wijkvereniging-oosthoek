@@ -33,8 +33,10 @@ export const event = {
     offMessage: "De live GPS is nu niet actief. Tijdens de rondrit volg je hier de huifkar.",
     dayMessage: "Tijdens de rondrit volg je de huifkar live op de routepagina.",
   },
-  // Vertrektijd van 3 november; definitief wijkhuisadres aangevuld door Gert op 5 november 2026.
-  departure: `Vertrek om 10.30 uur aan Wijkhuis Oosthoek, ${oosthoekAddress}.`,
+  // Vertrektijd van 3 november. Vertrekplaats gecorrigeerd door Gert op 22 november 2026: het wijkhuis in Oosteneinde
+  // bij de brug over het kanaal, niet het zeteladres Opstal 5 (dat ligt ± 230 m verder, aan de overkant van het kanaal).
+  // Geen huisnummer: het gebouw heeft er geen. Plaats en aanloop op de kaart: route-kaart.json, "vertrek".
+  departure: "Vertrek om 10.30 uur aan Wijkhuis Oosthoek, Oosteneinde, ter hoogte van de brug over het kanaal, 2340 Beerse.",
   programme: [
     {
       title: "Sinterklaas in de wijk",
@@ -44,7 +46,7 @@ export const event = {
     },
   ],
   // Rondrit 2026, bevestigd door de vereniging (Gert, 3 november 2026): dezelfde straatvolgorde als in 2025, vertrek
-  // zie `departure`. Officiële straatnamen voluit (de flyer kort ze af). De nummers op de kaart volgen deze volgorde;
+  // zie `departure`; vanaf het wijkhuis over de brug en langs het kanaal aan de Dijkstraatkant naar straat 1 (22 november). Officiële straatnamen voluit (de flyer kort ze af). De nummers op de kaart volgen deze volgorde;
   // de straatligging staat in route-kaart.json (OpenStreetMap). Geen haltes, afslagen of tijden per straat toevoegen.
   route: {
     stops: [

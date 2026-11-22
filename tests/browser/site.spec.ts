@@ -112,6 +112,9 @@ test("geen nepinschrijving, geen ongevraagde externe kaart of kinderopslag", asy
     page.getByRole("region", { name: "Kaart met de route van de huifkar", exact: true }),
   ).toBeVisible();
   await expect(page.locator(".route-number")).toHaveCount(24);
+  // Vertrek aan het wijkhuis (Oosteneinde, bij de brug), los van de live GPS.
+  await expect(page.locator(".route-start")).toHaveCount(1);
+  await expect(page.locator(".route-start")).toHaveAttribute("title", /Wijkhuis Oosthoek, Oosteneinde, ter hoogte van de brug/);
   await expect(page.locator(".sint-marker")).toHaveCount(0);
   await expect(page.locator(".route-legend")).toContainText("Indicatieve kaart");
   await expect(page.locator(".leaflet-control-attribution")).toContainText("OpenStreetMap");

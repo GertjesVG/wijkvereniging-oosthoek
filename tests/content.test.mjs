@@ -354,7 +354,12 @@ test("route 2026: de 24 bevestigde straten in volgorde, vertrek met definitief a
   ];
   assert.deepEqual(event.route.stops, confirmed);
   assert.equal(event.date, "2026-11-28");
-  assert.equal(event.departure, "Vertrek om 10.30 uur aan Wijkhuis Oosthoek, Opstal 5, 2340 Beerse.");
+  // Vertrekplaats van Gert, 22 november 2026: het wijkhuis in Oosteneinde bij de brug, niet het zeteladres Opstal 5.
+  assert.equal(
+    event.departure,
+    "Vertrek om 10.30 uur aan Wijkhuis Oosthoek, Oosteneinde, ter hoogte van de brug over het kanaal, 2340 Beerse.",
+  );
+  assert.doesNotMatch(event.departure, /Opstal/);
   assert.equal(event.route.transport, "Huifkar met paarden");
   assert.equal(
     event.route.turnNote,
@@ -381,6 +386,26 @@ test("route 2026: de 24 bevestigde straten in volgorde, vertrek met definitief a
     assert.ok(v.via.length > 0 && v.via.every((name) => !confirmed.includes(name)), "alleen wegen buiten de route");
     assert.ok(v.lijnen.every((l) => l.length >= 2 && l.every(inArea)));
   }
+  // Vertrek: het wijkhuis (zelfde punt als de wijkhuiskaart), aanloop over de brug en langs het kanaal aan de
+  // Dijkstraatkant, eindigend precies op een knooppunt van straat 1.
+  const start = map.vertrek;
+  assert.deepEqual(start.punt, [51.32974, 4.86997]);
+  assert.equal(start.naar, 1);
+  assert.equal(start.lijnen.length, 1);
+  const lead = start.lijnen[0];
+  assert.ok(lead.length >= 2 && lead.every(inArea));
+  // Begint op Oosteneinde naast het wijkhuis (± 20 m), ten noorden van het kanaal.
+  const meters = ([a, b], [c, d]) => Math.hypot((a - c) * 111320, (b - d) * 111320 * Math.cos((51.33 * Math.PI) / 180));
+  assert.ok(meters(lead[0], start.punt) < 30);
+  // Steekt het kanaal één keer over (brug, lengtegraad ± 4.8702) en blijft daarna aan de zuidkant (Dijkstraat).
+  // Het kanaal loopt hier van (51.32940, 4.87020) naar (51.33029, 4.87818).
+  const canalLat = (lon) => 51.3294 + ((lon - 4.8702) * (51.33029 - 51.3294)) / (4.87818 - 4.8702);
+  const north = lead.map(([lat, lon]) => lat > canalLat(lon));
+  assert.equal(north[0], true);
+  assert.equal(north.findIndex((n) => !n), north.lastIndexOf(true) + 1, "maar één oversteek");
+  assert.ok(lead.filter(([, lon]) => lon > 4.8705).every(([lat, lon]) => lat < canalLat(lon)), "Dijkstraatkant");
+  const firstStreet = map.straten[0].lijnen.flat();
+  assert.ok(firstStreet.some(([lat, lon]) => lat === lead.at(-1)[0] && lon === lead.at(-1)[1]), "sluit aan op straat 1");
   // Eén plek voor de stratenlijst: geen tweede kopie in de andere pagina's of de startpagina.
   for (const file of ["../src/Pages.tsx", "../src/Home.tsx", "../src/components.tsx", "../src/content/teksten.ts"]) {
     const source = readFileSync(new URL(file, import.meta.url), "utf8");

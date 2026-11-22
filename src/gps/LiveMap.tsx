@@ -129,6 +129,10 @@ export default function LiveMap({ position, focus, onFocus }: Props) {
           Straat van de rondrit
         </span>
         <span>
+          <i className="legend-start" aria-hidden="true" />
+          Vertrek: wijkhuis
+        </span>
+        <span>
           <i className="legend-number" aria-hidden="true">1</i>
           Volgorde
         </span>

@@ -481,6 +481,13 @@
   width: 22px;
   border-top: 3px dotted #fff;
 }
+.legend-start {
+  width: 22px;
+  height: 11px;
+  border: 2px solid #fff;
+  border-radius: 6px;
+  background: #0c293d;
+}
 .live-dot {
   flex: none;
   width: 9px;

@@ -12,7 +12,21 @@ export const GOLD = "#dca341";
 
 export const streets = routeMap.straten as { naam: string; lijnen: LatLon[][]; label: LatLon }[];
 export const links = routeMap.verbindingen as { na: number; via: string[]; lijnen: LatLon[][] }[];
-export const routeBounds = L.latLngBounds(streets.flatMap((s) => s.lijnen.flat()));
+// Vertrek aan het wijkhuis (Oosteneinde, bij de brug) en de aanloop naar straat 1: over de brug en langs het kanaal aan
+// de kant van de Dijkstraat (Gert, 22 november 2026). Eén bron voor de publieke kaart, het beheer en de afdruk.
+export const departure = routeMap.vertrek as unknown as {
+  naam: string;
+  plaats: string;
+  punt: LatLon;
+  naar: number;
+  via: string[];
+  lijnen: LatLon[][];
+};
+export const routeBounds = L.latLngBounds([
+  ...streets.flatMap((s) => s.lijnen.flat()),
+  ...departure.lijnen.flat(),
+  departure.punt,
+]);
 
 // OpenStreetMap-tegels, volgens operations.osmfoundation.org/policies/tiles: zichtbare attributie en een Referer.
 export const OSM_TILES = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
@@ -42,6 +56,17 @@ export function addRoute(target: L.Map, onSelect?: (index: number) => void) {
     L.polyline(link.lijnen, { color: "#0c293d", weight: 3, opacity: 0.75, dashArray: "2 8", lineCap: "round" })
       .bindTooltip(`Verbinding van ${link.na} naar ${link.na + 1} via ${link.via.join(", ")}`, { sticky: true })
       .addTo(layer);
+  // Aanloop van het vertrek naar straat 1, in dezelfde stijl als een verbinding, en de vertrekplaats zelf.
+  const first = `${departure.naar}. ${streets[departure.naar - 1].naam}`;
+  L.polyline(departure.lijnen, { color: "#0c293d", weight: 3, opacity: 0.75, dashArray: "2 8", lineCap: "round" })
+    .bindTooltip(`Van het vertrek naar ${first} via ${departure.via.join(", ")}`, { sticky: true })
+    .addTo(layer);
+  L.marker(departure.punt, {
+    icon: L.divIcon({ className: "route-start", html: "<span>Vertrek</span>", iconSize: [58, 22], iconAnchor: [29, 11] }),
+    keyboard: false,
+    title: `Vertrek: ${departure.naam}, ${departure.plaats}`,
+    zIndexOffset: 500,
+  }).addTo(layer);
   const lines = streets.map((street, i) => {
     // Witte rand onder de lijn: leesbaar op elke achtergrond.
     L.polyline(street.lijnen, { color: "#fff", weight: 9, opacity: 0.9, lineCap: "round", interactive: false }).addTo(layer);

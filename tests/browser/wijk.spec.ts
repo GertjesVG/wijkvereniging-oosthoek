@@ -343,7 +343,7 @@ test("wijkhuis: beeld, locatie en route; kaarttegels pas na de klik, zonder loca
   const image = main.locator('.activity-hero img[src$="oosthoek-wijkhuis.webp"]');
   await expect(image).toBeVisible();
   await expect.poll(() => image.evaluate((i: HTMLImageElement) => i.naturalWidth)).toBe(1536);
-  await expect(main).toContainText("Vertrek om 10.30 uur aan Wijkhuis Oosthoek, Opstal 5, 2340 Beerse.");
+  await expect(main).toContainText("Vertrek om 10.30 uur aan Wijkhuis Oosthoek, Oosteneinde, ter hoogte van de brug over het kanaal, 2340 Beerse.");
   await expect(main).not.toContainText("zodra ze bevestigd zijn");
   await expect(main).toContainText("Opstal 5, 2340 Beerse");
   await expect(main).not.toContainText("Opstal 7");

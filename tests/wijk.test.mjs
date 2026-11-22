@@ -174,6 +174,8 @@ test("wijkhuis: definitief adres Opstal 5 met de bestaande fysieke locatie, los 
   assert.equal(wijkhuisLocation.lat, 51.32974);
   assert.equal(wijkhuisLocation.lon, 4.86997);
   assert.equal(new URL(wijkhuisLocation.routeUrl).searchParams.get("destination"), `${wijkhuisLocation.lat},${wijkhuisLocation.lon}`);
+  // Het vertrek van de rondrit staat op hetzelfde punt als het wijkhuis op de wijkhuiskaart.
+  assert.deepEqual(JSON.parse(text("../src/content/route-kaart.json")).vertrek.punt, [wijkhuisLocation.lat, wijkhuisLocation.lon]);
   assert.equal(infoPages[2].more, "Bekijk de locatie en route");
   assert.ok(infoPages[2].teaser.includes(wijkhuisLocation.name));
   assert.ok(infoPages[2].teaser.includes(wijkhuisLocation.address));
