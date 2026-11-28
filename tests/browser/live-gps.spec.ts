@@ -159,3 +159,76 @@ test("beheer op de gsm: verbinding, Start en Stop", async ({ page }) => {
   await expect(panel.getByRole("button", { name: "Start live GPS" })).toBeVisible();
   expect(posted).toEqual([{ action: "start", hours: 4 }, { action: "stop" }]);
 });
+
+test("beheer: gekozen stopduur blijft staan bij verversen, wordt toegepast en blijft na herladen", async ({ page }) => {
+  await page.clock.install({ time: new Date("2026-11-28T09:30:00.000Z") }); // 10.30 uur Belgische tijd
+  const summary = {
+    id: "sinterklaas-2026", title: "Sinterklaas in Oosthoek 2026", date: "2026-11-28", status: "open", capacity: 150,
+    period: { opensAt: "2026-11-09T23:00:00.000Z", closesAt: "2026-11-27T23:00:00.000Z" }, publicStatus: "open",
+    active: 0, available: 150, registrations: 0, pickedUp: 0, mail: { pending: 0, sending: 0, sent: 0, failed: 0 },
+    personalDataErased: false, pendingDecisions: [], series: "Sinterklaas in Oosthoek", edition: 2026, cancelled: 0,
+    ages: [], addressReview: 0, deleteBy: "2027-01-31", autoErase: true, deleteByPassed: false,
+  };
+  const device = { seenAt: "2026-11-28T10:29:50.000Z", ageSeconds: 10, connected: true, fixAt: "2026-11-28T10:29:50.000Z", accuracy: 5, battery: 88, charging: false };
+  const stopped = { configured: true, session: null, public: off, device, hours: { default: 4, max: 8 } };
+  let current: unknown = stopped;
+  let gets = 0;
+  const posted: { action: string; hours?: number }[] = [];
+  await page.route("**/api/beheer/evenementen", (r) => r.fulfill({ json: [summary] }));
+  await page.route("**/api/beheer/evenementen/*/inschrijvingen", (r) => r.fulfill({ json: [] }));
+  await page.route("**/api/beheer/gps", (r) => {
+    if (r.request().method() === "GET") {
+      gets++;
+      return r.fulfill({ json: current });
+    }
+    const body = r.request().postDataJSON();
+    posted.push(body);
+    // Zoals de server: stopuur = nu + gekozen duur.
+    const since = "2026-11-28T09:30:00.000Z";
+    const until = new Date(Date.parse(since) + body.hours * 3600_000).toISOString();
+    current = { ...stopped, session: { since, until }, public: live() };
+    return r.fulfill({ json: current });
+  });
+  await page.goto(BEHEER);
+  const panel = page.getByRole("region", { name: "Live GPS Sinterklaas" });
+  const duration = panel.getByLabel("Automatische stop na");
+  await expect(duration).toHaveValue("4");
+
+  // Elke duur vrij te kiezen, en de keuze blijft staan over meerdere verversingen van 10 s.
+  for (const h of ["1", "2", "3", "5", "6", "7", "8"]) {
+    await duration.selectOption(h);
+    await expect(duration).toHaveValue(h);
+  }
+  const before = gets;
+  for (let i = 0; i < 4; i++) {
+    await page.clock.runFor(10_000);
+    await expect.poll(() => gets).toBeGreaterThan(before + i);
+    await expect(duration).toHaveValue("8");
+  }
+  // Ander tabblad van het beheer en terug, en de pagina herladen: de keuze blijft 8 uur.
+  await page.evaluate(() => (window.location.hash = "#teksten"));
+  await expect(panel).toHaveCount(0);
+  await page.evaluate(() => (window.location.hash = "#inschrijvingen"));
+  await expect(duration).toHaveValue("8");
+  await page.reload();
+  await expect(duration).toHaveValue("8");
+
+  // Start past de gekozen 8 uur toe: stop om 18:30 Belgische tijd.
+  await panel.getByRole("button", { name: "Start live GPS" }).click();
+  expect(posted).toEqual([{ action: "start", hours: 8 }]);
+  await expect(panel.locator(".stat", { hasText: "Automatische stop" }).locator("dd")).toHaveText("18:30");
+  const adjust = panel.getByLabel("Stopuur aanpassen: nog");
+  // Na de start toont de keuzelijst de resterende duur, niet opnieuw de standaard van 4 uur.
+  await expect(adjust).toHaveValue("8");
+  for (let i = 0; i < 3; i++) {
+    await page.clock.runFor(10_000);
+    await expect(adjust).toHaveValue("8");
+    await expect(panel.locator(".stat", { hasText: "Automatische stop" }).locator("dd")).toHaveText("18:30");
+  }
+
+  // Herladen tijdens de rit: stopuur en keuzelijst blijven 8 uur.
+  await page.reload();
+  await expect(panel.locator(".stat", { hasText: "Automatische stop" }).locator("dd")).toHaveText("18:30");
+  await expect(adjust).toHaveValue("8");
+  expect(posted).toHaveLength(1);
+});

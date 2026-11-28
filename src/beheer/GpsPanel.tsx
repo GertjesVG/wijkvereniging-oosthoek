@@ -27,10 +27,40 @@ function publicState(status: AdminGps): { text: string; tone: "ok" | "warn" | "b
   return { text: "Uit: niets zichtbaar", tone: "muted" };
 }
 
+// De gekozen duur blijft bewaard in de browser tot Start of Stopuur opslaan: zo zet een verversing, een ander tabblad
+// van het beheer of het herladen van de pagina de keuze niet terug op de standaard.
+const HOURS_KEY = "oosthoek-gps-uren";
+function storedHours(): number | null {
+  try {
+    const value = Number(localStorage.getItem(HOURS_KEY));
+    return Number.isInteger(value) && value >= 1 ? value : null;
+  } catch {
+    return null;
+  }
+}
+function storeHours(value: number | null) {
+  try {
+    if (value === null) localStorage.removeItem(HOURS_KEY);
+    else localStorage.setItem(HOURS_KEY, String(value));
+  } catch {
+    // Geen opslag beschikbaar: de keuze blijft dan alleen in dit scherm staan.
+  }
+}
+
+// Tijdens de rit toont de keuzelijst de resterende duur (naar boven afgerond, dus nooit korter dan het huidige stopuur).
+function remainingHours(until: string, max: number) {
+  const left = Math.ceil((Date.parse(until) - Date.now()) / 3600_000);
+  return Math.min(max, Math.max(1, left));
+}
+
 export function GpsPanel() {
   const [status, setStatus] = useState<AdminGps | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [hours, setHours] = useState<number | null>(null);
+  const [hours, setHoursState] = useState<number | null>(storedHours);
+  const setHours = (value: number | null) => {
+    setHoursState(value);
+    storeHours(value);
+  };
   const action = useAction();
 
   const load = useCallback(async () => {
@@ -56,7 +86,11 @@ export function GpsPanel() {
     };
   }, [load]);
 
-  const chosen = hours ?? status?.hours.default ?? 4;
+  const maxHours = status?.hours.max ?? 8;
+  const chosen = Math.min(
+    maxHours,
+    hours ?? (status?.session ? remainingHours(status.session.until, maxHours) : (status?.hours.default ?? 4)),
+  );
   async function start() {
     const updated = await action.run(() => api.gpsStart(chosen));
     if (updated) {
@@ -71,7 +105,7 @@ export function GpsPanel() {
 
   const device = status?.device ?? null;
   const shown = status ? publicState(status) : null;
-  const hourOptions = Array.from({ length: status?.hours.max ?? 8 }, (_, i) => i + 1);
+  const hourOptions = Array.from({ length: maxHours }, (_, i) => i + 1);
   const hourSelect = (label: string) => (
     <label className="field">
       <span>{label}</span>

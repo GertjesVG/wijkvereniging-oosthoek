@@ -271,6 +271,25 @@ try {
     assert.equal((await publicGps()).state, "live");
   });
 
+  await step("8 uur gekozen: stopuur = nu + 8 uur, blijft gelijk bij elke statusvraag en stopt niet na 4 uur", async () => {
+    const asked = Date.now();
+    const eight = (await admin("POST", { action: "start", hours: 8 })).data;
+    const until = eight.session.until;
+    const span = (Date.parse(until) - asked) / 1000;
+    assert.ok(span > 8 * HOUR_S - 3 && span <= 8 * HOUR_S + 1, String(span));
+    // Ruim voorbij 4 "uur", met de telefoon die blijft zenden en het beheer dat blijft verversen.
+    const end = Date.now() + (4 * HOUR_S + 2) * 1000;
+    while (Date.now() < end) {
+      assert.equal((await device(fix())).status, 200);
+      const status = (await admin("GET")).data;
+      assert.equal(status.session?.until, until);
+      await wait(2);
+    }
+    const pub = await publicGps();
+    assert.equal(pub.state, "live");
+    assert.ok(pub.endsInSeconds > 3 * HOUR_S, String(pub.endsInSeconds));
+  });
+
   await step("Stop: positie meteen weg, ook uit de database; posities na Stop en oude posities komen niet terug", async () => {
     const stopped = await admin("POST", { action: "stop" });
     assert.equal(stopped.status, 200);
