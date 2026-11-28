@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { ExternalLink, Play, Square } from "lucide-react";
+import { Download, ExternalLink, Pause, Play, Square } from "lucide-react";
 import type { AdminGps } from "../gps/api";
 import { api, describeError } from "./client";
 import { ErrorNote, useAction } from "./ui";
@@ -18,6 +18,7 @@ const ago = (seconds: number) => (seconds < 90 ? `${seconds} s geleden` : `${Mat
 
 function publicState(status: AdminGps): { text: string; tone: "ok" | "warn" | "bad" | "muted" } {
   const shown = status.public;
+  if (status.session?.pausedSince) return { text: "Pauze: niets zichtbaar", tone: "warn" };
   if (shown.state === "live")
     return shown.fixAgeSeconds > shown.staleAfterSeconds
       ? { text: "Zichtbaar, maar niet actueel", tone: "warn" }
@@ -102,6 +103,16 @@ export function GpsPanel() {
     const updated = await action.run(() => api.gpsStop());
     if (updated) setStatus(updated);
   }
+  async function pause() {
+    const updated = await action.run(() => api.gpsPause());
+    if (updated) setStatus(updated);
+  }
+  async function resume() {
+    const updated = await action.run(() => api.gpsResume());
+    if (updated) setStatus(updated);
+  }
+  const paused = Boolean(status?.session?.pausedSince);
+  const track = status?.track ?? null;
 
   const device = status?.device ?? null;
   const shown = status ? publicState(status) : null;
@@ -176,7 +187,23 @@ export function GpsPanel() {
               <dd>{status.session ? clock.format(new Date(status.session.until)) : "–"}</dd>
               <small>{status.session ? `Gestart om ${clock.format(new Date(status.session.since))}` : "Live GPS staat uit"}</small>
             </div>
+            <div className="stat">
+              <dt>Gereden route</dt>
+              <dd>{track ? `${track.points} punten` : "–"}</dd>
+              <small>
+                {!track
+                  ? "Onbekend"
+                  : paused
+                    ? `Opname gepauzeerd sinds ${clock.format(new Date(status.session!.pausedSince!))}`
+                    : track.lastAt
+                      ? `${status.session ? "Opname loopt" : "Laatste opname"} · laatste punt ${clockSeconds.format(new Date(track.lastAt))}${track.segments > 1 ? ` · ${track.segments} segmenten` : ""}`
+                      : status.session
+                        ? "Opname loopt · wacht op het eerste punt"
+                        : "Start de live GPS om de route op te nemen"}
+              </small>
+            </div>
           </dl>
+          {track?.error && <p className="note note-error">Routeopslag: {track.error}</p>}
 
           <div className="controls gps-controls">
             {status.session ? (
@@ -185,6 +212,17 @@ export function GpsPanel() {
                   <Square size={17} aria-hidden="true" />
                   Stop live GPS
                 </button>
+                {paused ? (
+                  <button type="button" className="btn btn-primary" onClick={resume} disabled={action.busy}>
+                    <Play size={17} aria-hidden="true" />
+                    Hervat live GPS
+                  </button>
+                ) : (
+                  <button type="button" className="btn" onClick={pause} disabled={action.busy}>
+                    <Pause size={17} aria-hidden="true" />
+                    Pauzeer live GPS
+                  </button>
+                )}
                 {hourSelect("Stopuur aanpassen: nog")}
                 <button type="button" className="btn btn-small" onClick={start} disabled={action.busy}>
                   Stopuur opslaan
@@ -204,6 +242,18 @@ export function GpsPanel() {
               Publieke kaart
             </a>
           </div>
+          {track && track.totalPoints > 0 && (
+            <p className="muted small gps-export">
+              Gereden route ({track.totalPoints} punten, {track.sessions} {track.sessions === 1 ? "sessie" : "sessies"}):{" "}
+              <a href="/api/beheer/gps?export=gpx" download>
+                <Download size={14} aria-hidden="true" /> GPX
+              </a>{" "}
+              ·{" "}
+              <a href="/api/beheer/gps?export=geojson" download>
+                <Download size={14} aria-hidden="true" /> GeoJSON
+              </a>
+            </p>
+          )}
           {!status.session && !device?.connected && (
             <p className="muted small">
               Nog geen recent contact met de telefoon. Starten kan, maar bezoekers zien pas iets zodra OwnTracks op Move

@@ -3,6 +3,7 @@ import {
   ArrowUpRight,
   CalendarDays,
   Check,
+  Coffee,
   ChevronDown,
   Download,
   Gift,
@@ -150,6 +151,8 @@ function ColouringPage() {
 
 // Tekst bij de livekaart, per toestand van de GPS (zie src/gps/useLiveGps.ts).
 function liveNote(view: LiveGpsView) {
+  if (view.kind === "paused")
+    return "Sinterklaas en zijn Pieten nemen even pauze. De livekaart verschijnt vanzelf opnieuw zodra de stoet verdergaat.";
   if (view.kind === "waiting")
     return "De live GPS is gestart. De positie van de huifkar verschijnt hier zo dadelijk.";
   if (view.kind === "lost")
@@ -162,6 +165,14 @@ function liveNote(view: LiveGpsView) {
 }
 
 function LiveCaption({ view }: { view: LiveGpsView }) {
+  if (view.kind === "paused")
+    return (
+      <>
+        <span className="live-dot is-stale" aria-hidden="true" />
+        Even pauze
+        <span>De livekaart komt vanzelf terug</span>
+      </>
+    );
   if (view.kind === "live")
     return (
       <>
@@ -217,13 +228,54 @@ function RoutePage() {
       <PageHeading eyebrow={t("sint.route.boventitel")} title={t("sint.route.titel")}>
         {t("sint.route.intro")}
       </PageHeading>
+      <section className="route-notice" aria-labelledby="route-notice-title">
+        <p className="eyebrow">BELANGRIJK VOOR VANDAAG</p>
+        <h2 id="route-notice-title">Samen maken we er een prachtige Sinterklaasstoet van!</h2>
+        <p>Sinterklaas en zijn Pieten trekken vandaag met de huifkar door onze wijk.</p>
+        <p>
+          Sommige kleinere straatjes zijn helaas moeilijk bereikbaar met de huifkar, waardoor het niet altijd mogelijk is
+          om overal veilig te rijden of te draaien.
+        </p>
+        <p>
+          Waar nodig zullen we daarom uitwijken naar een geschikte, nabijgelegen plaats. We willen iedereen vriendelijk
+          vragen om daar samen te komen, zodat Sinterklaas en zijn Pieten alle kinderen kunnen ontmoeten.
+        </p>
+        <p>Alvast onze excuses voor eventueel ongemak en bedankt voor jullie begrip en medewerking.</p>
+        <p>
+          <strong>We willen er samen met jullie een superleuke, gezellige en veilige Sinterklaastocht van maken!</strong>
+        </p>
+        <p>Via onze live routekaart kunnen jullie volgen waar Sinterklaas zich bevindt.</p>
+      </section>
       <div className="route-overview">
         <section
           id="routekaart"
           className="route-map-panel"
           aria-label={active ? "Livekaart van de huifkar" : "Kaart van de rondrit"}
         >
-          {showMap ? (
+          {view.kind === "paused" ? (
+            <div className="map-awaiting map-paused" role="status">
+              <span className="map-ornament" aria-hidden="true">
+                <Coffee size={76} strokeWidth={1} />
+                <i>✦</i>
+              </span>
+              <p className="eyebrow">EVEN PAUZE</p>
+              <h2>
+                Sinterklaas en zijn Pieten
+                <br />
+                nemen even pauze!
+              </h2>
+              <p>
+                Ook Sinterklaas en zijn Pieten moeten af en toe even op krachten komen. Ze genieten momenteel van een
+                welverdiend hapje en drankje.
+              </p>
+              <p>Straks trekken ze weer verder door onze wijk om alle kinderen te bezoeken.</p>
+              <p>Bedankt voor jullie geduld en tot zo meteen!</p>
+              <small>
+                De live routekaart verschijnt automatisch opnieuw zodra de stoet verdergaat en de beheerder de tracking
+                hervat.
+              </small>
+            </div>
+          ) : showMap ? (
             <Suspense fallback={<div className="live-map" />}>
               <LiveMap position={position} focus={focus} onFocus={setFocus} />
             </Suspense>

@@ -306,6 +306,49 @@
   font-size: 0.85rem;
   text-underline-offset: 4px;
 }
+/* Mededeling van de dag boven de routekaart, en de pauzeweergave op de plaats van de kaart. */
+.route-notice {
+  max-width: 860px;
+  margin: 0 auto 44px;
+  padding: 30px 34px 26px;
+  background: #fff0d6;
+  border: 1px solid #e9c687;
+  border-left: 5px solid var(--gold);
+  border-radius: 16px;
+  color: #4d3a12;
+}
+.route-notice .eyebrow {
+  color: var(--red);
+}
+.route-notice h2 {
+  font-family: var(--serif);
+  color: var(--navy);
+  font-size: 2rem;
+  line-height: 1.15;
+  margin: 8px 0 14px;
+}
+.route-notice p:not(.eyebrow) {
+  margin: 0 0 10px;
+  line-height: 1.6;
+}
+.route-notice p:last-child {
+  margin-bottom: 0;
+}
+.map-paused p:not(.eyebrow) {
+  margin-bottom: 10px;
+}
+.map-paused small {
+  margin-top: 8px;
+}
+@media (max-width: 600px) {
+  .route-notice {
+    padding: 22px 20px 18px;
+    margin-bottom: 30px;
+  }
+  .route-notice h2 {
+    font-size: 1.6rem;
+  }
+}
 .route-overview {
   display: grid;
   grid-template-columns: 1.6fr 1fr;

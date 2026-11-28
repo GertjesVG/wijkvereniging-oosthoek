@@ -38,7 +38,9 @@ function prepare(dir, { withGpsMigration = true } = {}) {
   source = replaceOnce(source, "const HOUR_MS = 3600_000;", `const HOUR_MS = ${HOUR_S * 1000};`);
   source = replaceOnce(source, "export const LOST_AFTER_SECONDS = 600;", `export const LOST_AFTER_SECONDS = ${LOST_S};`);
   writeFileSync(gpsFile, source);
-  if (!withGpsMigration) rmSync(path.join(dir, "migrations/0006_live_gps.sql"));
+  // Zonder 0006 ook zonder 0012 (die breidt gps_live uit): zo staat een database van vóór de live GPS.
+  if (!withGpsMigration)
+    for (const file of ["0006_live_gps.sql", "0012_gps_route_en_pauze.sql"]) rmSync(path.join(dir, "migrations", file));
   mkdirSync(path.join(dir, "_site"), { recursive: true });
   writeFileSync(path.join(dir, "_site/index.html"), "<!doctype html><title>test</title>");
   const run = spawnSync(
@@ -290,6 +292,65 @@ try {
     assert.ok(pub.endsInSeconds > 3 * HOUR_S, String(pub.endsInSeconds));
   });
 
+  await step("gereden route: elke positie bewaard, dubbel telt één keer; pauze verbergt alles en neemt niets op; hervatten = nieuw segment", async () => {
+    const count = () => sql(dirC, "SELECT COUNT(*) AS n FROM gps_track")[0].n;
+    const before = count();
+    assert.ok(before > 0, "nog geen routepunten");
+    let status = (await admin("GET")).data;
+    assert.equal(status.track.error, null);
+    assert.equal(status.track.points, sql(dirC, `SELECT COUNT(*) AS n FROM gps_track WHERE session_since = '${status.session.since}'`)[0].n);
+    // Onbewerkt bewaard, met snelheid en richting; hetzelfde bericht opnieuw (OwnTracks herhaalt) telt één keer.
+    await wait(1.1);
+    const one = fix({ lat: 51.319234567, vel: 7, cog: 90, alt: 12 });
+    assert.equal((await device(one)).status, 200);
+    assert.equal((await device(one)).status, 200);
+    assert.equal(count(), before + 1);
+    const last = sql(dirC, "SELECT event_id, lat, speed, course, altitude, accuracy FROM gps_track ORDER BY fix_at DESC LIMIT 1")[0];
+    assert.deepEqual(last, { event_id: "sinterklaas-2026", lat: 51.319234567, speed: 7, course: 90, altitude: 12, accuracy: 6 });
+
+    // Pauze: publiek "uit" met de pauzevlag, geen coördinaten; de telefoon blijft verbonden, er wordt niets opgenomen.
+    status = (await admin("POST", { action: "pause" })).data;
+    assert.ok(status.session.pausedSince);
+    assert.deepEqual(await publicGps(), { state: "off", refreshSeconds: 60, paused: true });
+    await wait(1.1);
+    assert.equal((await device(fix({ lat: 51.4 }))).status, 200);
+    assert.deepEqual(await publicGps(), { state: "off", refreshSeconds: 60, paused: true });
+    assert.equal(count(), before + 1);
+    status = (await admin("GET")).data;
+    assert.equal(status.device.connected, true);
+    assert.equal(status.public.state, "off");
+    assert.ok(status.session, "sessie blijft lopen tijdens de pauze");
+
+    // Hervatten: nieuw segment, eerst wachten, dan de nieuwe positie live en opgenomen; de pauzepositie verschijnt nooit.
+    status = (await admin("POST", { action: "resume" })).data;
+    assert.equal(status.session.pausedSince, null);
+    assert.equal((await publicGps()).state, "waiting");
+    await wait(1.1);
+    assert.equal((await device(fix({ lat: 51.32111 }))).status, 200);
+    const pub = await publicGps();
+    assert.deepEqual([pub.state, pub.lat], ["live", 51.32111]);
+    assert.equal(count(), before + 2);
+    status = (await admin("GET")).data;
+    assert.equal(status.track.segments, 2);
+    assert.equal(sql(dirC, "SELECT COUNT(*) AS n FROM gps_track WHERE lat = 51.4")[0].n, 0);
+
+    // Export: per segment een eigen lijn (geen rechte lijn over de pauze), alleen voor het beheer.
+    const geo = await call("GET", "/api/beheer/gps?export=geojson");
+    assert.equal(geo.status, 200);
+    const mine = geo.data.features.filter((f) => f.properties.session === status.session.since);
+    assert.equal(mine.length, 2);
+    assert.equal(mine.reduce((n, f) => n + f.geometry.coordinates.length, 0), status.track.points);
+    const gpx = await call("GET", "/api/beheer/gps?export=gpx");
+    assert.equal(gpx.status, 200);
+    assert.ok(gpx.text.includes("<trkseg>") && gpx.text.includes("<time>"));
+    const saved = cookie;
+    cookie = "";
+    assert.equal((await call("GET", "/api/beheer/gps?export=geojson")).status, 401);
+    cookie = saved;
+    const kinds = sql(dirC, `SELECT kind FROM gps_track_log WHERE session_since = '${status.session.since}' ORDER BY id`).map((r) => r.kind);
+    assert.deepEqual(kinds.filter((k) => k !== "until"), ["start", "pause", "resume"]);
+  });
+
   await step("Stop: positie meteen weg, ook uit de database; posities na Stop en oude posities komen niet terug", async () => {
     const stopped = await admin("POST", { action: "stop" });
     assert.equal(stopped.status, 200);
@@ -317,6 +378,16 @@ try {
     assert.deepEqual([(await publicGps()).state, stored(dirC).lat], ["off", null]);
     const status = (await admin("GET")).data;
     assert.deepEqual([status.session, status.device.connected], [null, true]);
+  });
+
+  await step("gereden routes blijven na Stop, automatische stop en een nieuwe sessie; niets overschreven", async () => {
+    const sessions = sql(dirC, "SELECT COUNT(DISTINCT session_since) AS n FROM gps_track")[0].n;
+    assert.ok(sessions >= 2, String(sessions));
+    const kinds = sql(dirC, "SELECT DISTINCT kind FROM gps_track_log").map((r) => r.kind).sort();
+    for (const k of ["autostop", "pause", "resume", "start", "stop"]) assert.ok(kinds.includes(k), k);
+    const status = (await admin("GET")).data;
+    assert.equal(status.session, null);
+    assert.ok(status.track.totalPoints > 0 && status.track.points > 0);
   });
 
   await step("inschrijvingen blijven ongemoeid: de GPS raakt geen enkele inschrijvingstabel", async () => {

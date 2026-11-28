@@ -79,7 +79,7 @@ export default function Home() {
                 <span>
                   Livekaart
                   <br />
-                  <strong>{view.kind === "off" ? "nog niet actief" : "nu actief"}</strong>
+                  <strong>{view.kind === "off" ? "nog niet actief" : view.kind === "paused" ? "even pauze" : "nu actief"}</strong>
                 </span>
               </div>
             </div>

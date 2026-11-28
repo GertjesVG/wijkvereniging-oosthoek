@@ -1,7 +1,8 @@
 // Live GPS van de huifkar. De telefoon (OwnTracks in HTTP-modus) stuurt posities naar /api/gps/positie, met Basic-
 // authenticatie: het wachtwoord is het Cloudflare-geheim GPS_DEVICE_TOKEN (min. 32 tekens). Bezoekers lezen /api/gps;
-// het beheer zet de publieke sessie aan en uit (/api/beheer/gps). Eén rij in gps_live (migratie 0006), geen historiek:
-// coördinaten staan er alleen tijdens een actieve sessie en verdwijnen bij Stop of bij de automatische stop.
+// het beheer zet de publieke sessie aan en uit (/api/beheer/gps). Eén rij in gps_live (migratie 0006): de publieke
+// coördinaten staan er alleen tijdens een actieve sessie buiten de pauze en verdwijnen bij Stop of de automatische stop.
+// De gereden route (migratie 0012) staat apart in gps_track, alleen voor het beheer, en wordt nooit overschreven.
 import type { AdminGps, PublicGps } from "../src/gps/api.ts";
 import { errorMessage, fail, json, nowIso, readJson, sameText, sha256Hex, type Env } from "./basis.ts";
 
@@ -21,8 +22,14 @@ const HOUR_MS = 3600_000;
 // Een telefoonklok die tot 5 minuten voorloopt telt als "nu"; verder vooruit is onbetrouwbaar.
 const MAX_FUTURE_MS = 5 * 60_000;
 const MIN_TOKEN_LENGTH = 32;
+// Elke routeregistratie hoort bij één evenement; volgend jaar hier het nieuwe evenement zetten.
+export const GPS_EVENT_ID = "sinterklaas-2026";
 
 export type GpsRow = {
+  // Migratie 0012; ontbreken ze (oude database), dan gelden ze als NULL.
+  paused_since?: string | null;
+  segment_since?: string | null;
+  track_error?: string | null;
   public_since: string | null;
   public_until: string | null;
   lat: number | null;
@@ -37,7 +44,17 @@ export type GpsRow = {
 };
 
 export type ParsedLocation =
-  | { kind: "fix"; lat: number; lon: number; accuracy: number | null; fixAt: string; battery: number | null; charging: boolean | null }
+  | {
+      kind: "fix";
+      lat: number;
+      lon: number;
+      accuracy: number | null;
+      fixAt: string;
+      battery: number | null;
+      charging: boolean | null;
+      // Onafgeronde meting voor de gereden route; snelheid (km/u), richting (graden) en hoogte (m) als OwnTracks ze geeft.
+      track: { lat: number; lon: number; speed: number | null; course: number | null; altitude: number | null };
+    }
   | { kind: "ignore" }
   | { kind: "invalid" };
 
@@ -63,6 +80,13 @@ export function parseLocation(body: Record<string, unknown> | null, nowMs: numbe
     battery: Number.isInteger(batt) && (batt as number) >= 0 && (batt as number) <= 100 ? (batt as number) : null,
     // bs: 1 = niet aan de lader, 2 = laadt, 3 = vol (aan de lader).
     charging: bs === 2 || bs === 3 ? true : bs === 1 ? false : null,
+    track: {
+      lat,
+      lon,
+      speed: inRange(body.vel, 1000) && (body.vel as number) >= 0 ? (body.vel as number) : null,
+      course: inRange(body.cog, 360) && (body.cog as number) >= 0 ? (body.cog as number) : null,
+      altitude: inRange(body.alt, 10000) ? (body.alt as number) : null,
+    },
   };
 }
 
@@ -87,9 +111,13 @@ const isLive = (row: GpsRow | null, nowMs: number) =>
 
 export function publicView(row: GpsRow | null, nowMs: number): PublicGps {
   if (!row || !isLive(row, nowMs)) return { state: "off", refreshSeconds: REFRESH_OFF_SECONDS };
+  // Pauze: voor bezoekers "uit" (zo tonen ook oudere pagina's geen positie), met de pauzevlag en het live-interval,
+  // zodat de livekaart na Hervatten binnen een minuut vanzelf terugkomt.
+  if (row.paused_since) return { state: "off", refreshSeconds: REFRESH_LIVE_SECONDS, paused: true };
   const endsInSeconds = Math.max(0, Math.floor((Date.parse(row.public_until!) - nowMs) / 1000));
   const base = { refreshSeconds: REFRESH_LIVE_SECONDS, endsInSeconds };
-  if (row.lat === null || row.lon === null || !row.fix_at || row.fix_at < row.public_since!) return { state: "waiting", ...base };
+  const segmentSince = row.segment_since ?? row.public_since!;
+  if (row.lat === null || row.lon === null || !row.fix_at || row.fix_at < segmentSince) return { state: "waiting", ...base };
   const fixAgeSeconds = secondsBetween(row.fix_at, nowMs);
   if (fixAgeSeconds > LOST_AFTER_SECONDS) return { state: "lost", ...base, fixAt: row.fix_at, fixAgeSeconds };
   return {
@@ -105,11 +133,20 @@ export function publicView(row: GpsRow | null, nowMs: number): PublicGps {
   };
 }
 
-export function adminView(row: GpsRow | null, nowMs: number, configured: boolean): AdminGps {
+export function adminView(
+  row: GpsRow | null,
+  nowMs: number,
+  configured: boolean,
+  track: AdminGps["track"] = null,
+): AdminGps {
   const ageSeconds = row?.seen_at ? secondsBetween(row.seen_at, nowMs) : 0;
   return {
     configured,
-    session: row && isLive(row, nowMs) ? { since: row.public_since!, until: row.public_until! } : null,
+    session:
+      row && isLive(row, nowMs)
+        ? { since: row.public_since!, until: row.public_until!, pausedSince: row.paused_since ?? null }
+        : null,
+    track,
     public: publicView(row, nowMs),
     device: row?.seen_at
       ? {
@@ -128,22 +165,43 @@ export function adminView(row: GpsRow | null, nowMs: number, configured: boolean
 
 // ---------- Database ----------
 
-const COLUMNS =
-  "public_since, public_until, lat, lon, accuracy, fix_at, seen_at, seen_fix_at, seen_accuracy, battery, charging";
-const CLEARED = { public_since: null, public_until: null, lat: null, lon: null, accuracy: null, fix_at: null };
-const STOP_SQL = `UPDATE gps_live SET public_since = NULL, public_until = NULL, lat = NULL, lon = NULL, accuracy = NULL,
-  fix_at = NULL, updated_at = ?1 WHERE id = 1`;
+const CLEARED = {
+  public_since: null,
+  public_until: null,
+  lat: null,
+  lon: null,
+  accuracy: null,
+  fix_at: null,
+};
+// SELECT *: zonder migratie 0012 ontbreken de nieuwe kolommen gewoon, en Stop werkt dan zoals voorheen.
+const hasRouteColumns = (row: GpsRow | null) => Boolean(row && "segment_since" in row);
+const stopSql = (row: GpsRow | null) =>
+  `UPDATE gps_live SET public_since = NULL, public_until = NULL, lat = NULL, lon = NULL, accuracy = NULL,
+     fix_at = NULL${hasRouteColumns(row) ? ", paused_since = NULL, segment_since = NULL" : ""}, updated_at = ?1 WHERE id = 1`;
 
 const missingTable = (error: unknown) => errorMessage(error).includes("no such table: gps_live");
 const configured = (env: Env) => Boolean(env.GPS_DEVICE_TOKEN && env.GPS_DEVICE_TOKEN.length >= MIN_TOKEN_LENGTH);
 
+// Logboek van de routesessie (start, pauze, hervat, stop, autostop). Mislukt het, dan gaat de GPS gewoon door.
+async function logTrack(db: D1Database, sessionSince: string, kind: string, at: string, until: string | null = null) {
+  try {
+    await db
+      .prepare("INSERT INTO gps_track_log (event_id, session_since, kind, at, until) VALUES (?1, ?2, ?3, ?4, ?5)")
+      .bind(GPS_EVENT_ID, sessionSince, kind, at, until)
+      .run();
+  } catch (error) {
+    console.error("gps_track_log", errorMessage(error));
+  }
+}
+
 // Leest de rij en voert meteen de automatische stop uit als het stopuur voorbij is: daarna staan er geen coördinaten meer.
 async function loadRow(db: D1Database, nowMs: number): Promise<GpsRow | null> {
-  const row = await db.prepare(`SELECT ${COLUMNS} FROM gps_live WHERE id = 1`).first<GpsRow>();
+  const row = await db.prepare("SELECT * FROM gps_live WHERE id = 1").first<GpsRow>();
   if (row?.public_since && row.public_until && Date.parse(row.public_until) <= nowMs) {
     // Alleen deze verlopen sessie; een intussen opnieuw gestarte sessie blijft staan.
-    await db.prepare(`${STOP_SQL} AND public_until = ?2`).bind(nowIso(), row.public_until).run();
-    return { ...row, ...CLEARED };
+    const result = await db.prepare(`${stopSql(row)} AND public_until = ?2`).bind(nowIso(), row.public_until).run();
+    if (result.meta?.changes) await logTrack(db, row.public_since, "autostop", row.public_until);
+    return { ...row, ...CLEARED, ...(hasRouteColumns(row) ? { paused_since: null, segment_since: null } : {}) };
   }
   return row;
 }
@@ -168,8 +226,9 @@ export async function receivePosition(request: Request, env: Env) {
   // bericht zou alles daarachter tegenhouden. Daarom altijd 200 met een lege lijst, ook als er niets bewaard wordt.
   if (parsed.kind !== "fix") return json([]);
   try {
-    await loadRow(db, nowMs);
+    const row = await loadRow(db, nowMs);
     const now = nowIso();
+    const route = hasRouteColumns(row);
     // Na een netwerkonderbreking komen opgespaarde berichten van oud naar nieuw binnen: alleen een nieuwere fix telt.
     const newer = "(seen_fix_at IS NULL OR ?2 > seen_fix_at)";
     const statements = [
@@ -184,17 +243,21 @@ export async function receivePosition(request: Request, env: Env) {
         )
         .bind(now, parsed.fixAt, parsed.accuracy, parsed.battery, parsed.charging === null ? null : parsed.charging ? 1 : 0),
     ];
-    // Coördinaten alleen tijdens een actieve sessie, van na de start, nauwkeurig genoeg en nieuwer dan de vorige.
+    // Coördinaten alleen tijdens een actieve sessie buiten de pauze, van na de start (of het hervatten), nauwkeurig
+    // genoeg en nieuwer dan de vorige.
     if (parsed.accuracy === null || parsed.accuracy <= MAX_ACCURACY_METERS)
       statements.push(
         db
           .prepare(
             `UPDATE gps_live SET lat = ?1, lon = ?2, accuracy = ?3, fix_at = ?4 WHERE id = 1 AND public_since IS NOT NULL
-               AND public_until > ?5 AND ?4 >= public_since AND (fix_at IS NULL OR ?4 > fix_at)`,
+               AND public_until > ?5 AND ?4 >= ${route ? "COALESCE(segment_since, public_since) AND paused_since IS NULL" : "public_since"}
+               AND (fix_at IS NULL OR ?4 > fix_at)`,
           )
           .bind(parsed.lat, parsed.lon, parsed.accuracy, parsed.fixAt, now),
       );
     await db.batch(statements);
+    // Gereden route: apart en ná de live positie, zodat een fout hier de livekaart nooit tegenhoudt.
+    if (route && row?.public_since) await recordTrack(db, parsed, now, row);
   } catch (error) {
     if (missingTable(error)) return fail(503, "NIET_GECONFIGUREERD", "Live GPS niet ingesteld.");
     throw error;
@@ -202,15 +265,213 @@ export async function receivePosition(request: Request, env: Env) {
   return json([]);
 }
 
-// Beheer: GET = status, POST {action: "start", hours} of {action: "stop"}. De beheerrouter controleert eerst de sessie.
+// Elke bruikbare meting tijdens de sessie, ook een opgespaarde oudere (na een netwerkonderbreking), maar niet tijdens de
+// pauze. Dezelfde meting twee keer telt één keer (UNIQUE op sessie en tijdstip). Onbewerkt: filteren gebeurt bij het
+// verwerken, zodat latere correcties mogelijk blijven.
+async function recordTrack(db: D1Database, parsed: Extract<ParsedLocation, { kind: "fix" }>, now: string, row: GpsRow) {
+  try {
+    await db
+      .prepare(
+        `INSERT OR IGNORE INTO gps_track
+           (event_id, session_since, segment_since, fix_at, lat, lon, accuracy, speed, course, altitude, received_at)
+         SELECT ?1, public_since, COALESCE(segment_since, public_since), ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9 FROM gps_live
+         WHERE id = 1 AND public_since IS NOT NULL AND public_until > ?9 AND ?2 >= COALESCE(segment_since, public_since)
+           AND (paused_since IS NULL OR ?2 < paused_since)`,
+      )
+      .bind(
+        GPS_EVENT_ID,
+        parsed.fixAt,
+        parsed.track.lat,
+        parsed.track.lon,
+        parsed.accuracy,
+        parsed.track.speed,
+        parsed.track.course,
+        parsed.track.altitude,
+        now,
+      )
+      .run();
+    if (row.track_error) await db.prepare("UPDATE gps_live SET track_error = NULL WHERE id = 1").run();
+  } catch (error) {
+    console.error("gps_track", errorMessage(error));
+    try {
+      await db
+        .prepare("UPDATE gps_live SET track_error = ?1 WHERE id = 1")
+        .bind(`${now} ${errorMessage(error)}`.slice(0, 300))
+        .run();
+    } catch {
+      // Ook dit mislukt: de live positie is al bewaard; het beheer ziet dan geen nieuwe routepunten bijkomen.
+    }
+  }
+}
+
+type TrackRow = {
+  session_since: string;
+  segment_since: string;
+  fix_at: string;
+  lat: number;
+  lon: number;
+  accuracy: number | null;
+  speed: number | null;
+  course: number | null;
+  altitude: number | null;
+};
+
+// Stand van de routeregistratie voor het beheer: de lopende sessie, of anders de laatste.
+async function trackSummary(db: D1Database, row: GpsRow | null): Promise<AdminGps["track"]> {
+  const empty = {
+    eventId: GPS_EVENT_ID,
+    sessionSince: null,
+    points: 0,
+    segments: 0,
+    firstAt: null,
+    lastAt: null,
+    totalPoints: 0,
+    sessions: 0,
+  };
+  if (!hasRouteColumns(row)) return { ...empty, error: "Routeopslag nog niet ingesteld: databasemigratie 0012 ontbreekt." };
+  try {
+    const session = row?.public_since
+      ? row.public_since
+      : ((
+          await db
+            .prepare("SELECT MAX(session_since) AS s FROM gps_track WHERE event_id = ?1")
+            .bind(GPS_EVENT_ID)
+            .first<{ s: string | null }>()
+        )?.s ?? null);
+    const [current, total] = await db.batch<Record<string, unknown>>([
+      db
+        .prepare(
+          `SELECT COUNT(*) AS points, COUNT(DISTINCT segment_since) AS segments, MIN(fix_at) AS first_at,
+             MAX(fix_at) AS last_at FROM gps_track WHERE session_since = ?1`,
+        )
+        .bind(session ?? ""),
+      db
+        .prepare("SELECT COUNT(*) AS points, COUNT(DISTINCT session_since) AS sessions FROM gps_track WHERE event_id = ?1")
+        .bind(GPS_EVENT_ID),
+    ]);
+    const c = current.results[0] ?? {};
+    const t = total.results[0] ?? {};
+    return {
+      eventId: GPS_EVENT_ID,
+      sessionSince: session,
+      points: Number(c.points ?? 0),
+      segments: Number(c.segments ?? 0),
+      firstAt: (c.first_at as string | null) ?? null,
+      lastAt: (c.last_at as string | null) ?? null,
+      totalPoints: Number(t.points ?? 0),
+      sessions: Number(t.sessions ?? 0),
+      error: row?.track_error ?? null,
+    };
+  } catch (error) {
+    return { ...empty, error: `Routeopslag niet bereikbaar: ${errorMessage(error)}` };
+  }
+}
+
+// Export van alle gereden routes van het evenement, onbewerkt, per sessie en segment (nooit een lijn over een pauze).
+async function exportTrack(db: D1Database, format: "geojson" | "gpx") {
+  const { results } = await db
+    .prepare(
+      `SELECT session_since, segment_since, fix_at, lat, lon, accuracy, speed, course, altitude FROM gps_track
+       WHERE event_id = ?1 ORDER BY session_since, segment_since, fix_at`,
+    )
+    .bind(GPS_EVENT_ID)
+    .all<TrackRow>();
+  const segments = new Map<string, TrackRow[]>();
+  for (const r of results) {
+    const key = `${r.session_since}|${r.segment_since}`;
+    const list = segments.get(key);
+    if (list) list.push(r);
+    else segments.set(key, [r]);
+  }
+  const headers = (type: string, ext: string) => ({
+    "Content-Type": type,
+    "Content-Disposition": `attachment; filename="${GPS_EVENT_ID}-gereden-route.${ext}"`,
+    "Cache-Control": "no-store",
+    "X-Content-Type-Options": "nosniff",
+  });
+  if (format === "gpx") {
+    const esc = (s: string) => s.replace(/[<>&"]/g, (ch) => `&#${ch.charCodeAt(0)};`);
+    const sessions = new Map<string, TrackRow[][]>();
+    for (const points of segments.values()) {
+      const s = points[0].session_since;
+      sessions.set(s, [...(sessions.get(s) ?? []), points]);
+    }
+    const point = (p: TrackRow) =>
+      `<trkpt lat="${p.lat}" lon="${p.lon}">${p.altitude !== null ? `<ele>${p.altitude}</ele>` : ""}<time>${esc(p.fix_at)}</time></trkpt>`;
+    const trk = [...sessions.entries()]
+      .map(
+        ([since, segs]) =>
+          `<trk><name>${esc(`${GPS_EVENT_ID} sessie ${since}`)}</name>${segs
+            .map((pts) => `<trkseg>${pts.map(point).join("")}</trkseg>`)
+            .join("")}</trk>`,
+      )
+      .join("\n");
+    const gpx = `<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="wijkvereniging-oosthoek" xmlns="http://www.topografix.com/GPX/1/1">\n${trk}\n</gpx>\n`;
+    return new Response(gpx, { headers: headers("application/gpx+xml; charset=utf-8", "gpx") });
+  }
+  const features = [...segments.values()].map((pts) => ({
+    type: "Feature",
+    geometry: { type: "LineString", coordinates: pts.map((p) => [p.lon, p.lat]) },
+    properties: {
+      event: GPS_EVENT_ID,
+      session: pts[0].session_since,
+      segment: pts[0].segment_since,
+      times: pts.map((p) => p.fix_at),
+      accuracy: pts.map((p) => p.accuracy),
+      speed: pts.map((p) => p.speed),
+      course: pts.map((p) => p.course),
+      altitude: pts.map((p) => p.altitude),
+    },
+  }));
+  return new Response(JSON.stringify({ type: "FeatureCollection", features }), {
+    headers: headers("application/geo+json; charset=utf-8", "geojson"),
+  });
+}
+
+// Beheer: GET = status (met ?export=geojson of gpx: de gereden route), POST {action: "start", hours}, {action: "pause"},
+// {action: "resume"} of {action: "stop"}. De beheerrouter controleert eerst de sessie.
 export async function handleGpsAdmin(request: Request, env: Env, db: D1Database) {
   try {
     const nowMs = Date.now();
-    if (request.method === "GET") return json(adminView(await loadRow(db, nowMs), nowMs, configured(env)));
+    if (request.method === "GET") {
+      const format = new URL(request.url).searchParams.get("export");
+      if (format === "geojson" || format === "gpx") return await exportTrack(db, format);
+      const row = await loadRow(db, nowMs);
+      return json(adminView(row, nowMs, configured(env), await trackSummary(db, row)));
+    }
     if (request.method !== "POST") return fail(404, "NIET_GEVONDEN", "Onbekende beheeropdracht.");
     const body = (await readJson(request)) ?? {};
     if (body.action === "stop") {
-      await db.prepare(STOP_SQL).bind(nowIso()).run();
+      const row = await loadRow(db, nowMs);
+      const now = nowIso();
+      await db.prepare(stopSql(row)).bind(now).run();
+      if (row?.public_since && hasRouteColumns(row)) await logTrack(db, row.public_since, "stop", now);
+    } else if (body.action === "pause" || body.action === "resume") {
+      const row = await loadRow(db, nowMs);
+      if (!row?.public_since) return fail(409, "VERBODEN", "De live GPS staat uit.");
+      if (!hasRouteColumns(row))
+        return fail(503, "NIET_GECONFIGUREERD", "Pauze nog niet ingesteld: de databasemigratie 0012 ontbreekt.");
+      const now = nowIso();
+      if (body.action === "pause" && !row.paused_since) {
+        await db
+          .prepare(
+            "UPDATE gps_live SET paused_since = ?1, updated_at = ?1 WHERE id = 1 AND public_since = ?2 AND paused_since IS NULL",
+          )
+          .bind(now, row.public_since)
+          .run();
+        await logTrack(db, row.public_since, "pause", now);
+      }
+      // Hervatten: nieuw routesegment en geen positie van tijdens de pauze; de eerste nieuwe positie verschijnt vanzelf.
+      if (body.action === "resume" && row.paused_since) {
+        await db
+          .prepare(
+            `UPDATE gps_live SET paused_since = NULL, segment_since = ?1, lat = NULL, lon = NULL, accuracy = NULL,
+               fix_at = NULL, updated_at = ?1 WHERE id = 1 AND public_since = ?2 AND paused_since IS NOT NULL`,
+          )
+          .bind(now, row.public_since)
+          .run();
+        await logTrack(db, row.public_since, "resume", now);
+      }
     } else if (body.action === "start") {
       const hours = body.hours;
       if (typeof hours !== "number" || !Number.isInteger(hours) || hours < 1 || hours > MAX_HOURS)
@@ -218,19 +479,28 @@ export async function handleGpsAdmin(request: Request, env: Env, db: D1Database)
       const row = await loadRow(db, nowMs);
       const until = new Date(nowMs + hours * HOUR_MS).toISOString();
       // Loopt er al een sessie, dan verschuift alleen het stopuur; anders begint een nieuwe sessie zonder oude positie.
-      if (row?.public_since)
-        await db.prepare("UPDATE gps_live SET public_until = ?1, updated_at = ?2 WHERE id = 1 AND public_since = ?3")
-          .bind(until, nowIso(), row.public_since).run();
-      else
+      if (row?.public_since) {
         await db
+          .prepare("UPDATE gps_live SET public_until = ?1, updated_at = ?2 WHERE id = 1 AND public_since = ?3")
+          .bind(until, nowIso(), row.public_since)
+          .run();
+        if (hasRouteColumns(row)) await logTrack(db, row.public_since, "until", nowIso(), until);
+      } else {
+        const since = nowIso();
+        const route = hasRouteColumns(row);
+        const result = await db
           .prepare(
             `UPDATE gps_live SET public_since = ?1, public_until = ?2, lat = NULL, lon = NULL, accuracy = NULL, fix_at = NULL,
-               updated_at = ?1 WHERE id = 1 AND public_since IS NULL`,
+               ${route ? "paused_since = NULL, segment_since = ?1, track_error = NULL," : ""} updated_at = ?1
+             WHERE id = 1 AND public_since IS NULL`,
           )
-          .bind(nowIso(), until)
+          .bind(since, until)
           .run();
+        if (route && result.meta?.changes) await logTrack(db, since, "start", since, until);
+      }
     } else return fail(400, "VALIDATIE", "Onbekende actie.");
-    return json(adminView(await loadRow(db, Date.now()), Date.now(), configured(env)));
+    const row = await loadRow(db, Date.now());
+    return json(adminView(row, Date.now(), configured(env), await trackSummary(db, row)));
   } catch (error) {
     if (missingTable(error))
       return fail(503, "NIET_GECONFIGUREERD", "Live GPS nog niet ingesteld: de databasemigratie 0006 ontbreekt.");

@@ -3,8 +3,8 @@
 // Wat bezoekers op de routepagina krijgen. Leeftijden en resterende tijd in seconden, gemeten door de server:
 // zo maakt een verkeerd ingestelde klok op de telefoon van een bezoeker niets uit.
 export type PublicGps =
-  // Geen actieve sessie: niets tonen.
-  | { state: "off"; refreshSeconds: number }
+  // Geen actieve sessie: niets tonen. paused = de sessie loopt, maar staat op pauze (geen positie, wel de pauzemelding).
+  | { state: "off"; refreshSeconds: number; paused?: boolean }
   // Gestart in het beheer, maar nog geen positie ontvangen sinds de start.
   | { state: "waiting"; refreshSeconds: number; endsInSeconds: number }
   // Laatste positie te oud: geen coördinaten meer, alleen het tijdstip.
@@ -28,7 +28,19 @@ export type AdminGps = {
   // Het apparaatgeheim GPS_DEVICE_TOKEN staat in Cloudflare (de waarde zelf komt nooit in het beheer).
   configured: boolean;
   // Actieve publieke sessie met automatische stop; null = uit.
-  session: { since: string; until: string } | null;
+  session: { since: string; until: string; pausedSince?: string | null } | null;
+  // Registratie van de gereden route (alleen voor het beheer); null = onbekend.
+  track: {
+    eventId: string;
+    sessionSince: string | null;
+    points: number;
+    segments: number;
+    firstAt: string | null;
+    lastAt: string | null;
+    totalPoints: number;
+    sessions: number;
+    error: string | null;
+  } | null;
   // Precies wat bezoekers nu zien.
   public: PublicGps;
   // Laatste contact met de telefoon, ook buiten een sessie (zonder coördinaten).

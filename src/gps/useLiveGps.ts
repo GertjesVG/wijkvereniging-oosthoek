@@ -5,6 +5,8 @@ import type { PublicGps } from "./api";
 // een positie ook zonder nieuw antwoord (verbinding van de bezoeker weg) vanzelf "niet actueel" en daarna onzichtbaar wordt.
 export type LiveGpsView =
   | { kind: "off" }
+  // Middagpauze: geen positie; de pagina blijft elke minuut vragen en toont de kaart vanzelf weer na Hervatten.
+  | { kind: "paused" }
   | { kind: "waiting" }
   | { kind: "lost"; fixAt: string }
   | { kind: "live"; lat: number; lon: number; accuracy: number | null; fixAt: string; ageSeconds: number; stale: boolean };
@@ -12,7 +14,8 @@ export type LiveGpsView =
 type Received = { data: PublicGps; at: number };
 
 export function viewOf(received: Received | null, now: number): LiveGpsView {
-  if (!received || received.data.state === "off") return { kind: "off" };
+  if (!received) return { kind: "off" };
+  if (received.data.state === "off") return received.data.paused === true ? { kind: "paused" } : { kind: "off" };
   const { data } = received;
   const elapsed = Math.max(0, (now - received.at) / 1000);
   // Automatische stop: ook zonder nieuw antwoord verdwijnt alles op het stopuur.

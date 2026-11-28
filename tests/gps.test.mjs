@@ -39,7 +39,11 @@ test("OwnTracks-locatie wordt gelezen en afgerond; andere berichttypes worden ge
     { _type: "location", lat: 51.319123456, lon: 4.854012345, acc: 7.6, tst: tst(-5), batt: 81, bs: 2, tid: "SK" },
     NOW,
   );
-  assert.deepEqual(fix, { kind: "fix", lat: 51.31912, lon: 4.85401, accuracy: 8, fixAt: iso(-5), battery: 81, charging: true });
+  assert.deepEqual(fix, {
+    kind: "fix", lat: 51.31912, lon: 4.85401, accuracy: 8, fixAt: iso(-5), battery: 81, charging: true,
+    // Voor de gereden route: de onafgeronde meting.
+    track: { lat: 51.319123456, lon: 4.854012345, speed: null, course: null, altitude: null },
+  });
   for (const type of ["transition", "waypoint", "lwt", "status", "card", "encrypted"])
     assert.deepEqual(parseLocation({ _type: type }, NOW), { kind: "ignore" }, type);
   assert.equal(parseLocation({ _type: "location", lat: 51, lon: 4, tst: tst(0), bs: 1 }, NOW).charging, false);
@@ -127,7 +131,7 @@ test("beheer: verbindingsstatus van de telefoon, sessie en wat het publiek nu zi
   assert.deepEqual([none.configured, none.session, none.device, none.public.state], [false, null, null, "off"]);
   const seen = { ...withFix(10), seen_at: iso(-10), seen_fix_at: iso(-10), seen_accuracy: 6, battery: 54, charging: 0 };
   const view = adminView(seen, NOW, true);
-  assert.deepEqual(view.session, { since: iso(-900), until: iso(3 * 3600) });
+  assert.deepEqual(view.session, { since: iso(-900), until: iso(3 * 3600), pausedSince: null });
   assert.deepEqual(view.device, {
     seenAt: iso(-10),
     ageSeconds: 10,
@@ -141,4 +145,19 @@ test("beheer: verbindingsstatus van de telefoon, sessie en wat het publiek nu zi
   const quiet = adminView({ ...empty, seen_at: iso(-CONNECTED_WITHIN_SECONDS - 1) }, NOW, true);
   assert.equal(quiet.device.connected, false);
   assert.deepEqual([quiet.device.fixAt, quiet.device.battery, quiet.device.charging], [null, null, null]);
+});
+
+test("pauze: bezoekers krijgen geen positie (ook oudere pagina's zien 'uit'), wel de pauzevlag en het live-interval", () => {
+  const paused = { ...withFix(10), paused_since: iso(-60), segment_since: iso(-900) };
+  assert.deepEqual(publicView(paused, NOW), { state: "off", refreshSeconds: REFRESH_LIVE_SECONDS, paused: true });
+  const admin = adminView(paused, NOW, true);
+  assert.equal(admin.session.pausedSince, iso(-60));
+  assert.equal(admin.public.state, "off");
+  // Na Hervatten: een positie van vóór het hervatten telt niet, een nieuwe wel.
+  const resumed = { ...withFix(120), paused_since: null, segment_since: iso(-30) };
+  assert.equal(publicView(resumed, NOW).state, "waiting");
+  assert.equal(publicView({ ...resumed, fix_at: iso(-5) }, NOW).state, "live");
+  // Snelheid, richting en hoogte voor de gereden route als OwnTracks ze meestuurt.
+  const fix = parseLocation({ _type: "location", lat: 51.3, lon: 4.8, tst: tst(-5), vel: 6, cog: 270, alt: 21 }, NOW);
+  assert.deepEqual(fix.track, { lat: 51.3, lon: 4.8, speed: 6, course: 270, altitude: 21 });
 });
