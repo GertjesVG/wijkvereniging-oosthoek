@@ -30,6 +30,9 @@ export type GpsRow = {
   paused_since?: string | null;
   segment_since?: string | null;
   track_error?: string | null;
+  track_points?: number;
+  track_segments?: number;
+  track_last_at?: string | null;
   public_since: string | null;
   public_until: string | null;
   lat: number | null;
@@ -270,7 +273,7 @@ export async function receivePosition(request: Request, env: Env) {
 // verwerken, zodat latere correcties mogelijk blijven.
 async function recordTrack(db: D1Database, parsed: Extract<ParsedLocation, { kind: "fix" }>, now: string, row: GpsRow) {
   try {
-    await db
+    const inserted = await db
       .prepare(
         `INSERT OR IGNORE INTO gps_track
            (event_id, session_since, segment_since, fix_at, lat, lon, accuracy, speed, course, altitude, received_at)
@@ -290,7 +293,16 @@ async function recordTrack(db: D1Database, parsed: Extract<ParsedLocation, { kin
         now,
       )
       .run();
-    if (row.track_error) await db.prepare("UPDATE gps_live SET track_error = NULL WHERE id = 1").run();
+    if (inserted.meta?.changes)
+      await db
+        .prepare(
+          `UPDATE gps_live SET track_points = track_points + 1, track_error = NULL,
+             track_last_at = CASE WHEN track_last_at IS NULL OR ?1 > track_last_at THEN ?1 ELSE track_last_at END
+           WHERE id = 1 AND public_since = ?2`,
+        )
+        .bind(parsed.fixAt, row.public_since)
+        .run();
+    else if (row.track_error) await db.prepare("UPDATE gps_live SET track_error = NULL WHERE id = 1").run();
   } catch (error) {
     console.error("gps_track", errorMessage(error));
     try {
@@ -316,55 +328,19 @@ type TrackRow = {
   altitude: number | null;
 };
 
-// Stand van de routeregistratie voor het beheer: de lopende sessie, of anders de laatste.
-async function trackSummary(db: D1Database, row: GpsRow | null): Promise<AdminGps["track"]> {
-  const empty = {
-    eventId: GPS_EVENT_ID,
-    sessionSince: null,
-    points: 0,
-    segments: 0,
-    firstAt: null,
-    lastAt: null,
-    totalPoints: 0,
-    sessions: 0,
+// Stand van de routeregistratie voor het beheer, uit de tellers in gps_live (één rij lezen; het beheer ververst elke
+// 10 s). Na Stop blijft de stand van de laatste sessie staan tot een nieuwe Start.
+function trackSummary(row: GpsRow | null): AdminGps["track"] {
+  const base = { eventId: GPS_EVENT_ID, sessionSince: row?.public_since ?? null };
+  if (!hasRouteColumns(row))
+    return { ...base, points: 0, segments: 0, lastAt: null, error: "Routeopslag nog niet ingesteld: databasemigratie 0012 ontbreekt." };
+  return {
+    ...base,
+    points: Number(row?.track_points ?? 0),
+    segments: Number(row?.track_segments ?? 0),
+    lastAt: row?.track_last_at ?? null,
+    error: row?.track_error ?? null,
   };
-  if (!hasRouteColumns(row)) return { ...empty, error: "Routeopslag nog niet ingesteld: databasemigratie 0012 ontbreekt." };
-  try {
-    const session = row?.public_since
-      ? row.public_since
-      : ((
-          await db
-            .prepare("SELECT MAX(session_since) AS s FROM gps_track WHERE event_id = ?1")
-            .bind(GPS_EVENT_ID)
-            .first<{ s: string | null }>()
-        )?.s ?? null);
-    const [current, total] = await db.batch<Record<string, unknown>>([
-      db
-        .prepare(
-          `SELECT COUNT(*) AS points, COUNT(DISTINCT segment_since) AS segments, MIN(fix_at) AS first_at,
-             MAX(fix_at) AS last_at FROM gps_track WHERE session_since = ?1`,
-        )
-        .bind(session ?? ""),
-      db
-        .prepare("SELECT COUNT(*) AS points, COUNT(DISTINCT session_since) AS sessions FROM gps_track WHERE event_id = ?1")
-        .bind(GPS_EVENT_ID),
-    ]);
-    const c = current.results[0] ?? {};
-    const t = total.results[0] ?? {};
-    return {
-      eventId: GPS_EVENT_ID,
-      sessionSince: session,
-      points: Number(c.points ?? 0),
-      segments: Number(c.segments ?? 0),
-      firstAt: (c.first_at as string | null) ?? null,
-      lastAt: (c.last_at as string | null) ?? null,
-      totalPoints: Number(t.points ?? 0),
-      sessions: Number(t.sessions ?? 0),
-      error: row?.track_error ?? null,
-    };
-  } catch (error) {
-    return { ...empty, error: `Routeopslag niet bereikbaar: ${errorMessage(error)}` };
-  }
 }
 
 // Export van alle gereden routes van het evenement, onbewerkt, per sessie en segment (nooit een lijn over een pauze).
@@ -437,7 +413,7 @@ export async function handleGpsAdmin(request: Request, env: Env, db: D1Database)
       const format = new URL(request.url).searchParams.get("export");
       if (format === "geojson" || format === "gpx") return await exportTrack(db, format);
       const row = await loadRow(db, nowMs);
-      return json(adminView(row, nowMs, configured(env), await trackSummary(db, row)));
+      return json(adminView(row, nowMs, configured(env), trackSummary(row)));
     }
     if (request.method !== "POST") return fail(404, "NIET_GEVONDEN", "Onbekende beheeropdracht.");
     const body = (await readJson(request)) ?? {};
@@ -465,7 +441,7 @@ export async function handleGpsAdmin(request: Request, env: Env, db: D1Database)
       if (body.action === "resume" && row.paused_since) {
         await db
           .prepare(
-            `UPDATE gps_live SET paused_since = NULL, segment_since = ?1, lat = NULL, lon = NULL, accuracy = NULL,
+            `UPDATE gps_live SET paused_since = NULL, segment_since = ?1, track_segments = track_segments + 1, lat = NULL, lon = NULL, accuracy = NULL,
                fix_at = NULL, updated_at = ?1 WHERE id = 1 AND public_since = ?2 AND paused_since IS NOT NULL`,
           )
           .bind(now, row.public_since)
@@ -491,7 +467,7 @@ export async function handleGpsAdmin(request: Request, env: Env, db: D1Database)
         const result = await db
           .prepare(
             `UPDATE gps_live SET public_since = ?1, public_until = ?2, lat = NULL, lon = NULL, accuracy = NULL, fix_at = NULL,
-               ${route ? "paused_since = NULL, segment_since = ?1, track_error = NULL," : ""} updated_at = ?1
+               ${route ? "paused_since = NULL, segment_since = ?1, track_error = NULL, track_points = 0, track_segments = 1, track_last_at = NULL," : ""} updated_at = ?1
              WHERE id = 1 AND public_since IS NULL`,
           )
           .bind(since, until)
@@ -500,7 +476,7 @@ export async function handleGpsAdmin(request: Request, env: Env, db: D1Database)
       }
     } else return fail(400, "VALIDATIE", "Onbekende actie.");
     const row = await loadRow(db, Date.now());
-    return json(adminView(row, Date.now(), configured(env), await trackSummary(db, row)));
+    return json(adminView(row, Date.now(), configured(env), trackSummary(row)));
   } catch (error) {
     if (missingTable(error))
       return fail(503, "NIET_GECONFIGUREERD", "Live GPS nog niet ingesteld: de databasemigratie 0006 ontbreekt.");

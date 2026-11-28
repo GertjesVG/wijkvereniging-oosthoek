@@ -242,9 +242,9 @@ export function GpsPanel() {
               Publieke kaart
             </a>
           </div>
-          {track && track.totalPoints > 0 && (
+          {track && (
             <p className="muted small gps-export">
-              Gereden route ({track.totalPoints} punten, {track.sessions} {track.sessions === 1 ? "sessie" : "sessies"}):{" "}
+              Alle gereden routes van dit evenement downloaden:{" "}
               <a href="/api/beheer/gps?export=gpx" download>
                 <Download size={14} aria-hidden="true" /> GPX
               </a>{" "}

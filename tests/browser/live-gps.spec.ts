@@ -265,7 +265,7 @@ test("beheer: Pauzeer en Hervat binnen de lopende sessie, met de stand van de ro
     ages: [], addressReview: 0, deleteBy: "2027-01-31", autoErase: true, deleteByPassed: false,
   };
   const device = { seenAt: "2026-11-28T10:29:50.000Z", ageSeconds: 10, connected: true, fixAt: "2026-11-28T10:29:50.000Z", accuracy: 5, battery: 88, charging: false };
-  const track = { eventId: "sinterklaas-2026", sessionSince: "2026-11-28T09:30:00.000Z", points: 42, segments: 1, firstAt: "2026-11-28T09:30:30.000Z", lastAt: "2026-11-28T10:00:00.000Z", totalPoints: 42, sessions: 1, error: null };
+  const track = { eventId: "sinterklaas-2026", sessionSince: "2026-11-28T09:30:00.000Z", points: 42, segments: 1, lastAt: "2026-11-28T10:00:00.000Z", error: null };
   const session = { since: "2026-11-28T09:30:00.000Z", until: "2026-11-28T17:30:00.000Z", pausedSince: null };
   const running = { configured: true, session, public: live(), device, hours: { default: 4, max: 8 }, track };
   const pausedState = { ...running, session: { ...session, pausedSince: "2026-11-28T11:00:00.000Z" }, public: { state: "off", refreshSeconds: 60, paused: true } };

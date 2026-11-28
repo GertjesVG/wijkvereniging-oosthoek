@@ -387,7 +387,7 @@ try {
     for (const k of ["autostop", "pause", "resume", "start", "stop"]) assert.ok(kinds.includes(k), k);
     const status = (await admin("GET")).data;
     assert.equal(status.session, null);
-    assert.ok(status.track.totalPoints > 0 && status.track.points > 0);
+    assert.ok(status.track.points > 0, "stand van de laatste sessie blijft zichtbaar na de stop");
   });
 
   await step("inschrijvingen blijven ongemoeid: de GPS raakt geen enkele inschrijvingstabel", async () => {

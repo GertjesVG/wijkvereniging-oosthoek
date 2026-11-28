@@ -29,16 +29,13 @@ export type AdminGps = {
   configured: boolean;
   // Actieve publieke sessie met automatische stop; null = uit.
   session: { since: string; until: string; pausedSince?: string | null } | null;
-  // Registratie van de gereden route (alleen voor het beheer); null = onbekend.
+  // Opname van de gereden route van de lopende (of laatste) sessie, alleen voor het beheer; null = onbekend.
   track: {
     eventId: string;
     sessionSince: string | null;
     points: number;
     segments: number;
-    firstAt: string | null;
     lastAt: string | null;
-    totalPoints: number;
-    sessions: number;
     error: string | null;
   } | null;
   // Precies wat bezoekers nu zien.
