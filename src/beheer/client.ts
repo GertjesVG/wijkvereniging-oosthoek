@@ -8,6 +8,20 @@ import type {
 import type { AdminGps } from "../gps/api";
 import type { AdminText } from "../content/teksten";
 import type { AdminStats } from "../bezoek/paginas";
+import type { Control, EventYear, Phase } from "../evenement/fase";
+
+export type SinterklaasAction = "site" | "bedankt" | "afsluiten" | "automatisch" | "planning-uit" | "planning-aan" | "nieuw-jaar";
+export type AdminEventPhase = {
+  now: string;
+  phase: Phase;
+  control: Control;
+  years: EventYear[];
+  gps: {
+    busy: boolean;
+    track: { points: number; sessions: number; segments: number; first: string | null; last: string | null } | null;
+  };
+  log: { at: string; action: string; detail: string | null }[];
+};
 
 export class AdminError extends Error {
   status: number;
@@ -142,6 +156,11 @@ export const api = {
   gpsStop: () => request<AdminGps>("POST", "/api/beheer/gps", { action: "stop" }),
   gpsPause: () => request<AdminGps>("POST", "/api/beheer/gps", { action: "pause" }),
   gpsResume: () => request<AdminGps>("POST", "/api/beheer/gps", { action: "resume" }),
+  // Sinterklaasbeheer: fase, afsluiten, heropenen, planning en evenementjaren (server/evenement.ts).
+  sinterklaas: () => request<AdminEventPhase>("GET", "/api/beheer/sinterklaas"),
+  sinterklaasAction: (action: SinterklaasAction) => request<AdminEventPhase>("POST", "/api/beheer/sinterklaas", { action }),
+  saveYear: (year: number, patch: Partial<Omit<EventYear, "year">>) =>
+    request<AdminEventPhase>("PATCH", `/api/beheer/sinterklaas/jaren/${year}`, patch),
   // Teksten van de website: alleen de aangepaste; value null = terug naar de oorspronkelijke tekst.
   stats: () => request<AdminStats>("GET", "/api/beheer/statistieken"),
   texts: () => request<AdminText[]>("GET", "/api/beheer/teksten"),

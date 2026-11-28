@@ -24,6 +24,8 @@ export const textSections = [
   { id: "sint-route", title: "Sinterklaas · Route", href: "/sinterklaas/#/route" },
   { id: "sint-praktisch", title: "Sinterklaas · Praktische info", href: "/sinterklaas/#/praktisch" },
   { id: "sint-contact", title: "Sinterklaas · Contact", href: "/sinterklaas/#/contact" },
+  { id: "sint-bedankt", title: "Sinterklaas · Bedankpagina (na het evenement)", href: "/sinterklaas/?voorvertoning=bedankt#/bedankt" },
+  { id: "sint-fotos", title: "Sinterklaas · Fotoalbum", href: "/sinterklaas/?voorvertoning=bedankt#/fotos" },
 ] as const;
 
 export type TextSectionId = (typeof textSections)[number]["id"];
@@ -267,6 +269,78 @@ const catalogue = {
     section: "sint-contact",
     label: "Inleiding",
     text: "Een vraag over de Sinterklaasdag of de vereniging? Neem gerust contact met ons op.",
+  },
+
+  // ---------- Bedankpagina en fotoalbum (na het evenement; src/Afsluiting.tsx) ----------
+  // {jaar} wordt het evenementjaar en {volgend jaar} het jaar erna (src/evenement/fase.ts, fillYear).
+  "sint.bedankt.boventitel": { section: "sint-bedankt", label: BOVENREGEL, text: "Bedankt voor een onvergetelijke dag!" },
+  "sint.bedankt.titel": { section: "sint-bedankt", label: "Titel", text: "Tot de volgende keer,\nlieve kindjes!", lines: true },
+  "sint.bedankt.alinea1": {
+    section: "sint-bedankt",
+    label: "Alinea 1",
+    text: "Wat hebben Sinterklaas en Zwarte Piet vandaag genoten van hun prachtige rondrit door onze wijk Oosthoek!",
+  },
+  "sint.bedankt.alinea2": {
+    section: "sint-bedankt",
+    label: "Alinea 2",
+    text: "Ze waren superblij met alle prachtige tekeningen, de vele blije gezichtjes en natuurlijk alle superlieve en brave kindjes die hen vandaag kwamen begroeten.",
+  },
+  "sint.bedankt.alinea3": {
+    section: "sint-bedankt",
+    label: "Alinea 3",
+    text: "Ook een dikke dankjewel aan alle ouders, grootouders, vrijwilligers, sponsors en iedereen die deze bijzondere dag mee mogelijk heeft gemaakt.",
+  },
+  "sint.bedankt.alinea4": {
+    section: "sint-bedankt",
+    label: "Alinea 4",
+    text: "Samen hebben we er opnieuw een onvergetelijk Sinterklaasfeest van gemaakt, vol warmte, gezelligheid en schitterende herinneringen.",
+  },
+  "sint.bedankt.knuffel": { section: "sint-bedankt", label: "Vetgedrukte groet", text: "Een dikke knuffel van Sinterklaas en Zwarte Piet!" },
+  "sint.bedankt.afspraak": {
+    section: "sint-bedankt",
+    label: "Zin boven de afspraak",
+    text: "En vanuit het bestuur hebben wij afgesproken met Sinterklaas en zijn Zwarte Pieten:",
+  },
+  "sint.bedankt.afspraak-titel": { section: "sint-bedankt", label: "Afspraak (grote titel)", text: "Tot in {volgend jaar}!" },
+  "sint.bedankt.dank": {
+    section: "sint-bedankt",
+    label: "Dankwoord (vetgedrukt)",
+    text: "Dank jullie allemaal, wijk Oosthoek, dat we meer dan 135 brave kinderen superblij hebben kunnen maken!",
+  },
+  "sint.bedankt.ondertekening": { section: "sint-bedankt", label: "Ondertekening", text: "Het bestuur van VZW Wijkvereniging Oosthoek" },
+  "sint.bedankt.cijfer1-waarde": { section: "sint-bedankt", label: "Resultaat 1: getal", text: "135+" },
+  "sint.bedankt.cijfer1-tekst": { section: "sint-bedankt", label: "Resultaat 1: tekst", text: "blije kinderen" },
+  "sint.bedankt.cijfer2-waarde": { section: "sint-bedankt", label: "Resultaat 2: getal", text: "24" },
+  "sint.bedankt.cijfer2-tekst": { section: "sint-bedankt", label: "Resultaat 2: tekst", text: "straten op de geplande rondrit" },
+  "sint.bedankt.cijfer3-waarde": { section: "sint-bedankt", label: "Resultaat 3: getal", text: "Ontelbare" },
+  "sint.bedankt.cijfer3-tekst": { section: "sint-bedankt", label: "Resultaat 3: tekst", text: "mooie herinneringen" },
+  "sint.bedankt.cijfer4-waarde": { section: "sint-bedankt", label: "Resultaat 4: getal", text: "Eén" },
+  "sint.bedankt.cijfer4-tekst": { section: "sint-bedankt", label: "Resultaat 4: tekst", text: "fantastische wijk" },
+  "sint.bedankt.fotos-titel": { section: "sint-bedankt", label: "Fotopaneel: titel", text: "Herbeleef de mooiste momenten!" },
+  "sint.bedankt.fotos-tekst": {
+    section: "sint-bedankt",
+    label: "Fotopaneel: tekst",
+    text: "Van de eerste glimlach tot het laatste zwaaimoment: ontdek de prachtige herinneringen aan Sinterklaas in Oosthoek.",
+  },
+  "sint.bedankt.fotos-knop": { section: "sint-bedankt", label: "Fotopaneel: knop", text: "Bekijk het fotoalbum van {jaar}" },
+  "sint.bedankt.slot-titel": { section: "sint-bedankt", label: "Slot: titel", text: "Samen maken we onze wijk bijzonder." },
+  "sint.bedankt.slot-tekst": {
+    section: "sint-bedankt",
+    label: "Slot: tekst",
+    text: "Benieuwd wat de wijkvereniging nog allemaal organiseert? Ontdek onze activiteiten op de website van Oosthoek.",
+  },
+  "sint.fotos.boventitel": { section: "sint-fotos", label: BOVENREGEL, text: "Fotoalbum Sinterklaas in Oosthoek" },
+  "sint.fotos.titel": { section: "sint-fotos", label: "Titel", text: "De mooiste momenten van {jaar}" },
+  "sint.fotos.intro": {
+    section: "sint-fotos",
+    label: "Inleiding",
+    text: "Van de eerste glimlach tot het laatste zwaaimoment: herbeleef de Sinterklaasstoet door onze wijk.",
+  },
+  "sint.fotos.leeg-titel": { section: "sint-fotos", label: "Nog geen foto's: titel", text: "De mooiste herinneringen komen eraan!" },
+  "sint.fotos.leeg-tekst": {
+    section: "sint-fotos",
+    label: "Nog geen foto's: tekst",
+    text: "Binnenkort kunnen jullie hier alle prachtige momenten van onze Sinterklaasstoet opnieuw beleven.",
   },
 } satisfies Record<string, TextField>;
 

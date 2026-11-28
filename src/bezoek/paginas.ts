@@ -26,6 +26,8 @@ export const bezoekPaginas: Record<string, string> = {
   "sinterklaas/route": "Sinterklaas: route",
   "sinterklaas/praktisch": "Sinterklaas: praktische informatie",
   "sinterklaas/contact": "Sinterklaas: contact",
+  "sinterklaas/bedankt": "Sinterklaas: bedankpagina",
+  "sinterklaas/fotos": "Sinterklaas: fotoalbum",
 };
 
 export const isBezoekPagina = (page: unknown): page is string => typeof page === "string" && Object.hasOwn(bezoekPaginas, page);

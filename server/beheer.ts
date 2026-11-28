@@ -22,6 +22,7 @@ import {
 } from "./basis.ts";
 import { handleGpsAdmin } from "./gps.ts";
 import { handleTextsAdmin } from "./teksten.ts";
+import { handleEventAdmin } from "./evenement.ts";
 import { handleStatsAdmin } from "./bezoek.ts";
 import { CHILD_NAME_HINT, checkArea, cleanChildName, cleanEmail, cleanHouseNumber, cleanText } from "./validatie.ts";
 import { deleteByPassed, eraseExpired, eraseStatements } from "./wissen.ts";
@@ -729,6 +730,8 @@ export async function handleAdmin(request: Request, env: Env, path: string[]) {
 
   // Live GPS: status, Start en Stop (server/gps.ts).
   if (section === "gps" && !key) return handleGpsAdmin(request, env, db);
+  // Sinterklaasbeheer: evenementjaren, fasen, afsluiten en heropenen (server/evenement.ts).
+  if (section === "sinterklaas") return handleEventAdmin(request, db, path);
   // Teksten van de website (server/teksten.ts).
   if (section === "teksten") return handleTextsAdmin(request, db, path);
   // Bezoekersstatistieken (server/bezoek.ts).

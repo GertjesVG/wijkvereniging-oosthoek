@@ -1,11 +1,12 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
-import { BarChart3, ClipboardList, Download, LogOut, Mail, Map as MapIcon, PenLine, RefreshCw, Trash2 } from "lucide-react";
+import { BarChart3, ClipboardList, Download, LogOut, Mail, Map as MapIcon, PenLine, RefreshCw, Sparkles, Trash2 } from "lucide-react";
 import type { AdminEventSummary, AdminRegistration } from "../inschrijving/api";
 import { renderConfirmation, repliesInGmail } from "../inschrijving/bevestigingsmail";
 import { registrationNotice, toBrusselsInput } from "../inschrijving/periode";
 import { AdminError, api, describeError, downloadExport, setUnauthorizedHandler } from "./client";
 import { GpsPanel } from "./GpsPanel";
 import { RegistrationItem } from "./RegistrationItem";
+import { SinterklaasPanel } from "./SinterklaasPanel";
 import { StatsPanel } from "./StatsPanel";
 import { TextsPanel } from "./TextsPanel";
 import { ErrorNote, formatDay, useAction } from "./ui";
@@ -748,9 +749,18 @@ function History({ events }: { events: AdminEventSummary[] }) {
 
 // Vier onderdelen: inschrijvingen met GPS (zoals altijd), de kinderen op de kaart (#kaart), de teksten van de website
 // (#teksten) en de bezoekersstatistieken (#statistieken).
-type View = "inschrijvingen" | "kaart" | "teksten" | "statistieken";
+// Sinterklaasbeheer (#sinterklaas): fasen, afsluiten, jaarplanning en gereden routes.
+type View = "inschrijvingen" | "kaart" | "teksten" | "statistieken" | "sinterklaas";
 const viewOf = (hash: string): View =>
-  hash === "#teksten" ? "teksten" : hash === "#statistieken" ? "statistieken" : hash === "#kaart" ? "kaart" : "inschrijvingen";
+  hash === "#teksten"
+    ? "teksten"
+    : hash === "#statistieken"
+      ? "statistieken"
+      : hash === "#kaart"
+        ? "kaart"
+        : hash === "#sinterklaas"
+          ? "sinterklaas"
+          : "inschrijvingen";
 
 function Dashboard({
   initialEvents,
@@ -816,6 +826,10 @@ function Dashboard({
             <span className="muted">Wijkvereniging Oosthoek</span>
           </div>
           <nav className="views" aria-label="Onderdelen van het beheer">
+            <a href="#sinterklaas" aria-current={view === "sinterklaas" ? "page" : undefined}>
+              <Sparkles size={16} aria-hidden="true" />
+              Sinterklaasbeheer
+            </a>
             <a href="#inschrijvingen" aria-current={view === "inschrijvingen" ? "page" : undefined}>
               <ClipboardList size={16} aria-hidden="true" />
               Inschrijvingen en GPS
@@ -859,6 +873,7 @@ function Dashboard({
         )}
         {/* Bij elk openen opnieuw opgebouwd: zo haalt het scherm meteen de actuele cijfers op. */}
         {view === "statistieken" && <StatsPanel />}
+        {view === "sinterklaas" && <SinterklaasPanel events={events} />}
         {/* Bij elk openen opnieuw opgebouwd: zo komen verbeterde adressen en nieuwe inschrijvingen meteen mee. */}
         {view === "kaart" &&
           (!event ? (

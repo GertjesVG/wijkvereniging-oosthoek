@@ -5,11 +5,13 @@ import { event, dateLabel, asset } from "./content/event";
 import Home from "./Home";
 import { ContentPage } from "./Pages";
 import { useTexts } from "./teksten";
+import { useEventPhase } from "./evenement/useFase";
+import { Afsluiting, Fotoalbum } from "./Afsluiting";
 
 function readPage() {
   return window.location.hash.replace(/^#\/?/, "").split("?")[0] || "home";
 }
-function Brand({ onNavigate }: { onNavigate: () => void }) {
+function Brand({ onNavigate, year }: { onNavigate: () => void; year: number }) {
   return (
     <a
       className="brand"
@@ -26,7 +28,7 @@ function Brand({ onNavigate }: { onNavigate: () => void }) {
       </span>
       <span>
         <strong>Oosthoek</strong>
-        <small>SINTERKLAAS {event.year}</small>
+        <small>SINTERKLAAS {year}</small>
       </span>
     </a>
   );
@@ -50,7 +52,16 @@ function Village() {
   );
 }
 const menuLinks = pageLinks.filter(([key]) => key !== "privacy");
+// Na het evenement (bedankpagina): alleen de bedankpagina en het fotoalbum. De actiepagina's (cadeauactie,
+// kleurwedstrijd, route, praktische info, contact) tonen dan ook via een rechtstreeks adres de bedankpagina.
+const closedLinks = [
+  ["bedankt", "Bedankt"],
+  ["fotos", "Foto's"],
+] as const;
 export default function App() {
+  const phase = useEventPhase();
+  const closed = phase.status === "ready" && phase.show === "bedankt";
+  const year = (phase.status === "ready" ? phase.year : null) ?? event.year;
   const [page, setPage] = useState(readPage);
   const [menuOpen, setMenuOpen] = useState(false);
   const main = useRef<HTMLElement>(null);
@@ -75,8 +86,14 @@ export default function App() {
   }, []);
   useEffect(() => {
     const label =
-      pageLinks.find(([key]) => key === page)?.[1] ?? "Pagina niet gevonden";
-    document.title = `${label} · Sinterklaas Oosthoek ${event.year}`;
+      page === "fotos"
+        ? "Foto's"
+        : closed
+          ? "Bedankt"
+          : (pageLinks.find(([key]) => key === page)?.[1] ?? "Pagina niet gevonden");
+    document.title = `${label} · Sinterklaas Oosthoek ${year}`;
+  }, [page, closed, year]);
+  useEffect(() => {
     if (previousPage.current !== page) {
       main.current?.focus({ preventScroll: true });
       previousPage.current = page;
@@ -137,6 +154,13 @@ export default function App() {
       >
         Ga naar de inhoud
       </a>
+      {phase.status === "ready" && phase.preview && (
+        <p className="preview-banner" role="status">
+          <strong>Voorvertoning voor beheerders</strong> · u ziet{" "}
+          {phase.preview === "bedankt" ? "de bedankpagina" : "de volledige Sinterklaaswebsite"}. Bezoekers zien nu{" "}
+          {phase.publicShow === "bedankt" ? "de bedankpagina" : "de volledige Sinterklaaswebsite"}.
+        </p>
+      )}
       <div className="back-bar">
         <div className="container">
           <a className="button button-outline" href="https://wijkvereniging-oosthoek.pages.dev/">
@@ -146,7 +170,7 @@ export default function App() {
       </div>
       <header className="site-header">
         <div className="header-inner">
-          <Brand onNavigate={() => setMenuOpen(false)} />
+          <Brand onNavigate={() => setMenuOpen(false)} year={year} />
           <button
             className="menu-toggle"
             id="menu-toggle"
@@ -163,11 +187,13 @@ export default function App() {
             aria-label="Hoofdnavigatie"
           >
             {/* Privacy staat in het menu van de wijkwebsite; hier alleen in de voet en bij het formulier. */}
-            {menuLinks.map(([key, label]) => (
+            {(phase.status === "loading" ? [] : closed ? closedLinks : menuLinks).map(([key, label]) => (
               <a
                 key={key}
                 href={`#/${key}`}
-                aria-current={page === key ? "page" : undefined}
+                aria-current={
+                  (closed ? (page === "fotos" ? "fotos" : "bedankt") : page) === key ? "page" : undefined
+                }
                 onClick={() => setMenuOpen(false)}
               >
                 {label}
@@ -176,8 +202,15 @@ export default function App() {
           </nav>
         </div>
       </header>
-      <main id="inhoud" ref={main} tabIndex={-1}>
-        {page === "home" ? (
+      <main id="inhoud" ref={main} tabIndex={-1} aria-busy={phase.status === "loading"}>
+        {phase.status === "loading" ? (
+          // Even wachten op de evenementfase (hoogstens 5 s), zodat na het evenement nooit kort de oude website verschijnt.
+          <div className="phase-loading" />
+        ) : page === "fotos" ? (
+          <Fotoalbum year={year} />
+        ) : closed ? (
+          <Afsluiting year={year} />
+        ) : page === "home" ? (
           <Home />
         ) : known ? (
           <div className="container inner-page">
@@ -198,12 +231,14 @@ export default function App() {
         <div className="footer-bottom container">
           <div>
             <strong>{event.organisation.name}</strong>
-            <span>{dateLabel}</span>
+            <span>{closed ? `Sinterklaas in Oosthoek ${year}` : dateLabel}</span>
           </div>
           <div className="footer-links">
-            <a href="#/contact">
-              Contact <ArrowUpRight size={13} />
-            </a>
+            {!closed && (
+              <a href="#/contact">
+                Contact <ArrowUpRight size={13} />
+              </a>
+            )}
             <a href="#/privacy">Privacy</a>
             <span>
               Met liefde voor de wijk <Heart size={12} />

@@ -49,7 +49,7 @@ test("elk onderdeel heeft teksten en een link naar de eigen pagina", () => {
   assert.equal(new Set(textSections.map((s) => s.id)).size, textSections.length);
   for (const section of textSections) {
     assert.ok(keys.some((key) => texts[key].section === section.id), `${section.id}: leeg`);
-    assert.match(section.href, /^\/(sinterklaas\/)?(#\/[a-z-]+)?$/, section.href);
+    assert.match(section.href, /^\/(sinterklaas\/)?(\?voorvertoning=bedankt)?(#\/[a-z-]+)?$/, section.href);
   }
 });
 

@@ -375,7 +375,7 @@ test("privacy: één centrale verklaring op de wijkwebsite, met link in de voet 
   assert.match(app, /\{pageLink\("wijkhuis", "Wijkhuis"\)\}\s*\{pageLink\(privacyPage\.slug, "Privacy"\)\}\s*<a className="nav-contact"/);
   // De Sinterklaaswebsite heeft geen eigen privacytekst en geen privacy in het hoofdmenu: alleen de voet en het formulier verwijzen.
   assert.ok(text("../src/App.tsx").includes('const menuLinks = pageLinks.filter(([key]) => key !== "privacy");'));
-  assert.ok(text("../src/App.tsx").includes("{menuLinks.map("));
+  assert.ok(text("../src/App.tsx").includes("closed ? closedLinks : menuLinks"));
   const pages = text("../src/Pages.tsx");
   assert.doesNotMatch(pages, /artikel 6\.1|Gegevensbeschermingsautoriteit|geboortekaartje/);
   assert.ok(text("../src/App.tsx").includes('<a href="#/privacy">Privacy</a>'));

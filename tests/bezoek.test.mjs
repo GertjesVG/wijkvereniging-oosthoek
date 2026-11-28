@@ -13,7 +13,8 @@ test("de paginalijst is precies de bestaande pagina's van beide websites", () =>
   const wijk = ["wijk", ...[...activities, ...infoPages, privacyPage].map((p) => `wijk/${p.slug}`)];
   // De pagina's van de Sinterklaaswebsite (Pages.tsx); de sponsors en de privacy staan online op de wijkwebsite.
   const record = /const pages: Record<string, ComponentType> = \{([^}]+)\}/.exec(text("../src/Pages.tsx"))[1];
-  const sint = ["home", ...[...record.matchAll(/^\s*([a-z-]+):/gm)].map((m) => m[1]).filter((p) => p !== "sponsors" && p !== "privacy")];
+  const sint = ["home", ...[...record.matchAll(/^\s*([a-z-]+):/gm)].map((m) => m[1]).filter((p) => p !== "sponsors" && p !== "privacy"), "bedankt", "fotos"];
+  // "bedankt" en "fotos": de bedankpagina en het fotoalbum na het evenement (App.tsx, Afsluiting.tsx).
   assert.deepEqual(Object.keys(bezoekPaginas).sort(), [...wijk, ...sint.map((p) => `sinterklaas/${p}`)].sort());
   for (const label of Object.values(bezoekPaginas)) assert.ok(label.length > 3);
 });

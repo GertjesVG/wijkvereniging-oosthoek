@@ -404,6 +404,42 @@ async function exportTrack(db: D1Database, format: "geojson" | "gpx") {
   });
 }
 
+// Stop: de positie is meteen weg voor iedereen; de gereden route blijft bewaard. Ook gebruikt door "Sluit
+// Sinterklaasstoet af" in het Sinterklaasbeheer (server/evenement.ts).
+export async function stopLiveGps(db: D1Database, nowMs = Date.now()) {
+  const row = await loadRow(db, nowMs);
+  const now = nowIso();
+  await db.prepare(stopSql(row)).bind(now).run();
+  if (row?.public_since && hasRouteColumns(row)) await logTrack(db, row.public_since, "stop", now);
+}
+
+// Loopt de live GPS (ook gepauzeerd)? Dan wacht de automatische afsluiting van de website (src/evenement/fase.ts).
+export async function liveGpsBusy(db: D1Database, nowMs = Date.now()) {
+  try {
+    const row = await db.prepare("SELECT public_since, public_until FROM gps_live WHERE id = 1").first<GpsRow>();
+    return Boolean(row && isLive(row, nowMs));
+  } catch (error) {
+    if (missingTable(error)) return false;
+    throw error;
+  }
+}
+
+// Stand van de opname per evenement voor het Sinterklaasbeheer: aantallen, nooit de punten zelf.
+export async function trackCounts(db: D1Database, eventId: string) {
+  try {
+    const row = await db
+      .prepare(
+        "SELECT COUNT(*) AS points, COUNT(DISTINCT session_since) AS sessions, COUNT(DISTINCT session_since || segment_since) AS segments, MIN(fix_at) AS first, MAX(fix_at) AS last FROM gps_track WHERE event_id = ?1",
+      )
+      .bind(eventId)
+      .first<{ points: number; sessions: number; segments: number; first: string | null; last: string | null }>();
+    return row ?? { points: 0, sessions: 0, segments: 0, first: null, last: null };
+  } catch (error) {
+    if (errorMessage(error).includes("no such table")) return null;
+    throw error;
+  }
+}
+
 // Beheer: GET = status (met ?export=geojson of gpx: de gereden route), POST {action: "start", hours}, {action: "pause"},
 // {action: "resume"} of {action: "stop"}. De beheerrouter controleert eerst de sessie.
 export async function handleGpsAdmin(request: Request, env: Env, db: D1Database) {
@@ -418,10 +454,7 @@ export async function handleGpsAdmin(request: Request, env: Env, db: D1Database)
     if (request.method !== "POST") return fail(404, "NIET_GEVONDEN", "Onbekende beheeropdracht.");
     const body = (await readJson(request)) ?? {};
     if (body.action === "stop") {
-      const row = await loadRow(db, nowMs);
-      const now = nowIso();
-      await db.prepare(stopSql(row)).bind(now).run();
-      if (row?.public_since && hasRouteColumns(row)) await logTrack(db, row.public_since, "stop", now);
+      await stopLiveGps(db, nowMs);
     } else if (body.action === "pause" || body.action === "resume") {
       const row = await loadRow(db, nowMs);
       if (!row?.public_since) return fail(409, "VERBODEN", "De live GPS staat uit.");
